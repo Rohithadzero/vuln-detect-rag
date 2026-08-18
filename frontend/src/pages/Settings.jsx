@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getBackendLogs, getLLMStatus, getHealth } from '../api/client'
 import { RefreshCw, Download, FileText, Settings as SettingsIcon, Cpu, AlertTriangle, CheckCircle, XCircle } from 'lucide-react'
+import ProviderControls from '../components/ProviderControls'
 
 export default function Settings() {
   const [logs, setLogs] = useState('')
@@ -41,6 +42,9 @@ export default function Settings() {
           <p className="text-sm font-bold text-gray-600 uppercase tracking-wider">Platform configuration and logs</p>
         </div>
       </div>
+
+      {/* Research controls: per-provider toggles, model choice, RAG on/off */}
+      <ProviderControls />
 
       {/* Status Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

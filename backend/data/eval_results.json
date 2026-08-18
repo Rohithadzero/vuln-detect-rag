@@ -1,0 +1,1550 @@
+{
+  "environment": {
+    "timestamp": "2026-08-18T10:45:22.545526+00:00",
+    "llm_provider": "groq",
+    "llm_model": "openai/gpt-oss-120b",
+    "embedding_provider": "local",
+    "embedding_model": "all-MiniLM-L6-v2",
+    "vector_documents": 180,
+    "collection": "cve_knowledge",
+    "corpus_cves": 50,
+    "answerable": 40,
+    "controls": 5,
+    "top_k": 5,
+    "repeats": 1,
+    "app_version": "3.5.0"
+  },
+  "metrics": {
+    "retrieval": {
+      "retrieval": {
+        "hit_rate_at_k": 1.0,
+        "precision_at_1": 1.0,
+        "mrr": 1.0,
+        "queries": 40,
+        "hits": 40,
+        "misses": 0
+      },
+      "retrieval_by_style": {
+        "id": {
+          "hit_rate_at_k": 1.0,
+          "precision_at_1": 1.0,
+          "mrr": 1.0,
+          "queries": 20,
+          "hits": 20,
+          "misses": 0
+        },
+        "semantic": {
+          "hit_rate_at_k": 1.0,
+          "precision_at_1": 1.0,
+          "mrr": 1.0,
+          "queries": 20,
+          "hits": 20,
+          "misses": 0
+        }
+      },
+      "cost": {
+        "mean_retrieval_ms": 286.9,
+        "mean_generation_ms": 0.0,
+        "mean_prompt_tokens": 0.0,
+        "mean_completion_tokens": 0.0,
+        "queries": 45,
+        "failures": 0
+      }
+    }
+  },
+  "records": {
+    "retrieval": [
+      {
+        "id": "CVE-2020-1472",
+        "question": "What is CVE-2020-1472 and how do I remediate it?",
+        "answerable": true,
+        "expected_cve": "CVE-2020-1472",
+        "style": "id",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2020-1472",
+          "CVE-2021-45046",
+          "CVE-2023-44487",
+          "CVE-2023-3079",
+          "CVE-2022-40684"
+        ],
+        "retrieved_texts": [
+          "CVE-2020-1472 (CRITICAL, CVSS 10.0)\nDescription: An elevation of privilege vulnerability exists when an attacker establishes a vulnerable Netlogon secure channel connection to a computer, using the Netlogon Remote Protocol (MS-NRPC), aka 'Netlogon Elevation of Privilege Vulnerability' (Zerologon).\nRemediation: Apply Microsoft August 2020 security update. Enable enforcement mode for CVE-2020-1472.",
+          "# CVE-2021-45046 \u2014 It was found that the fix to address CVE-2021-44228 in Apache Log4j...\n\nIdentifier: CVE-2021-45046\nSeverity: CRITICAL (CVSS base score 9.0 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-05-01. US federal remediation deadline 2023-05-22. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-917.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity high, privileges required none, user interaction none.",
+          "# CVE-2023-44487 \u2014 The HTTP/2 protocol allows a denial of service (server resource...\n\nIdentifier: CVE-2023-44487\nSeverity: HIGH (CVSS base score 7.5 out of 10) \u2014 high risk; prioritise patching in the current cycle\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-10-10. US federal remediation deadline 2023-10-31.\nExploit likelihood (EPSS): 1.0000 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-400.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.",
+          "# CVE-2023-3079 \u2014 Type confusion in V8 in Google Chrome prior to 114.0.5735.110 allowed...\n\nIdentifier: CVE-2023-3079\nSeverity: HIGH (CVSS base score 8.8 out of 10) \u2014 high risk; prioritise patching in the current cycle\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-06-07. US federal remediation deadline 2023-06-28.\nExploit likelihood (EPSS): 0.3211 probability of exploitation in the next 30 days, which is the 98.2th percentile of all CVEs.\nWeakness class: CWE-843.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction required.",
+          "# CVE-2022-40684 \u2014 An authentication bypass using an alternate path or channel...\n\nIdentifier: CVE-2022-40684\nSeverity: CRITICAL (CVSS base score 9.8 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2022-10-11. US federal remediation deadline 2022-11-01. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-287.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none."
+        ],
+        "scores": [
+          0.99,
+          0.8085,
+          0.7949,
+          0.7948,
+          0.7944
+        ],
+        "retrieval_ms": 11908.0,
+        "generation_ms": 0.0,
+        "reference": "An elevation of privilege vulnerability exists when an attacker establishes a vulnerable Netlogon secure channel connection to a computer, using the Netlogon Remote Protocol (MS-NRPC), aka 'Netlogon Elevation of Privilege Vulnerability' (Zerologon). Remediation: Apply Microsoft August 2020 security update. Enable enforcement mode for CVE-2020-1472."
+      },
+      {
+        "id": "CVE-2020-1472[sem]",
+        "question": "Which vulnerability involves elevation privilege exists establishes vulnerable Netlogon secure channel connection computer using Netlogon Remote Protocol? Explain it and how to fix it.",
+        "answerable": true,
+        "expected_cve": "CVE-2020-1472",
+        "style": "semantic",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2020-1472",
+          "CVE-2021-26855",
+          "CVE-2023-20198",
+          "CVE-2023-29336",
+          "CVE-2023-20269"
+        ],
+        "retrieved_texts": [
+          ":3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N.\nExploitability: attack vector local, attack complexity low, privileges required low, user interaction none.\nAffected products: canonical ubuntu linux, debian debian linux, fedoraproject fedora, microsoft windows server 1903, microsoft windows server 1909, microsoft windows server 2004, microsoft windows server 2008, microsoft windows server 2012, microsoft windows server 2016, microsoft windows server 2019.\nPublished: 2020-08-17.\n\n## Description\nAn elevation of privilege vulnerability exists when an attacker establishes a vulnerable Netlogon secure channel connection to a computer, using the Netlogon Remote Protocol (MS-NRPC), aka 'Netlogon Elevation of Privilege Vulnerability' (Zerologon).\n\n## Remediation\nApply Microsoft August 2020 security update. Enable enforcement mode for CVE-2020-1472.",
+          "CVE-2021-26855 (CRITICAL, CVSS 9.8)\nDescription: Microsoft Exchange Server Remote Code Execution Vulnerability (ProxyLogon). This vulnerability is part of an attack chain that allows unauthenticated attackers to execute arbitrary commands on vulnerable Exchange servers.\nRemediation: Apply Microsoft Exchange Server security update from March 2021. Enable Extended Protection and disable legacy authentication.",
+          "1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.\nAffected products: cisco ios xe, rockwellautomation allen-bradley stratix 5200, rockwellautomation allen-bradley stratix 5200 firmware, rockwellautomation allen-bradley stratix 5800, rockwellautomation allen-bradley stratix 5800 firmware.\nPublished: 2023-10-16.\n\n## Description\nA privilege escalation vulnerability in the web UI of Cisco IOS XE that allows an unauthenticated attacker to create an account on the device with full privilege level 15 access.\n\n## Remediation\nDisable the HTTP server feature on internet-facing systems. Apply Cisco security advisories.",
+          "CVE-2023-29336 (HIGH, CVSS 7.8)\nDescription: Win32k Elevation of Privilege Vulnerability in Microsoft Windows. A local attacker could gain SYSTEM privileges.\nRemediation: Apply Microsoft May 2023 security update.",
+          "privileges required low, user interaction none.\nAffected products: cisco adaptive security appliance software, cisco secure firewall threat defense.\nPublished: 2023-09-06.\n\n## Description\nA vulnerability in the remote access VPN feature of Cisco Adaptive Security Appliance (ASA) Software and Cisco Firepower Threat Defense (FTD) Software could allow an unauthenticated, remote attacker to conduct a brute force attack against an existing user or establish a clientless SSL VPN session.\n\n## Remediation\nUpdate Cisco ASA/FTD to patched versions. Enforce MFA for VPN.\n\n## References\n- https://nvd.nist.gov/vuln/detail/CVE-2023-20269\n- https://sec.cloudapps.cisco.com/security/center/content/CiscoSecurityAdvisory/cisco-sa-asaftd-ravpn-auth-8LyfCkeC\n- https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2023-20269"
+        ],
+        "scores": [
+          0.9145,
+          0.7791,
+          0.7646,
+          0.7612,
+          0.7606
+        ],
+        "retrieval_ms": 17.5,
+        "generation_ms": 0.0,
+        "reference": "An elevation of privilege vulnerability exists when an attacker establishes a vulnerable Netlogon secure channel connection to a computer, using the Netlogon Remote Protocol (MS-NRPC), aka 'Netlogon Elevation of Privilege Vulnerability' (Zerologon). Remediation: Apply Microsoft August 2020 security update. Enable enforcement mode for CVE-2020-1472."
+      },
+      {
+        "id": "CVE-2021-26855",
+        "question": "What is CVE-2021-26855 and how do I remediate it?",
+        "answerable": true,
+        "expected_cve": "CVE-2021-26855",
+        "style": "id",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2021-26855",
+          "CVE-2021-45046",
+          "CVE-2022-47966",
+          "CVE-2023-4966",
+          "CVE-2022-26134"
+        ],
+        "retrieved_texts": [
+          "# CVE-2021-26855 \u2014 Microsoft Exchange Server Remote Code Execution Vulnerability...\n\nIdentifier: CVE-2021-26855\nSeverity: CRITICAL (CVSS base score 9.8 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2021-11-03. US federal remediation deadline 2022-05-03. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 1.0000 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-918.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.\nAffected products: microsoft exchange server.\nPublished: 2021-03-03.",
+          "# CVE-2021-45046 \u2014 It was found that the fix to address CVE-2021-44228 in Apache Log4j...\n\nIdentifier: CVE-2021-45046\nSeverity: CRITICAL (CVSS base score 9.0 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-05-01. US federal remediation deadline 2023-05-22. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-917.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity high, privileges required none, user interaction none.",
+          "CVE-2022-47966 (CRITICAL, CVSS 9.8)\nDescription: Multiple Zoho ManageEngine products are affected by a Remote Code Execution vulnerability due to the usage of an outdated third-party dependency, Apache Santuario.\nRemediation: Update affected ManageEngine products to the latest available builds.",
+          "CVE-2023-4966 (HIGH, CVSS 7.5)\nDescription: Sensitive information disclosure in NetScaler ADC and NetScaler Gateway when configured as a Gateway (VPN virtual server, ICA Proxy, CVPN, RDP Proxy) or AAA virtual server (Citrix Bleed).\nRemediation: Update NetScaler ADC and Gateway to patched versions. Terminate all active sessions after patching.",
+          "CVE-2022-26134 (CRITICAL, CVSS 9.8)\nDescription: Atlassian Confluence Server and Data Center contain an OGNL injection vulnerability that allows an unauthenticated attacker to execute arbitrary code on a Confluence Server or Data Center instance.\nRemediation: Update Confluence to patched versions immediately."
+        ],
+        "scores": [
+          0.99,
+          0.7886,
+          0.7875,
+          0.7812,
+          0.7781
+        ],
+        "retrieval_ms": 17.7,
+        "generation_ms": 0.0,
+        "reference": "Microsoft Exchange Server Remote Code Execution Vulnerability (ProxyLogon). This vulnerability is part of an attack chain that allows unauthenticated attackers to execute arbitrary commands on vulnerable Exchange servers. Remediation: Apply Microsoft Exchange Server security update from March 2021. Enable Extended Protection and disable legacy authentication."
+      },
+      {
+        "id": "CVE-2021-26855[sem]",
+        "question": "Which vulnerability involves Microsoft Exchange Server Remote Code Execution ProxyLogon? Explain it and how to fix it.",
+        "answerable": true,
+        "expected_cve": "CVE-2021-26855",
+        "style": "semantic",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2021-26855",
+          "CVE-2022-41040",
+          "CVE-2023-36884",
+          "CVE-2023-23397",
+          "CVE-2021-34527"
+        ],
+        "retrieved_texts": [
+          "network, attack complexity low, privileges required none, user interaction none.\nAffected products: microsoft exchange server.\nPublished: 2021-03-03.\n\n## Description\nMicrosoft Exchange Server Remote Code Execution Vulnerability (ProxyLogon). This vulnerability is part of an attack chain that allows unauthenticated attackers to execute arbitrary commands on vulnerable Exchange servers.\n\n## Remediation\nApply Microsoft Exchange Server security update from March 2021. Enable Extended Protection and disable legacy authentication.",
+          "network, attack complexity low, privileges required low, user interaction none.\nAffected products: microsoft exchange server.\nPublished: 2022-10-03.\n\n## Description\nMicrosoft Exchange Server Server-Side Request Forgery Vulnerability (ProxyNotShell). An authenticated attacker can trigger this vulnerability to execute arbitrary PowerShell code in the context of SYSTEM.\n\n## Remediation\nApply Microsoft Exchange security updates. Implement URL rewrite mitigation rules.",
+          "CVE-2023-36884 (HIGH, CVSS 8.3)\nDescription: Microsoft Office and Windows HTML Remote Code Execution Vulnerability. An attacker could create a specially crafted Microsoft Office document that enables them to perform remote code execution in the context of the victim.\nRemediation: Apply Microsoft July 2023 security updates. Block Office macros from running in files from the internet.",
+          "1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.\nAffected products: microsoft 365 apps, microsoft office, microsoft office long term servicing channel, microsoft outlook.\nPublished: 2023-03-14.\n\n## Description\nMicrosoft Outlook Elevation of Privilege Vulnerability. An attacker sends a calendar invite containing a UNC path to an SMB share controlled by the attacker. When Outlook processes the reminder for this event, it automatically connects to the attacker's SMB share, leaking the victim's Net-NTLMv2 hash.\n\n## Remediation\nApply Microsoft March 2023 security update. Block TCP 445/SMB outbound from your network.",
+          ".1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required low, user interaction none.\nAffected products: microsoft windows 10 1507, microsoft windows 10 1607, microsoft windows 10 1809, microsoft windows 10 20h2, microsoft windows 10 21h2, microsoft windows 10 22h2, microsoft windows 11 21h2, microsoft windows 11 22h2, microsoft windows rt 8.1, microsoft windows server 2008.\nPublished: 2021-07-02.\n\n## Description\nWindows Print Spooler Remote Code Execution Vulnerability (PrintNightmare). A remote code execution vulnerability exists when the Windows Print Spooler service improperly performs privileged file operations. An attacker who successfully exploited this vulnerability could run arbitrary code with SYSTEM privileges."
+        ],
+        "scores": [
+          0.9452,
+          0.8528,
+          0.8008,
+          0.7669,
+          0.7615
+        ],
+        "retrieval_ms": 23.4,
+        "generation_ms": 0.0,
+        "reference": "Microsoft Exchange Server Remote Code Execution Vulnerability (ProxyLogon). This vulnerability is part of an attack chain that allows unauthenticated attackers to execute arbitrary commands on vulnerable Exchange servers. Remediation: Apply Microsoft Exchange Server security update from March 2021. Enable Extended Protection and disable legacy authentication."
+      },
+      {
+        "id": "CVE-2021-45046",
+        "question": "What is CVE-2021-45046 and how do I remediate it?",
+        "answerable": true,
+        "expected_cve": "CVE-2021-45046",
+        "style": "id",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2021-45046",
+          "CVE-2022-47966",
+          "CVE-2023-1389",
+          "CVE-2023-4966",
+          "CVE-2022-26134"
+        ],
+        "retrieved_texts": [
+          "# CVE-2021-45046 \u2014 It was found that the fix to address CVE-2021-44228 in Apache Log4j...\n\nIdentifier: CVE-2021-45046\nSeverity: CRITICAL (CVSS base score 9.0 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-05-01. US federal remediation deadline 2023-05-22. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-917.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity high, privileges required none, user interaction none.",
+          "CVE-2022-47966 (CRITICAL, CVSS 9.8)\nDescription: Multiple Zoho ManageEngine products are affected by a Remote Code Execution vulnerability due to the usage of an outdated third-party dependency, Apache Santuario.\nRemediation: Update affected ManageEngine products to the latest available builds.",
+          "# CVE-2023-1389 \u2014 TP-Link Archer AX21 (AX1800) contains a command injection...\n\nIdentifier: CVE-2023-1389\nSeverity: HIGH (CVSS base score 7.5 out of 10) \u2014 high risk; prioritise patching in the current cycle\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-05-01. US federal remediation deadline 2023-05-22.\nExploit likelihood (EPSS): 1.0000 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-77.\nCVSS 3.1 vector: CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector adjacent_network, attack complexity low, privileges required none, user interaction none.\nAffected products: tp-link archer ax21, tp-link archer ax21 firmware.\nPublished: 2023-03-15.",
+          "CVE-2023-4966 (HIGH, CVSS 7.5)\nDescription: Sensitive information disclosure in NetScaler ADC and NetScaler Gateway when configured as a Gateway (VPN virtual server, ICA Proxy, CVPN, RDP Proxy) or AAA virtual server (Citrix Bleed).\nRemediation: Update NetScaler ADC and Gateway to patched versions. Terminate all active sessions after patching.",
+          "CVE-2022-26134 (CRITICAL, CVSS 9.8)\nDescription: Atlassian Confluence Server and Data Center contain an OGNL injection vulnerability that allows an unauthenticated attacker to execute arbitrary code on a Confluence Server or Data Center instance.\nRemediation: Update Confluence to patched versions immediately."
+        ],
+        "scores": [
+          0.99,
+          0.7802,
+          0.7695,
+          0.7683,
+          0.7674
+        ],
+        "retrieval_ms": 20.0,
+        "generation_ms": 0.0,
+        "reference": "It was found that the fix to address CVE-2021-44228 in Apache Log4j 2.15.0 was incomplete in certain non-default configurations. This could allows attackers with control over Thread Context Map to craft malicious input data using a JNDI Lookup pattern resulting in a denial of service and potentially remote code execution. Remediation: Upgrade to Log4j 2.16.0 or later."
+      },
+      {
+        "id": "CVE-2021-45046[sem]",
+        "question": "Which vulnerability involves found fix address Apache Log4j? Explain it and how to fix it.",
+        "answerable": true,
+        "expected_cve": "CVE-2021-45046",
+        "style": "semantic",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2021-45046",
+          "CVE-2021-44228",
+          "CVE-2023-25690",
+          "CVE-2021-26855",
+          "CVE-2023-50164"
+        ],
+        "retrieved_texts": [
+          "CVE-2021-45046 (CRITICAL, CVSS 9.0)\nDescription: It was found that the fix to address CVE-2021-44228 in Apache Log4j 2.15.0 was incomplete in certain non-default configurations. This could allows attackers with control over Thread Context Map to craft malicious input data using a JNDI Lookup pattern resulting in a denial of service and potentially remote code execution.\nRemediation: Upgrade to Log4j 2.16.0 or later.",
+          "CVE-2021-44228 (CRITICAL, CVSS 10.0)\nDescription: Apache Log4j2 versions 2.0-beta9 through 2.14.1 JNDI features used in configuration, log messages, and parameters do not protect against attacker controlled LDAP and other JNDI related endpoints. An attacker who can control log messages or log message parameters can execute arbitrary code loaded from LDAP servers when message lookup substitution is enabled.\nRemediation: Upgrade to Log4j 2.17.1 or later. Alternatively, remove the JndiLookup class from the classpath.",
+          "# CVE-2023-25690 \u2014 Some mod_proxy configurations on Apache HTTP Server versions 2.4.0...\n\nIdentifier: CVE-2023-25690\nSeverity: CRITICAL (CVSS base score 9.8 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: not listed on the CISA Known Exploited Vulnerabilities catalogue.\nExploit likelihood (EPSS): 0.8451 probability of exploitation in the next 30 days, which is the 99.7th percentile of all CVEs.\nWeakness class: CWE-444.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.\nAffected products: apache http server.\nPublished: 2023-03-07.\n\n## Description\nSome mod_proxy configurations on Apache HTTP Server versions 2.4.0 through 2.4.55 allow an HTTP Request Smuggling attack.",
+          "CVE-2021-26855 (CRITICAL, CVSS 9.8)\nDescription: Microsoft Exchange Server Remote Code Execution Vulnerability (ProxyLogon). This vulnerability is part of an attack chain that allows unauthenticated attackers to execute arbitrary commands on vulnerable Exchange servers.\nRemediation: Apply Microsoft Exchange Server security update from March 2021. Enable Extended Protection and disable legacy authentication.",
+          "# CVE-2023-50164 \u2014 Apache Struts contains an attacker-controlled file upload path...\n\nIdentifier: CVE-2023-50164\nSeverity: HIGH (CVSS base score 7.5 out of 10) \u2014 high risk; prioritise patching in the current cycle\nExploitation status: not listed on the CISA Known Exploited Vulnerabilities catalogue.\nExploit likelihood (EPSS): 0.8082 probability of exploitation in the next 30 days, which is the 99.6th percentile of all CVEs.\nWeakness class: CWE-552.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.\nAffected products: apache struts.\nPublished: 2023-12-07."
+        ],
+        "scores": [
+          0.8269,
+          0.8147,
+          0.7338,
+          0.7165,
+          0.7093
+        ],
+        "retrieval_ms": 15.9,
+        "generation_ms": 0.0,
+        "reference": "It was found that the fix to address CVE-2021-44228 in Apache Log4j 2.15.0 was incomplete in certain non-default configurations. This could allows attackers with control over Thread Context Map to craft malicious input data using a JNDI Lookup pattern resulting in a denial of service and potentially remote code execution. Remediation: Upgrade to Log4j 2.16.0 or later."
+      },
+      {
+        "id": "CVE-2022-22965",
+        "question": "What is CVE-2022-22965 and how do I remediate it?",
+        "answerable": true,
+        "expected_cve": "CVE-2022-22965",
+        "style": "id",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2022-22965",
+          "CVE-2023-1389",
+          "CVE-2021-45046",
+          "CVE-2022-40684",
+          "CVE-2023-4966"
+        ],
+        "retrieved_texts": [
+          "# CVE-2022-22965 \u2014 A Spring MVC or Spring WebFlux application running on JDK 9+ may be...\n\nIdentifier: CVE-2022-22965\nSeverity: CRITICAL (CVSS base score 9.8 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2022-04-04. US federal remediation deadline 2022-04-25.\nExploit likelihood (EPSS): 0.9968 probability of exploitation in the next 30 days, which is the 99.9th percentile of all CVEs.\nWeakness class: CWE-94.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.",
+          "# CVE-2023-1389 \u2014 TP-Link Archer AX21 (AX1800) contains a command injection...\n\nIdentifier: CVE-2023-1389\nSeverity: HIGH (CVSS base score 7.5 out of 10) \u2014 high risk; prioritise patching in the current cycle\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-05-01. US federal remediation deadline 2023-05-22.\nExploit likelihood (EPSS): 1.0000 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-77.\nCVSS 3.1 vector: CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector adjacent_network, attack complexity low, privileges required none, user interaction none.\nAffected products: tp-link archer ax21, tp-link archer ax21 firmware.\nPublished: 2023-03-15.",
+          "# CVE-2021-45046 \u2014 It was found that the fix to address CVE-2021-44228 in Apache Log4j...\n\nIdentifier: CVE-2021-45046\nSeverity: CRITICAL (CVSS base score 9.0 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-05-01. US federal remediation deadline 2023-05-22. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-917.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity high, privileges required none, user interaction none.",
+          "# CVE-2022-40684 \u2014 An authentication bypass using an alternate path or channel...\n\nIdentifier: CVE-2022-40684\nSeverity: CRITICAL (CVSS base score 9.8 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2022-10-11. US federal remediation deadline 2022-11-01. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-287.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.",
+          "CVE-2023-4966 (HIGH, CVSS 7.5)\nDescription: Sensitive information disclosure in NetScaler ADC and NetScaler Gateway when configured as a Gateway (VPN virtual server, ICA Proxy, CVPN, RDP Proxy) or AAA virtual server (Citrix Bleed).\nRemediation: Update NetScaler ADC and Gateway to patched versions. Terminate all active sessions after patching."
+        ],
+        "scores": [
+          0.99,
+          0.7886,
+          0.7878,
+          0.7836,
+          0.7825
+        ],
+        "retrieval_ms": 20.1,
+        "generation_ms": 0.0,
+        "reference": "A Spring MVC or Spring WebFlux application running on JDK 9+ may be vulnerable to remote code execution (RCE) via data binding. The specific exploit requires the application to run on Tomcat as a WAR deployment. (Spring4Shell) Remediation: Upgrade to Spring Framework 5.3.18+ or 2.6.6+. Alternatively, upgrade to Tomcat 10.0.20, 9.0.62, or 8.5.78."
+      },
+      {
+        "id": "CVE-2022-22965[sem]",
+        "question": "Which vulnerability involves Spring MVC Spring WebFlux application running JDK vulnerable remote code execution RCE data binding? Explain it and how to fix it.",
+        "answerable": true,
+        "expected_cve": "CVE-2022-22965",
+        "style": "semantic",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2022-22965",
+          "CVE-2021-26855",
+          "CVE-2022-26134",
+          "CVE-2022-22963",
+          "CVE-2023-2868"
+        ],
+        "retrieved_texts": [
+          "CVE-2022-22965 (CRITICAL, CVSS 9.8)\nDescription: A Spring MVC or Spring WebFlux application running on JDK 9+ may be vulnerable to remote code execution (RCE) via data binding. The specific exploit requires the application to run on Tomcat as a WAR deployment. (Spring4Shell)\nRemediation: Upgrade to Spring Framework 5.3.18+ or 2.6.6+. Alternatively, upgrade to Tomcat 10.0.20, 9.0.62, or 8.5.78.",
+          "CVE-2021-26855 (CRITICAL, CVSS 9.8)\nDescription: Microsoft Exchange Server Remote Code Execution Vulnerability (ProxyLogon). This vulnerability is part of an attack chain that allows unauthenticated attackers to execute arbitrary commands on vulnerable Exchange servers.\nRemediation: Apply Microsoft Exchange Server security update from March 2021. Enable Extended Protection and disable legacy authentication.",
+          "CVE-2022-26134 (CRITICAL, CVSS 9.8)\nDescription: Atlassian Confluence Server and Data Center contain an OGNL injection vulnerability that allows an unauthenticated attacker to execute arbitrary code on a Confluence Server or Data Center instance.\nRemediation: Update Confluence to patched versions immediately.",
+          "ssible for a user to provide a specially crafted SpEL as a routing-expression that may result in remote code execution and access to local resources.\n\n## Remediation\nUpgrade to Spring Cloud Function 3.1.7+ or 3.2.3+.\n\n## References\n- https://nvd.nist.gov/vuln/detail/CVE-2022-22963\n- http://packetstormsecurity.com/files/173430/Spring-Cloud-3.2.2-Remote-Command-Execution.html\n- https://psirt.global.sonicwall.com/vuln-detail/SNWLID-2022-0005\n- https://tanzu.vmware.com/security/cve-2022-22963\n- https://tools.cisco.com/security/center/content/CiscoSecurityAdvisory/cisco-sa-java-spring-scf-rce-DQrHhJxH\n- https://www.oracle.com/security-alerts/cpuapr2022.html\n- https://www.oracle.com/security-alerts/cpujul2022.html",
+          "CVE-2023-2868 (CRITICAL, CVSS 9.8)\nDescription: A remote command injection vulnerability in the Barracuda Email Security Gateway appliance allows an attacker to gain unauthorized access.\nRemediation: Barracuda recommends immediately replacing affected ESG appliances."
+        ],
+        "scores": [
+          0.9142,
+          0.7686,
+          0.748,
+          0.7358,
+          0.732
+        ],
+        "retrieval_ms": 18.2,
+        "generation_ms": 0.0,
+        "reference": "A Spring MVC or Spring WebFlux application running on JDK 9+ may be vulnerable to remote code execution (RCE) via data binding. The specific exploit requires the application to run on Tomcat as a WAR deployment. (Spring4Shell) Remediation: Upgrade to Spring Framework 5.3.18+ or 2.6.6+. Alternatively, upgrade to Tomcat 10.0.20, 9.0.62, or 8.5.78."
+      },
+      {
+        "id": "CVE-2022-41040",
+        "question": "What is CVE-2022-41040 and how do I remediate it?",
+        "answerable": true,
+        "expected_cve": "CVE-2022-41040",
+        "style": "id",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2022-41040",
+          "CVE-2023-1389",
+          "CVE-2022-26134",
+          "CVE-2022-47966",
+          "CVE-2021-45046"
+        ],
+        "retrieved_texts": [
+          "# CVE-2022-41040 \u2014 Microsoft Exchange Server Server-Side Request Forgery Vulnerability...\n\nIdentifier: CVE-2022-41040\nSeverity: HIGH (CVSS base score 8.8 out of 10) \u2014 high risk; prioritise patching in the current cycle\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2022-09-30. US federal remediation deadline 2022-10-21. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9996 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-918.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required low, user interaction none.\nAffected products: microsoft exchange server.\nPublished: 2022-10-03.",
+          "# CVE-2023-1389 \u2014 TP-Link Archer AX21 (AX1800) contains a command injection...\n\nIdentifier: CVE-2023-1389\nSeverity: HIGH (CVSS base score 7.5 out of 10) \u2014 high risk; prioritise patching in the current cycle\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-05-01. US federal remediation deadline 2023-05-22.\nExploit likelihood (EPSS): 1.0000 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-77.\nCVSS 3.1 vector: CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector adjacent_network, attack complexity low, privileges required none, user interaction none.\nAffected products: tp-link archer ax21, tp-link archer ax21 firmware.\nPublished: 2023-03-15.",
+          "CVE-2022-26134 (CRITICAL, CVSS 9.8)\nDescription: Atlassian Confluence Server and Data Center contain an OGNL injection vulnerability that allows an unauthenticated attacker to execute arbitrary code on a Confluence Server or Data Center instance.\nRemediation: Update Confluence to patched versions immediately.",
+          "CVE-2022-47966 (CRITICAL, CVSS 9.8)\nDescription: Multiple Zoho ManageEngine products are affected by a Remote Code Execution vulnerability due to the usage of an outdated third-party dependency, Apache Santuario.\nRemediation: Update affected ManageEngine products to the latest available builds.",
+          "# CVE-2021-45046 \u2014 It was found that the fix to address CVE-2021-44228 in Apache Log4j...\n\nIdentifier: CVE-2021-45046\nSeverity: CRITICAL (CVSS base score 9.0 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-05-01. US federal remediation deadline 2023-05-22. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-917.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity high, privileges required none, user interaction none."
+        ],
+        "scores": [
+          0.99,
+          0.7702,
+          0.7695,
+          0.7646,
+          0.7644
+        ],
+        "retrieval_ms": 20.9,
+        "generation_ms": 0.0,
+        "reference": "Microsoft Exchange Server Server-Side Request Forgery Vulnerability (ProxyNotShell). An authenticated attacker can trigger this vulnerability to execute arbitrary PowerShell code in the context of SYSTEM. Remediation: Apply Microsoft Exchange security updates. Implement URL rewrite mitigation rules."
+      },
+      {
+        "id": "CVE-2022-41040[sem]",
+        "question": "Which vulnerability involves Microsoft Exchange Server Server-Side Request Forgery ProxyNotShell? Explain it and how to fix it.",
+        "answerable": true,
+        "expected_cve": "CVE-2022-41040",
+        "style": "semantic",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2022-41040",
+          "CVE-2021-26855",
+          "CVE-2023-23397",
+          "CVE-2023-29357",
+          "CVE-2023-36884"
+        ],
+        "retrieved_texts": [
+          "CVE-2022-41040 (HIGH, CVSS 8.8)\nDescription: Microsoft Exchange Server Server-Side Request Forgery Vulnerability (ProxyNotShell). An authenticated attacker can trigger this vulnerability to execute arbitrary PowerShell code in the context of SYSTEM.\nRemediation: Apply Microsoft Exchange security updates. Implement URL rewrite mitigation rules.",
+          "network, attack complexity low, privileges required none, user interaction none.\nAffected products: microsoft exchange server.\nPublished: 2021-03-03.\n\n## Description\nMicrosoft Exchange Server Remote Code Execution Vulnerability (ProxyLogon). This vulnerability is part of an attack chain that allows unauthenticated attackers to execute arbitrary commands on vulnerable Exchange servers.\n\n## Remediation\nApply Microsoft Exchange Server security update from March 2021. Enable Extended Protection and disable legacy authentication.",
+          "CVE-2023-23397 (CRITICAL, CVSS 9.8)\nDescription: Microsoft Outlook Elevation of Privilege Vulnerability. An attacker sends a calendar invite containing a UNC path to an SMB share controlled by the attacker. When Outlook processes the reminder for this event, it automatically connects to the attacker's SMB share, leaking the victim's Net-NTLMv2 hash.\nRemediation: Apply Microsoft March 2023 security update. Block TCP 445/SMB outbound from your network.",
+          "ility: attack vector network, attack complexity low, privileges required none, user interaction none.\nAffected products: microsoft sharepoint server.\nPublished: 2023-06-14.\n\n## Description\nMicrosoft SharePoint Server Privilege Escalation Vulnerability. An unauthenticated attacker can use a spoofed JWT token to gain administrator privileges.\n\n## Remediation\nApply Microsoft June 2024 security update.\n\n## References\n- https://nvd.nist.gov/vuln/detail/CVE-2023-29357\n- https://msrc.microsoft.com/update-guide/vulnerability/CVE-2023-29357\n- https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2023-29357",
+          "CVE-2023-36884 (HIGH, CVSS 8.3)\nDescription: Microsoft Office and Windows HTML Remote Code Execution Vulnerability. An attacker could create a specially crafted Microsoft Office document that enables them to perform remote code execution in the context of the victim.\nRemediation: Apply Microsoft July 2023 security updates. Block Office macros from running in files from the internet."
+        ],
+        "scores": [
+          0.9092,
+          0.8755,
+          0.7734,
+          0.7666,
+          0.7519
+        ],
+        "retrieval_ms": 19.7,
+        "generation_ms": 0.0,
+        "reference": "Microsoft Exchange Server Server-Side Request Forgery Vulnerability (ProxyNotShell). An authenticated attacker can trigger this vulnerability to execute arbitrary PowerShell code in the context of SYSTEM. Remediation: Apply Microsoft Exchange security updates. Implement URL rewrite mitigation rules."
+      },
+      {
+        "id": "CVE-2022-42475",
+        "question": "What is CVE-2022-42475 and how do I remediate it?",
+        "answerable": true,
+        "expected_cve": "CVE-2022-42475",
+        "style": "id",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2022-42475",
+          "CVE-2021-45046",
+          "CVE-2023-4966",
+          "CVE-2023-44487",
+          "CVE-2022-40684"
+        ],
+        "retrieved_texts": [
+          "# CVE-2022-42475 \u2014 A heap-based buffer overflow vulnerability in FortiOS SSL-VPN may...\n\nIdentifier: CVE-2022-42475\nSeverity: CRITICAL (CVSS base score 9.8 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2022-12-13. US federal remediation deadline 2023-01-03. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9947 probability of exploitation in the next 30 days, which is the 99.9th percentile of all CVEs.\nWeakness class: CWE-197, CWE-787.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.",
+          "# CVE-2021-45046 \u2014 It was found that the fix to address CVE-2021-44228 in Apache Log4j...\n\nIdentifier: CVE-2021-45046\nSeverity: CRITICAL (CVSS base score 9.0 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-05-01. US federal remediation deadline 2023-05-22. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-917.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity high, privileges required none, user interaction none.",
+          "CVE-2023-4966 (HIGH, CVSS 7.5)\nDescription: Sensitive information disclosure in NetScaler ADC and NetScaler Gateway when configured as a Gateway (VPN virtual server, ICA Proxy, CVPN, RDP Proxy) or AAA virtual server (Citrix Bleed).\nRemediation: Update NetScaler ADC and Gateway to patched versions. Terminate all active sessions after patching.",
+          "# CVE-2023-44487 \u2014 The HTTP/2 protocol allows a denial of service (server resource...\n\nIdentifier: CVE-2023-44487\nSeverity: HIGH (CVSS base score 7.5 out of 10) \u2014 high risk; prioritise patching in the current cycle\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-10-10. US federal remediation deadline 2023-10-31.\nExploit likelihood (EPSS): 1.0000 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-400.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.",
+          "# CVE-2022-40684 \u2014 An authentication bypass using an alternate path or channel...\n\nIdentifier: CVE-2022-40684\nSeverity: CRITICAL (CVSS base score 9.8 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2022-10-11. US federal remediation deadline 2022-11-01. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-287.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none."
+        ],
+        "scores": [
+          0.99,
+          0.7992,
+          0.7917,
+          0.7912,
+          0.7907
+        ],
+        "retrieval_ms": 21.8,
+        "generation_ms": 0.0,
+        "reference": "A heap-based buffer overflow vulnerability in FortiOS SSL-VPN may allow a remote attacker to execute arbitrary code or commands via specifically crafted requests. Remediation: Upgrade FortiOS immediately. Disable SSL-VPN as a workaround."
+      },
+      {
+        "id": "CVE-2022-42475[sem]",
+        "question": "Which vulnerability involves heap-based buffer overflow FortiOS SSL-VPN remote execute arbitrary code commands specifically crafted requests? Explain it and how to fix it.",
+        "answerable": true,
+        "expected_cve": "CVE-2022-42475",
+        "style": "semantic",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2022-42475",
+          "CVE-2023-27997",
+          "CVE-2022-40684",
+          "CVE-2023-7024",
+          "CVE-2023-46747"
+        ],
+        "retrieved_texts": [
+          "CVE-2022-42475 (CRITICAL, CVSS 9.8)\nDescription: A heap-based buffer overflow vulnerability in FortiOS SSL-VPN may allow a remote attacker to execute arbitrary code or commands via specifically crafted requests.\nRemediation: Upgrade FortiOS immediately. Disable SSL-VPN as a workaround.",
+          "CVE-2023-27997 (CRITICAL, CVSS 9.8)\nDescription: A heap-based buffer overflow vulnerability in FortiOS and FortiProxy SSL-VPN may allow a remote attacker to execute arbitrary code or commands via specifically crafted requests.\nRemediation: Upgrade FortiOS to patched version. Disable SSL-VPN if not needed.",
+          "CVE-2022-40684 (CRITICAL, CVSS 9.8)\nDescription: An authentication bypass using an alternate path or channel vulnerability in FortiOS and FortiProxy may allow an unauthenticated attacker to perform operations on the administrative interface via specially crafted HTTP or HTTPS requests.\nRemediation: Update FortiOS to 7.0.7+ or FortiProxy to 7.0.7+ or 7.2.2+. Restrict management access.",
+          "# CVE-2023-7024 \u2014 Heap buffer overflow in WebRTC in Google Chrome prior to...\n\nIdentifier: CVE-2023-7024\nSeverity: HIGH (CVSS base score 8.8 out of 10) \u2014 high risk; prioritise patching in the current cycle\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2024-01-02. US federal remediation deadline 2024-01-23.\nExploit likelihood (EPSS): 0.0736 probability of exploitation in the next 30 days, which is the 93.9th percentile of all CVEs.\nWeakness class: CWE-787.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction required.\nAffected products: debian debian linux, fedoraproject fedora, google chrome.\nPublished: 2023-12-21.",
+          "utility through undisclosed requests.\n\n## Remediation\nUpdate F5 BIG-IP to fixed versions. Block Configuration utility access from untrusted networks.\n\n## References\n- https://nvd.nist.gov/vuln/detail/CVE-2023-46747\n- http://packetstormsecurity.com/files/175673/F5-BIG-IP-TMUI-AJP-Smuggling-Remote-Command-Execution.html\n- https://my.f5.com/manage/s/article/K000137353\n- https://www.secpod.com/blog/f5-issues-warning-big-ip-vulnerability-used-in-active-exploit-chain/\n- https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2023-46747"
+        ],
+        "scores": [
+          0.9174,
+          0.9171,
+          0.7718,
+          0.7633,
+          0.7446
+        ],
+        "retrieval_ms": 23.1,
+        "generation_ms": 0.0,
+        "reference": "A heap-based buffer overflow vulnerability in FortiOS SSL-VPN may allow a remote attacker to execute arbitrary code or commands via specifically crafted requests. Remediation: Upgrade FortiOS immediately. Disable SSL-VPN as a workaround."
+      },
+      {
+        "id": "CVE-2023-0198",
+        "question": "What is CVE-2023-0198 and how do I remediate it?",
+        "answerable": true,
+        "expected_cve": "CVE-2023-0198",
+        "style": "id",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2023-0198",
+          "CVE-2021-45046",
+          "CVE-2022-40684",
+          "CVE-2023-4966",
+          "CVE-2023-3079"
+        ],
+        "retrieved_texts": [
+          "# CVE-2023-0198 \u2014 An issue was discovered in the Linux kernel before 6.2. A...\n\nIdentifier: CVE-2023-0198\nSeverity: MEDIUM (CVSS base score 4.3 out of 10) \u2014 medium risk; schedule remediation\nExploitation status: not listed on the CISA Known Exploited Vulnerabilities catalogue.\nExploit likelihood (EPSS): 0.0025 probability of exploitation in the next 30 days, which is the 16.6th percentile of all CVEs.\nWeakness class: CWE-119.\nCVSS 3.1 vector: CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:H.\nExploitability: attack vector local, attack complexity low, privileges required low, user interaction none.\nAffected products: citrix hypervisor, linux linux kernel, nvidia virtual gpu, redhat enterprise linux kernel-based virtual machine, vmware vsphere.\nPublished: 2023-04-01.",
+          "# CVE-2021-45046 \u2014 It was found that the fix to address CVE-2021-44228 in Apache Log4j...\n\nIdentifier: CVE-2021-45046\nSeverity: CRITICAL (CVSS base score 9.0 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-05-01. US federal remediation deadline 2023-05-22. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-917.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity high, privileges required none, user interaction none.",
+          "# CVE-2022-40684 \u2014 An authentication bypass using an alternate path or channel...\n\nIdentifier: CVE-2022-40684\nSeverity: CRITICAL (CVSS base score 9.8 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2022-10-11. US federal remediation deadline 2022-11-01. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-287.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.",
+          "CVE-2023-4966 (HIGH, CVSS 7.5)\nDescription: Sensitive information disclosure in NetScaler ADC and NetScaler Gateway when configured as a Gateway (VPN virtual server, ICA Proxy, CVPN, RDP Proxy) or AAA virtual server (Citrix Bleed).\nRemediation: Update NetScaler ADC and Gateway to patched versions. Terminate all active sessions after patching.",
+          "# CVE-2023-3079 \u2014 Type confusion in V8 in Google Chrome prior to 114.0.5735.110 allowed...\n\nIdentifier: CVE-2023-3079\nSeverity: HIGH (CVSS base score 8.8 out of 10) \u2014 high risk; prioritise patching in the current cycle\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-06-07. US federal remediation deadline 2023-06-28.\nExploit likelihood (EPSS): 0.3211 probability of exploitation in the next 30 days, which is the 98.2th percentile of all CVEs.\nWeakness class: CWE-843.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction required."
+        ],
+        "scores": [
+          0.99,
+          0.8036,
+          0.7989,
+          0.7981,
+          0.7948
+        ],
+        "retrieval_ms": 21.7,
+        "generation_ms": 0.0,
+        "reference": "An issue was discovered in the Linux kernel before 6.2. A use-after-free vulnerability exists in the Bluetooth L2CAP subsystem. Remediation: Update Linux kernel to 6.2 or later."
+      },
+      {
+        "id": "CVE-2023-0198[sem]",
+        "question": "Which vulnerability involves discovered Linux kernel before? Explain it and how to fix it.",
+        "answerable": true,
+        "expected_cve": "CVE-2023-0198",
+        "style": "semantic",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2023-0198",
+          "CVE-2023-7024",
+          "CVE-2020-1472",
+          "CVE-2023-3079",
+          "CVE-2021-45046"
+        ],
+        "retrieved_texts": [
+          "trix hypervisor, linux linux kernel, nvidia virtual gpu, redhat enterprise linux kernel-based virtual machine, vmware vsphere.\nPublished: 2023-04-01.\n\n## Description\nAn issue was discovered in the Linux kernel before 6.2. A use-after-free vulnerability exists in the Bluetooth L2CAP subsystem.\n\n## Remediation\nUpdate Linux kernel to 6.2 or later.\n\n## References\n- https://nvd.nist.gov/vuln/detail/CVE-2023-0198\n- https://nvidia.custhelp.com/app/answers/detail/a_id/5452\n- https://security.gentoo.org/glsa/202310-02",
+          "# CVE-2023-7024 \u2014 Heap buffer overflow in WebRTC in Google Chrome prior to...\n\nIdentifier: CVE-2023-7024\nSeverity: HIGH (CVSS base score 8.8 out of 10) \u2014 high risk; prioritise patching in the current cycle\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2024-01-02. US federal remediation deadline 2024-01-23.\nExploit likelihood (EPSS): 0.0736 probability of exploitation in the next 30 days, which is the 93.9th percentile of all CVEs.\nWeakness class: CWE-787.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction required.\nAffected products: debian debian linux, fedoraproject fedora, google chrome.\nPublished: 2023-12-21.",
+          ":3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N.\nExploitability: attack vector local, attack complexity low, privileges required low, user interaction none.\nAffected products: canonical ubuntu linux, debian debian linux, fedoraproject fedora, microsoft windows server 1903, microsoft windows server 1909, microsoft windows server 2004, microsoft windows server 2008, microsoft windows server 2012, microsoft windows server 2016, microsoft windows server 2019.\nPublished: 2020-08-17.\n\n## Description\nAn elevation of privilege vulnerability exists when an attacker establishes a vulnerable Netlogon secure channel connection to a computer, using the Netlogon Remote Protocol (MS-NRPC), aka 'Netlogon Elevation of Privilege Vulnerability' (Zerologon).\n\n## Remediation\nApply Microsoft August 2020 security update. Enable enforcement mode for CVE-2020-1472.",
+          "0 allowed a remote attacker to potentially exploit heap corruption via a crafted HTML page.\n\n## Remediation\nUpdate Chrome to 114.0.5735.110 or later.\n\n## References\n- https://nvd.nist.gov/vuln/detail/CVE-2023-3079\n- http://packetstormsecurity.com/files/176211/Chrome-V8-Type-Confusion.html\n- http://packetstormsecurity.com/files/176212/Chrome-V8-Type-Confusion-New-Sandbox-Escape.html\n- https://chromereleases.googleblog.com/2023/06/stable-channel-update-for-desktop.html\n- https://crbug.com/1450481\n- https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/DYTXO5E3FI3I2ETDP3HF4SHYYTFMKMIC/\n- https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/U4OXTNIZY4JYHJT7CVLPAJQILI6BISVM/\n- https://security.gentoo.org/glsa/202311-11",
+          "/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity high, privileges required none, user interaction none.\nAffected products: apache log4j, cvat computer vision annotation tool, debian debian linux, fedoraproject fedora, intel audio development kit, intel datacenter manager, intel genomics kernel library, intel oneapi, intel secure device onboard, intel sensor solution firmware development kit.\nPublished: 2021-12-14.\n\n## Description\nIt was found that the fix to address CVE-2021-44228 in Apache Log4j 2.15.0 was incomplete in certain non-default configurations. This could allows attackers with control over Thread Context Map to craft malicious input data using a JNDI Lookup pattern resulting in a denial of service and potentially remote code execution.\n\n## Remediation\nUpgrade to Log4j 2.16.0 or later."
+        ],
+        "scores": [
+          0.7535,
+          0.7088,
+          0.7081,
+          0.7072,
+          0.7017
+        ],
+        "retrieval_ms": 21.6,
+        "generation_ms": 0.0,
+        "reference": "An issue was discovered in the Linux kernel before 6.2. A use-after-free vulnerability exists in the Bluetooth L2CAP subsystem. Remediation: Update Linux kernel to 6.2 or later."
+      },
+      {
+        "id": "CVE-2023-1389",
+        "question": "What is CVE-2023-1389 and how do I remediate it?",
+        "answerable": true,
+        "expected_cve": "CVE-2023-1389",
+        "style": "id",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2023-1389",
+          "CVE-2023-46805",
+          "CVE-2023-44487",
+          "CVE-2023-3079",
+          "CVE-2021-45046"
+        ],
+        "retrieved_texts": [
+          "# CVE-2023-1389 \u2014 TP-Link Archer AX21 (AX1800) contains a command injection...\n\nIdentifier: CVE-2023-1389\nSeverity: HIGH (CVSS base score 7.5 out of 10) \u2014 high risk; prioritise patching in the current cycle\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-05-01. US federal remediation deadline 2023-05-22.\nExploit likelihood (EPSS): 1.0000 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-77.\nCVSS 3.1 vector: CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector adjacent_network, attack complexity low, privileges required none, user interaction none.\nAffected products: tp-link archer ax21, tp-link archer ax21 firmware.\nPublished: 2023-03-15.",
+          "CVE-2023-46805 (HIGH, CVSS 8.2)\nDescription: An authentication bypass vulnerability in the web component of Ivanti ICS and Ivanti Policy Secure allows an attacker to access restricted resources by bypassing control checks.\nRemediation: Apply Ivanti mitigation. Upgrade to patched versions when available.",
+          "# CVE-2023-44487 \u2014 The HTTP/2 protocol allows a denial of service (server resource...\n\nIdentifier: CVE-2023-44487\nSeverity: HIGH (CVSS base score 7.5 out of 10) \u2014 high risk; prioritise patching in the current cycle\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-10-10. US federal remediation deadline 2023-10-31.\nExploit likelihood (EPSS): 1.0000 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-400.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.",
+          "# CVE-2023-3079 \u2014 Type confusion in V8 in Google Chrome prior to 114.0.5735.110 allowed...\n\nIdentifier: CVE-2023-3079\nSeverity: HIGH (CVSS base score 8.8 out of 10) \u2014 high risk; prioritise patching in the current cycle\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-06-07. US federal remediation deadline 2023-06-28.\nExploit likelihood (EPSS): 0.3211 probability of exploitation in the next 30 days, which is the 98.2th percentile of all CVEs.\nWeakness class: CWE-843.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction required.",
+          "# CVE-2021-45046 \u2014 It was found that the fix to address CVE-2021-44228 in Apache Log4j...\n\nIdentifier: CVE-2021-45046\nSeverity: CRITICAL (CVSS base score 9.0 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-05-01. US federal remediation deadline 2023-05-22. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-917.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity high, privileges required none, user interaction none."
+        ],
+        "scores": [
+          0.99,
+          0.7946,
+          0.7919,
+          0.7918,
+          0.79
+        ],
+        "retrieval_ms": 24.4,
+        "generation_ms": 0.0,
+        "reference": "TP-Link Archer AX21 (AX1800) contains a command injection vulnerability in the country form of the /cgi-bin/luci;stok=/locale endpoint. An unauthenticated attacker can execute arbitrary OS commands. Remediation: Apply TP-Link firmware update."
+      },
+      {
+        "id": "CVE-2023-1389[sem]",
+        "question": "Which vulnerability involves TP-Link Archer AX21 AX1800 contains command injection country form /cgi-bin/luci;stok=/locale endpoint? Explain it and how to fix it.",
+        "answerable": true,
+        "expected_cve": "CVE-2023-1389",
+        "style": "semantic",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2023-1389",
+          "CVE-2023-20198",
+          "CVE-2023-21716",
+          "CVE-2022-26134",
+          "CVE-2023-2868"
+        ],
+        "retrieved_texts": [
+          "CVE-2023-1389 (HIGH, CVSS 7.5)\nDescription: TP-Link Archer AX21 (AX1800) contains a command injection vulnerability in the country form of the /cgi-bin/luci;stok=/locale endpoint. An unauthenticated attacker can execute arbitrary OS commands.\nRemediation: Apply TP-Link firmware update.",
+          "CVE-2023-20198 (CRITICAL, CVSS 10.0)\nDescription: A privilege escalation vulnerability in the web UI of Cisco IOS XE that allows an unauthenticated attacker to create an account on the device with full privilege level 15 access.\nRemediation: Disable the HTTP server feature on internet-facing systems. Apply Cisco security advisories.",
+          "CVE-2023-21716 (CRITICAL, CVSS 9.8)\nDescription: Microsoft Word Remote Code Execution Vulnerability due to heap overflow when parsing RTF files.\nRemediation: Apply Microsoft February 2023 security update. Avoid opening untrusted RTF files.",
+          "CVE-2022-26134 (CRITICAL, CVSS 9.8)\nDescription: Atlassian Confluence Server and Data Center contain an OGNL injection vulnerability that allows an unauthenticated attacker to execute arbitrary code on a Confluence Server or Data Center instance.\nRemediation: Update Confluence to patched versions immediately.",
+          "CVE-2023-2868 (CRITICAL, CVSS 9.8)\nDescription: A remote command injection vulnerability in the Barracuda Email Security Gateway appliance allows an attacker to gain unauthorized access.\nRemediation: Barracuda recommends immediately replacing affected ESG appliances."
+        ],
+        "scores": [
+          0.9318,
+          0.7428,
+          0.7325,
+          0.7287,
+          0.7244
+        ],
+        "retrieval_ms": 23.1,
+        "generation_ms": 0.0,
+        "reference": "TP-Link Archer AX21 (AX1800) contains a command injection vulnerability in the country form of the /cgi-bin/luci;stok=/locale endpoint. An unauthenticated attacker can execute arbitrary OS commands. Remediation: Apply TP-Link firmware update."
+      },
+      {
+        "id": "CVE-2023-21608",
+        "question": "What is CVE-2023-21608 and how do I remediate it?",
+        "answerable": true,
+        "expected_cve": "CVE-2023-21608",
+        "style": "id",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2023-21608",
+          "CVE-2021-45046",
+          "CVE-2022-40684",
+          "CVE-2023-1389",
+          "CVE-2023-4966"
+        ],
+        "retrieved_texts": [
+          "# CVE-2023-21608 \u2014 Adobe Acrobat Reader use-after-free vulnerability. Successful...\n\nIdentifier: CVE-2023-21608\nSeverity: HIGH (CVSS base score 7.8 out of 10) \u2014 high risk; prioritise patching in the current cycle\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-10-10. US federal remediation deadline 2023-10-31.\nExploit likelihood (EPSS): 0.6148 probability of exploitation in the next 30 days, which is the 99.1th percentile of all CVEs.\nWeakness class: CWE-416.\nCVSS 3.1 vector: CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H.\nExploitability: attack vector local, attack complexity low, privileges required none, user interaction required.\nAffected products: adobe acrobat, adobe acrobat dc, adobe acrobat reader, adobe acrobat reader dc, apple macos, microsoft windows.\nPublished: 2023-01-18.",
+          "# CVE-2021-45046 \u2014 It was found that the fix to address CVE-2021-44228 in Apache Log4j...\n\nIdentifier: CVE-2021-45046\nSeverity: CRITICAL (CVSS base score 9.0 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-05-01. US federal remediation deadline 2023-05-22. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-917.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity high, privileges required none, user interaction none.",
+          "# CVE-2022-40684 \u2014 An authentication bypass using an alternate path or channel...\n\nIdentifier: CVE-2022-40684\nSeverity: CRITICAL (CVSS base score 9.8 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2022-10-11. US federal remediation deadline 2022-11-01. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-287.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.",
+          "# CVE-2023-1389 \u2014 TP-Link Archer AX21 (AX1800) contains a command injection...\n\nIdentifier: CVE-2023-1389\nSeverity: HIGH (CVSS base score 7.5 out of 10) \u2014 high risk; prioritise patching in the current cycle\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-05-01. US federal remediation deadline 2023-05-22.\nExploit likelihood (EPSS): 1.0000 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-77.\nCVSS 3.1 vector: CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector adjacent_network, attack complexity low, privileges required none, user interaction none.\nAffected products: tp-link archer ax21, tp-link archer ax21 firmware.\nPublished: 2023-03-15.",
+          "CVE-2023-4966 (HIGH, CVSS 7.5)\nDescription: Sensitive information disclosure in NetScaler ADC and NetScaler Gateway when configured as a Gateway (VPN virtual server, ICA Proxy, CVPN, RDP Proxy) or AAA virtual server (Citrix Bleed).\nRemediation: Update NetScaler ADC and Gateway to patched versions. Terminate all active sessions after patching."
+        ],
+        "scores": [
+          0.99,
+          0.8025,
+          0.8003,
+          0.7994,
+          0.7988
+        ],
+        "retrieval_ms": 28.1,
+        "generation_ms": 0.0,
+        "reference": "Adobe Acrobat Reader use-after-free vulnerability. Successful exploitation could lead to arbitrary code execution in the context of the current user. Remediation: Update Adobe Acrobat Reader to latest version."
+      },
+      {
+        "id": "CVE-2023-21608[sem]",
+        "question": "Which vulnerability involves Adobe Acrobat Reader use-after-free? Explain it and how to fix it.",
+        "answerable": true,
+        "expected_cve": "CVE-2023-21608",
+        "style": "semantic",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2023-21608",
+          "CVE-2023-21716",
+          "CVE-2023-36884",
+          "CVE-2021-34527",
+          "CVE-2023-24880"
+        ],
+        "retrieved_texts": [
+          "cted products: adobe acrobat, adobe acrobat dc, adobe acrobat reader, adobe acrobat reader dc, apple macos, microsoft windows.\nPublished: 2023-01-18.\n\n## Description\nAdobe Acrobat Reader use-after-free vulnerability. Successful exploitation could lead to arbitrary code execution in the context of the current user.\n\n## Remediation\nUpdate Adobe Acrobat Reader to latest version.\n\n## References\n- https://nvd.nist.gov/vuln/detail/CVE-2023-21608\n- https://helpx.adobe.com/security/products/acrobat/apsb23-01.html\n- https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2023-21608",
+          "1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.\nAffected products: microsoft office, microsoft office long term servicing channel, microsoft office online server, microsoft office web apps, microsoft sharepoint enterprise server, microsoft sharepoint foundation, microsoft sharepoint server, microsoft word.\nPublished: 2023-02-14.\n\n## Description\nMicrosoft Word Remote Code Execution Vulnerability due to heap overflow when parsing RTF files.\n\n## Remediation\nApply Microsoft February 2023 security update. Avoid opening untrusted RTF files.\n\n## References\n- https://nvd.nist.gov/vuln/detail/CVE-2023-21716\n- https://msrc.microsoft.com/update-guide/vulnerability/CVE-2023-21716",
+          "n the context of the victim.\n\n## Remediation\nApply Microsoft July 2023 security updates. Block Office macros from running in files from the internet.\n\n## References\n- https://nvd.nist.gov/vuln/detail/CVE-2023-36884\n- https://msrc.microsoft.com/update-guide/vulnerability/CVE-2023-36884\n- http://seclists.org/fulldisclosure/2023/Jul/43\n- https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2023-36884",
+          ".1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required low, user interaction none.\nAffected products: microsoft windows 10 1507, microsoft windows 10 1607, microsoft windows 10 1809, microsoft windows 10 20h2, microsoft windows 10 21h2, microsoft windows 10 22h2, microsoft windows 11 21h2, microsoft windows 11 22h2, microsoft windows rt 8.1, microsoft windows server 2008.\nPublished: 2021-07-02.\n\n## Description\nWindows Print Spooler Remote Code Execution Vulnerability (PrintNightmare). A remote code execution vulnerability exists when the Windows Print Spooler service improperly performs privileged file operations. An attacker who successfully exploited this vulnerability could run arbitrary code with SYSTEM privileges.",
+          "AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:L.\nExploitability: attack vector local, attack complexity low, privileges required none, user interaction required.\nAffected products: microsoft windows 10 1607, microsoft windows 10 1809, microsoft windows 10 20h2, microsoft windows 10 21h2, microsoft windows 10 22h2, microsoft windows 11 21h2, microsoft windows 11 22h2, microsoft windows server 2016, microsoft windows server 2019, microsoft windows server 2022.\nPublished: 2023-03-14.\n\n## Description\nWindows SmartScreen Security Feature Bypass Vulnerability. An attacker could craft a file that evades Mark of the Web (MOTW) defenses.\n\n## Remediation\nApply Microsoft March 2023 security update."
+        ],
+        "scores": [
+          0.9406,
+          0.7426,
+          0.7328,
+          0.7167,
+          0.7052
+        ],
+        "retrieval_ms": 22.2,
+        "generation_ms": 0.0,
+        "reference": "Adobe Acrobat Reader use-after-free vulnerability. Successful exploitation could lead to arbitrary code execution in the context of the current user. Remediation: Update Adobe Acrobat Reader to latest version."
+      },
+      {
+        "id": "CVE-2023-22515",
+        "question": "What is CVE-2023-22515 and how do I remediate it?",
+        "answerable": true,
+        "expected_cve": "CVE-2023-22515",
+        "style": "id",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2023-22515",
+          "CVE-2023-4966",
+          "CVE-2023-1389",
+          "CVE-2021-45046",
+          "CVE-2023-3079"
+        ],
+        "retrieved_texts": [
+          "# CVE-2023-22515 \u2014 Atlassian Confluence Data Center and Server contain a broken access...\n\nIdentifier: CVE-2023-22515\nSeverity: CRITICAL (CVSS base score 10.0 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-10-05. US federal remediation deadline 2023-10-13. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9916 probability of exploitation in the next 30 days, which is the 99.9th percentile of all CVEs.\nWeakness class: CWE-20.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.",
+          "CVE-2023-4966 (HIGH, CVSS 7.5)\nDescription: Sensitive information disclosure in NetScaler ADC and NetScaler Gateway when configured as a Gateway (VPN virtual server, ICA Proxy, CVPN, RDP Proxy) or AAA virtual server (Citrix Bleed).\nRemediation: Update NetScaler ADC and Gateway to patched versions. Terminate all active sessions after patching.",
+          "# CVE-2023-1389 \u2014 TP-Link Archer AX21 (AX1800) contains a command injection...\n\nIdentifier: CVE-2023-1389\nSeverity: HIGH (CVSS base score 7.5 out of 10) \u2014 high risk; prioritise patching in the current cycle\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-05-01. US federal remediation deadline 2023-05-22.\nExploit likelihood (EPSS): 1.0000 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-77.\nCVSS 3.1 vector: CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector adjacent_network, attack complexity low, privileges required none, user interaction none.\nAffected products: tp-link archer ax21, tp-link archer ax21 firmware.\nPublished: 2023-03-15.",
+          "# CVE-2021-45046 \u2014 It was found that the fix to address CVE-2021-44228 in Apache Log4j...\n\nIdentifier: CVE-2021-45046\nSeverity: CRITICAL (CVSS base score 9.0 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-05-01. US federal remediation deadline 2023-05-22. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-917.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity high, privileges required none, user interaction none.",
+          "# CVE-2023-3079 \u2014 Type confusion in V8 in Google Chrome prior to 114.0.5735.110 allowed...\n\nIdentifier: CVE-2023-3079\nSeverity: HIGH (CVSS base score 8.8 out of 10) \u2014 high risk; prioritise patching in the current cycle\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-06-07. US federal remediation deadline 2023-06-28.\nExploit likelihood (EPSS): 0.3211 probability of exploitation in the next 30 days, which is the 98.2th percentile of all CVEs.\nWeakness class: CWE-843.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction required."
+        ],
+        "scores": [
+          0.99,
+          0.784,
+          0.7825,
+          0.7806,
+          0.7744
+        ],
+        "retrieval_ms": 22.6,
+        "generation_ms": 0.0,
+        "reference": "Atlassian Confluence Data Center and Server contain a broken access control vulnerability. An unauthenticated attacker can create a Confluence administrator account to access the instance. Remediation: Upgrade Confluence Data Center and Server to fixed versions. Block public access to the /setup/* endpoints."
+      },
+      {
+        "id": "CVE-2023-22515[sem]",
+        "question": "Which vulnerability involves Atlassian Confluence Data Center Server contain broken access control? Explain it and how to fix it.",
+        "answerable": true,
+        "expected_cve": "CVE-2023-22515",
+        "style": "semantic",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2023-22515",
+          "CVE-2022-26134",
+          "CVE-2021-26084",
+          "CVE-2023-29357",
+          "CVE-2023-46805"
+        ],
+        "retrieved_texts": [
+          "1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.\nAffected products: atlassian confluence data center, atlassian confluence server.\nPublished: 2023-10-04.\n\n## Description\nAtlassian Confluence Data Center and Server contain a broken access control vulnerability. An unauthenticated attacker can create a Confluence administrator account to access the instance.\n\n## Remediation\nUpgrade Confluence Data Center and Server to fixed versions. Block public access to the /setup/* endpoints.",
+          "1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.\nAffected products: atlassian confluence data center, atlassian confluence server.\nPublished: 2022-06-03.\n\n## Description\nAtlassian Confluence Server and Data Center contain an OGNL injection vulnerability that allows an unauthenticated attacker to execute arbitrary code on a Confluence Server or Data Center instance.\n\n## Remediation\nUpdate Confluence to patched versions immediately.",
+          "1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.\nAffected products: atlassian confluence data center, atlassian confluence server.\nPublished: 2021-08-30.\n\n## Description\nAtlassian Confluence Server and Data Center allowed an OGNL injection via a crafted URL that could lead to Remote Code Execution.\n\n## Remediation\nUpdate Confluence to patched versions (7.4.11, 7.11.6, 7.12.5, or 7.13.0+).\n\n## References\n- https://nvd.nist.gov/vuln/detail/CVE-2021-26084\n- http://packetstormsecurity.com/files/167449/Atlassian-Confluence-Namespace-OGNL-Injection.html\n- https://jira.atlassian.com/browse/CONFSERVER-67940\n- https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2021-26084",
+          "ility: attack vector network, attack complexity low, privileges required none, user interaction none.\nAffected products: microsoft sharepoint server.\nPublished: 2023-06-14.\n\n## Description\nMicrosoft SharePoint Server Privilege Escalation Vulnerability. An unauthenticated attacker can use a spoofed JWT token to gain administrator privileges.\n\n## Remediation\nApply Microsoft June 2024 security update.\n\n## References\n- https://nvd.nist.gov/vuln/detail/CVE-2023-29357\n- https://msrc.microsoft.com/update-guide/vulnerability/CVE-2023-29357\n- https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2023-29357",
+          "CVE-2023-46805 (HIGH, CVSS 8.2)\nDescription: An authentication bypass vulnerability in the web component of Ivanti ICS and Ivanti Policy Secure allows an attacker to access restricted resources by bypassing control checks.\nRemediation: Apply Ivanti mitigation. Upgrade to patched versions when available."
+        ],
+        "scores": [
+          0.9158,
+          0.8684,
+          0.8425,
+          0.7645,
+          0.7499
+        ],
+        "retrieval_ms": 19.5,
+        "generation_ms": 0.0,
+        "reference": "Atlassian Confluence Data Center and Server contain a broken access control vulnerability. An unauthenticated attacker can create a Confluence administrator account to access the instance. Remediation: Upgrade Confluence Data Center and Server to fixed versions. Block public access to the /setup/* endpoints."
+      },
+      {
+        "id": "CVE-2023-25588",
+        "question": "What is CVE-2023-25588 and how do I remediate it?",
+        "answerable": true,
+        "expected_cve": "CVE-2023-25588",
+        "style": "id",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2023-25588",
+          "CVE-2023-4966",
+          "CVE-2022-40684",
+          "CVE-2021-45046",
+          "CVE-2024-3400"
+        ],
+        "retrieved_texts": [
+          "CVE-2023-25588 (MEDIUM, CVSS 5.5)\nDescription: Samba Active Directory Domain Controller has a flaw where the DC's private key is readable by world. This could allow an attacker to impersonate the domain controller.\nRemediation: Upgrade Samba to patched versions. Regenerate domain controller keys.",
+          "CVE-2023-4966 (HIGH, CVSS 7.5)\nDescription: Sensitive information disclosure in NetScaler ADC and NetScaler Gateway when configured as a Gateway (VPN virtual server, ICA Proxy, CVPN, RDP Proxy) or AAA virtual server (Citrix Bleed).\nRemediation: Update NetScaler ADC and Gateway to patched versions. Terminate all active sessions after patching.",
+          "# CVE-2022-40684 \u2014 An authentication bypass using an alternate path or channel...\n\nIdentifier: CVE-2022-40684\nSeverity: CRITICAL (CVSS base score 9.8 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2022-10-11. US federal remediation deadline 2022-11-01. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-287.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.",
+          "# CVE-2021-45046 \u2014 It was found that the fix to address CVE-2021-44228 in Apache Log4j...\n\nIdentifier: CVE-2021-45046\nSeverity: CRITICAL (CVSS base score 9.0 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-05-01. US federal remediation deadline 2023-05-22. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-917.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity high, privileges required none, user interaction none.",
+          "CVE-2024-3400 (CRITICAL, CVSS 10.0)\nDescription: A command injection vulnerability in the GlobalProtect feature of Palo Alto Networks PAN-OS software enables an unauthenticated attacker to execute arbitrary code with root privileges on the firewall.\nRemediation: Apply Palo Alto Networks security patches. Disable GlobalProtect if not needed."
+        ],
+        "scores": [
+          0.99,
+          0.8106,
+          0.7996,
+          0.7987,
+          0.7953
+        ],
+        "retrieval_ms": 22.5,
+        "generation_ms": 0.0,
+        "reference": "Samba Active Directory Domain Controller has a flaw where the DC's private key is readable by world. This could allow an attacker to impersonate the domain controller. Remediation: Upgrade Samba to patched versions. Regenerate domain controller keys."
+      },
+      {
+        "id": "CVE-2023-25588[sem]",
+        "question": "Which vulnerability involves Samba Active Directory Domain Controller flaw where DC's private key readable world? Explain it and how to fix it.",
+        "answerable": true,
+        "expected_cve": "CVE-2023-25588",
+        "style": "semantic",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2023-25588",
+          "CVE-2023-23397",
+          "CVE-2023-29357",
+          "CVE-2021-26855",
+          "CVE-2022-41040"
+        ],
+        "retrieved_texts": [
+          "# CVE-2023-25588 \u2014 Samba Active Directory Domain Controller has a flaw where the DC's...\n\nIdentifier: CVE-2023-25588\nSeverity: MEDIUM (CVSS base score 5.5 out of 10) \u2014 medium risk; schedule remediation\nExploitation status: not listed on the CISA Known Exploited Vulnerabilities catalogue.\nExploit likelihood (EPSS): 0.0037 probability of exploitation in the next 30 days, which is the 30.6th percentile of all CVEs.\nWeakness class: CWE-457, CWE-908.\nCVSS 3.1 vector: CVSS:3.1/AV:L/AC:H/PR:N/UI:R/S:U/C:N/I:N/A:H.\nExploitability: attack vector local, attack complexity high, privileges required none, user interaction required.\nAffected products: gnu binutils.\nPublished: 2023-09-14.\n\n## Description\nSamba Active Directory Domain Controller has a flaw where the DC's private key is readable by world. This could allow an attacker to impersonate the domain controller.",
+          "hare, leaking the victim's Net-NTLMv2 hash.\n\n## Remediation\nApply Microsoft March 2023 security update. Block TCP 445/SMB outbound from your network.\n\n## References\n- https://nvd.nist.gov/vuln/detail/CVE-2023-23397\n- https://msrc.microsoft.com/update-guide/vulnerability/CVE-2023-23397\n- https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2023-23397",
+          "ility: attack vector network, attack complexity low, privileges required none, user interaction none.\nAffected products: microsoft sharepoint server.\nPublished: 2023-06-14.\n\n## Description\nMicrosoft SharePoint Server Privilege Escalation Vulnerability. An unauthenticated attacker can use a spoofed JWT token to gain administrator privileges.\n\n## Remediation\nApply Microsoft June 2024 security update.\n\n## References\n- https://nvd.nist.gov/vuln/detail/CVE-2023-29357\n- https://msrc.microsoft.com/update-guide/vulnerability/CVE-2023-29357\n- https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2023-29357",
+          "network, attack complexity low, privileges required none, user interaction none.\nAffected products: microsoft exchange server.\nPublished: 2021-03-03.\n\n## Description\nMicrosoft Exchange Server Remote Code Execution Vulnerability (ProxyLogon). This vulnerability is part of an attack chain that allows unauthenticated attackers to execute arbitrary commands on vulnerable Exchange servers.\n\n## Remediation\nApply Microsoft Exchange Server security update from March 2021. Enable Extended Protection and disable legacy authentication.",
+          "network, attack complexity low, privileges required low, user interaction none.\nAffected products: microsoft exchange server.\nPublished: 2022-10-03.\n\n## Description\nMicrosoft Exchange Server Server-Side Request Forgery Vulnerability (ProxyNotShell). An authenticated attacker can trigger this vulnerability to execute arbitrary PowerShell code in the context of SYSTEM.\n\n## Remediation\nApply Microsoft Exchange security updates. Implement URL rewrite mitigation rules."
+        ],
+        "scores": [
+          0.8958,
+          0.7191,
+          0.6864,
+          0.6746,
+          0.6723
+        ],
+        "retrieval_ms": 22.2,
+        "generation_ms": 0.0,
+        "reference": "Samba Active Directory Domain Controller has a flaw where the DC's private key is readable by world. This could allow an attacker to impersonate the domain controller. Remediation: Upgrade Samba to patched versions. Regenerate domain controller keys."
+      },
+      {
+        "id": "CVE-2023-27997",
+        "question": "What is CVE-2023-27997 and how do I remediate it?",
+        "answerable": true,
+        "expected_cve": "CVE-2023-27997",
+        "style": "id",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2023-27997",
+          "CVE-2021-45046",
+          "CVE-2022-40684",
+          "CVE-2023-4966",
+          "CVE-2023-44487"
+        ],
+        "retrieved_texts": [
+          "# CVE-2023-27997 \u2014 A heap-based buffer overflow vulnerability in FortiOS and FortiProxy...\n\nIdentifier: CVE-2023-27997\nSeverity: CRITICAL (CVSS base score 9.8 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-06-13. US federal remediation deadline 2023-07-04. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.8569 probability of exploitation in the next 30 days, which is the 99.7th percentile of all CVEs.\nWeakness class: CWE-122, CWE-787.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.",
+          "# CVE-2021-45046 \u2014 It was found that the fix to address CVE-2021-44228 in Apache Log4j...\n\nIdentifier: CVE-2021-45046\nSeverity: CRITICAL (CVSS base score 9.0 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-05-01. US federal remediation deadline 2023-05-22. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-917.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity high, privileges required none, user interaction none.",
+          "# CVE-2022-40684 \u2014 An authentication bypass using an alternate path or channel...\n\nIdentifier: CVE-2022-40684\nSeverity: CRITICAL (CVSS base score 9.8 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2022-10-11. US federal remediation deadline 2022-11-01. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-287.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.",
+          "CVE-2023-4966 (HIGH, CVSS 7.5)\nDescription: Sensitive information disclosure in NetScaler ADC and NetScaler Gateway when configured as a Gateway (VPN virtual server, ICA Proxy, CVPN, RDP Proxy) or AAA virtual server (Citrix Bleed).\nRemediation: Update NetScaler ADC and Gateway to patched versions. Terminate all active sessions after patching.",
+          "# CVE-2023-44487 \u2014 The HTTP/2 protocol allows a denial of service (server resource...\n\nIdentifier: CVE-2023-44487\nSeverity: HIGH (CVSS base score 7.5 out of 10) \u2014 high risk; prioritise patching in the current cycle\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-10-10. US federal remediation deadline 2023-10-31.\nExploit likelihood (EPSS): 1.0000 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-400.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none."
+        ],
+        "scores": [
+          0.99,
+          0.8057,
+          0.7993,
+          0.7968,
+          0.7946
+        ],
+        "retrieval_ms": 22.6,
+        "generation_ms": 0.0,
+        "reference": "A heap-based buffer overflow vulnerability in FortiOS and FortiProxy SSL-VPN may allow a remote attacker to execute arbitrary code or commands via specifically crafted requests. Remediation: Upgrade FortiOS to patched version. Disable SSL-VPN if not needed."
+      },
+      {
+        "id": "CVE-2023-27997[sem]",
+        "question": "Which vulnerability involves heap-based buffer overflow FortiOS FortiProxy SSL-VPN remote execute arbitrary code commands specifically crafted requests? Explain it and how to fix it.",
+        "answerable": true,
+        "expected_cve": "CVE-2023-27997",
+        "style": "semantic",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2023-27997",
+          "CVE-2022-42475",
+          "CVE-2022-40684",
+          "CVE-2023-7024",
+          "CVE-2023-46747"
+        ],
+        "retrieved_texts": [
+          "CVE-2023-27997 (CRITICAL, CVSS 9.8)\nDescription: A heap-based buffer overflow vulnerability in FortiOS and FortiProxy SSL-VPN may allow a remote attacker to execute arbitrary code or commands via specifically crafted requests.\nRemediation: Upgrade FortiOS to patched version. Disable SSL-VPN if not needed.",
+          "CVE-2022-42475 (CRITICAL, CVSS 9.8)\nDescription: A heap-based buffer overflow vulnerability in FortiOS SSL-VPN may allow a remote attacker to execute arbitrary code or commands via specifically crafted requests.\nRemediation: Upgrade FortiOS immediately. Disable SSL-VPN as a workaround.",
+          "1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.\nAffected products: fortinet fortios, fortinet fortiproxy, fortinet fortiswitchmanager.\nPublished: 2022-10-18.\n\n## Description\nAn authentication bypass using an alternate path or channel vulnerability in FortiOS and FortiProxy may allow an unauthenticated attacker to perform operations on the administrative interface via specially crafted HTTP or HTTPS requests.\n\n## Remediation\nUpdate FortiOS to 7.0.7+ or FortiProxy to 7.0.7+ or 7.2.2+. Restrict management access.",
+          "# CVE-2023-7024 \u2014 Heap buffer overflow in WebRTC in Google Chrome prior to...\n\nIdentifier: CVE-2023-7024\nSeverity: HIGH (CVSS base score 8.8 out of 10) \u2014 high risk; prioritise patching in the current cycle\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2024-01-02. US federal remediation deadline 2024-01-23.\nExploit likelihood (EPSS): 0.0736 probability of exploitation in the next 30 days, which is the 93.9th percentile of all CVEs.\nWeakness class: CWE-787.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction required.\nAffected products: debian debian linux, fedoraproject fedora, google chrome.\nPublished: 2023-12-21.",
+          "utility through undisclosed requests.\n\n## Remediation\nUpdate F5 BIG-IP to fixed versions. Block Configuration utility access from untrusted networks.\n\n## References\n- https://nvd.nist.gov/vuln/detail/CVE-2023-46747\n- http://packetstormsecurity.com/files/175673/F5-BIG-IP-TMUI-AJP-Smuggling-Remote-Command-Execution.html\n- https://my.f5.com/manage/s/article/K000137353\n- https://www.secpod.com/blog/f5-issues-warning-big-ip-vulnerability-used-in-active-exploit-chain/\n- https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2023-46747"
+        ],
+        "scores": [
+          0.9259,
+          0.908,
+          0.7993,
+          0.7563,
+          0.7459
+        ],
+        "retrieval_ms": 26.7,
+        "generation_ms": 0.0,
+        "reference": "A heap-based buffer overflow vulnerability in FortiOS and FortiProxy SSL-VPN may allow a remote attacker to execute arbitrary code or commands via specifically crafted requests. Remediation: Upgrade FortiOS to patched version. Disable SSL-VPN if not needed."
+      },
+      {
+        "id": "CVE-2023-29357",
+        "question": "What is CVE-2023-29357 and how do I remediate it?",
+        "answerable": true,
+        "expected_cve": "CVE-2023-29357",
+        "style": "id",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2023-29357",
+          "CVE-2021-45046",
+          "CVE-2023-1389",
+          "CVE-2023-4966",
+          "CVE-2023-3079"
+        ],
+        "retrieved_texts": [
+          "# CVE-2023-29357 \u2014 Microsoft SharePoint Server Privilege Escalation Vulnerability. An...\n\nIdentifier: CVE-2023-29357\nSeverity: CRITICAL (CVSS base score 9.8 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2024-01-10. US federal remediation deadline 2024-01-31. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9965 probability of exploitation in the next 30 days, which is the 99.9th percentile of all CVEs.\nWeakness class: CWE-303.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.\nAffected products: microsoft sharepoint server.",
+          "# CVE-2021-45046 \u2014 It was found that the fix to address CVE-2021-44228 in Apache Log4j...\n\nIdentifier: CVE-2021-45046\nSeverity: CRITICAL (CVSS base score 9.0 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-05-01. US federal remediation deadline 2023-05-22. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-917.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity high, privileges required none, user interaction none.",
+          "# CVE-2023-1389 \u2014 TP-Link Archer AX21 (AX1800) contains a command injection...\n\nIdentifier: CVE-2023-1389\nSeverity: HIGH (CVSS base score 7.5 out of 10) \u2014 high risk; prioritise patching in the current cycle\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-05-01. US federal remediation deadline 2023-05-22.\nExploit likelihood (EPSS): 1.0000 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-77.\nCVSS 3.1 vector: CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector adjacent_network, attack complexity low, privileges required none, user interaction none.\nAffected products: tp-link archer ax21, tp-link archer ax21 firmware.\nPublished: 2023-03-15.",
+          "CVE-2023-4966 (HIGH, CVSS 7.5)\nDescription: Sensitive information disclosure in NetScaler ADC and NetScaler Gateway when configured as a Gateway (VPN virtual server, ICA Proxy, CVPN, RDP Proxy) or AAA virtual server (Citrix Bleed).\nRemediation: Update NetScaler ADC and Gateway to patched versions. Terminate all active sessions after patching.",
+          "# CVE-2023-3079 \u2014 Type confusion in V8 in Google Chrome prior to 114.0.5735.110 allowed...\n\nIdentifier: CVE-2023-3079\nSeverity: HIGH (CVSS base score 8.8 out of 10) \u2014 high risk; prioritise patching in the current cycle\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-06-07. US federal remediation deadline 2023-06-28.\nExploit likelihood (EPSS): 0.3211 probability of exploitation in the next 30 days, which is the 98.2th percentile of all CVEs.\nWeakness class: CWE-843.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction required."
+        ],
+        "scores": [
+          0.99,
+          0.7876,
+          0.7857,
+          0.785,
+          0.7814
+        ],
+        "retrieval_ms": 22.0,
+        "generation_ms": 0.0,
+        "reference": "Microsoft SharePoint Server Privilege Escalation Vulnerability. An unauthenticated attacker can use a spoofed JWT token to gain administrator privileges. Remediation: Apply Microsoft June 2024 security update."
+      },
+      {
+        "id": "CVE-2023-29357[sem]",
+        "question": "Which vulnerability involves Microsoft SharePoint Server Privilege Escalation? Explain it and how to fix it.",
+        "answerable": true,
+        "expected_cve": "CVE-2023-29357",
+        "style": "semantic",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2023-29357",
+          "CVE-2023-29336",
+          "CVE-2021-26855",
+          "CVE-2021-34527",
+          "CVE-2020-1472"
+        ],
+        "retrieved_texts": [
+          "ility: attack vector network, attack complexity low, privileges required none, user interaction none.\nAffected products: microsoft sharepoint server.\nPublished: 2023-06-14.\n\n## Description\nMicrosoft SharePoint Server Privilege Escalation Vulnerability. An unauthenticated attacker can use a spoofed JWT token to gain administrator privileges.\n\n## Remediation\nApply Microsoft June 2024 security update.\n\n## References\n- https://nvd.nist.gov/vuln/detail/CVE-2023-29357\n- https://msrc.microsoft.com/update-guide/vulnerability/CVE-2023-29357\n- https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2023-29357",
+          ":3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector local, attack complexity low, privileges required low, user interaction none.\nAffected products: microsoft windows 10 1507, microsoft windows 10 1607, microsoft windows server 2008, microsoft windows server 2012, microsoft windows server 2016.\nPublished: 2023-05-09.\n\n## Description\nWin32k Elevation of Privilege Vulnerability in Microsoft Windows. A local attacker could gain SYSTEM privileges.\n\n## Remediation\nApply Microsoft May 2023 security update.\n\n## References\n- https://nvd.nist.gov/vuln/detail/CVE-2023-29336\n- https://msrc.microsoft.com/update-guide/vulnerability/CVE-2023-29336\n- https://www.exploit-db.com/exploits/52301\n- https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2023-29336",
+          "network, attack complexity low, privileges required none, user interaction none.\nAffected products: microsoft exchange server.\nPublished: 2021-03-03.\n\n## Description\nMicrosoft Exchange Server Remote Code Execution Vulnerability (ProxyLogon). This vulnerability is part of an attack chain that allows unauthenticated attackers to execute arbitrary commands on vulnerable Exchange servers.\n\n## Remediation\nApply Microsoft Exchange Server security update from March 2021. Enable Extended Protection and disable legacy authentication.",
+          ".1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required low, user interaction none.\nAffected products: microsoft windows 10 1507, microsoft windows 10 1607, microsoft windows 10 1809, microsoft windows 10 20h2, microsoft windows 10 21h2, microsoft windows 10 22h2, microsoft windows 11 21h2, microsoft windows 11 22h2, microsoft windows rt 8.1, microsoft windows server 2008.\nPublished: 2021-07-02.\n\n## Description\nWindows Print Spooler Remote Code Execution Vulnerability (PrintNightmare). A remote code execution vulnerability exists when the Windows Print Spooler service improperly performs privileged file operations. An attacker who successfully exploited this vulnerability could run arbitrary code with SYSTEM privileges.",
+          ":3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N.\nExploitability: attack vector local, attack complexity low, privileges required low, user interaction none.\nAffected products: canonical ubuntu linux, debian debian linux, fedoraproject fedora, microsoft windows server 1903, microsoft windows server 1909, microsoft windows server 2004, microsoft windows server 2008, microsoft windows server 2012, microsoft windows server 2016, microsoft windows server 2019.\nPublished: 2020-08-17.\n\n## Description\nAn elevation of privilege vulnerability exists when an attacker establishes a vulnerable Netlogon secure channel connection to a computer, using the Netlogon Remote Protocol (MS-NRPC), aka 'Netlogon Elevation of Privilege Vulnerability' (Zerologon).\n\n## Remediation\nApply Microsoft August 2020 security update. Enable enforcement mode for CVE-2020-1472."
+        ],
+        "scores": [
+          0.8413,
+          0.8193,
+          0.8112,
+          0.8037,
+          0.8026
+        ],
+        "retrieval_ms": 20.5,
+        "generation_ms": 0.0,
+        "reference": "Microsoft SharePoint Server Privilege Escalation Vulnerability. An unauthenticated attacker can use a spoofed JWT token to gain administrator privileges. Remediation: Apply Microsoft June 2024 security update."
+      },
+      {
+        "id": "CVE-2023-32402",
+        "question": "What is CVE-2023-32402 and how do I remediate it?",
+        "answerable": true,
+        "expected_cve": "CVE-2023-32402",
+        "style": "id",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2023-32402",
+          "CVE-2021-45046",
+          "CVE-2022-40684",
+          "CVE-2023-44487",
+          "CVE-2022-47966"
+        ],
+        "retrieved_texts": [
+          "# CVE-2023-32402 \u2014 A logic issue was addressed with improved checks. This issue is fixed...\n\nIdentifier: CVE-2023-32402\nSeverity: HIGH (CVSS base score 7.8 out of 10) \u2014 high risk; prioritise patching in the current cycle\nExploitation status: not listed on the CISA Known Exploited Vulnerabilities catalogue.\nExploit likelihood (EPSS): 0.0072 probability of exploitation in the next 30 days, which is the 50.8th percentile of all CVEs.\nWeakness class: CWE-125.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction required.\nAffected products: apple ipados, apple iphone os, apple macos, apple safari, apple tvos, apple watchos.\nPublished: 2023-06-23.",
+          "# CVE-2021-45046 \u2014 It was found that the fix to address CVE-2021-44228 in Apache Log4j...\n\nIdentifier: CVE-2021-45046\nSeverity: CRITICAL (CVSS base score 9.0 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-05-01. US federal remediation deadline 2023-05-22. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-917.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity high, privileges required none, user interaction none.",
+          "# CVE-2022-40684 \u2014 An authentication bypass using an alternate path or channel...\n\nIdentifier: CVE-2022-40684\nSeverity: CRITICAL (CVSS base score 9.8 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2022-10-11. US federal remediation deadline 2022-11-01. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-287.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.",
+          "# CVE-2023-44487 \u2014 The HTTP/2 protocol allows a denial of service (server resource...\n\nIdentifier: CVE-2023-44487\nSeverity: HIGH (CVSS base score 7.5 out of 10) \u2014 high risk; prioritise patching in the current cycle\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-10-10. US federal remediation deadline 2023-10-31.\nExploit likelihood (EPSS): 1.0000 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-400.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.",
+          "CVE-2022-47966 (CRITICAL, CVSS 9.8)\nDescription: Multiple Zoho ManageEngine products are affected by a Remote Code Execution vulnerability due to the usage of an outdated third-party dependency, Apache Santuario.\nRemediation: Update affected ManageEngine products to the latest available builds."
+        ],
+        "scores": [
+          0.99,
+          0.7976,
+          0.7935,
+          0.7924,
+          0.7883
+        ],
+        "retrieval_ms": 23.9,
+        "generation_ms": 0.0,
+        "reference": "A logic issue was addressed with improved checks. This issue is fixed in macOS Ventura 13.4. A sandboxed app may be able to observe system-wide network connections. Remediation: Update macOS to Ventura 13.4 or later."
+      },
+      {
+        "id": "CVE-2023-32402[sem]",
+        "question": "Which vulnerability involves logic addressed improved checks? Explain it and how to fix it.",
+        "answerable": true,
+        "expected_cve": "CVE-2023-32402",
+        "style": "semantic",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2023-32402",
+          "CVE-2021-26855",
+          "CVE-2023-36884",
+          "CVE-2022-41040",
+          "CVE-2023-23397"
+        ],
+        "retrieved_texts": [
+          "# CVE-2023-32402 \u2014 A logic issue was addressed with improved checks. This issue is fixed...\n\nIdentifier: CVE-2023-32402\nSeverity: HIGH (CVSS base score 7.8 out of 10) \u2014 high risk; prioritise patching in the current cycle\nExploitation status: not listed on the CISA Known Exploited Vulnerabilities catalogue.\nExploit likelihood (EPSS): 0.0072 probability of exploitation in the next 30 days, which is the 50.8th percentile of all CVEs.\nWeakness class: CWE-125.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction required.\nAffected products: apple ipados, apple iphone os, apple macos, apple safari, apple tvos, apple watchos.\nPublished: 2023-06-23.",
+          "CVE-2021-26855 (CRITICAL, CVSS 9.8)\nDescription: Microsoft Exchange Server Remote Code Execution Vulnerability (ProxyLogon). This vulnerability is part of an attack chain that allows unauthenticated attackers to execute arbitrary commands on vulnerable Exchange servers.\nRemediation: Apply Microsoft Exchange Server security update from March 2021. Enable Extended Protection and disable legacy authentication.",
+          "n the context of the victim.\n\n## Remediation\nApply Microsoft July 2023 security updates. Block Office macros from running in files from the internet.\n\n## References\n- https://nvd.nist.gov/vuln/detail/CVE-2023-36884\n- https://msrc.microsoft.com/update-guide/vulnerability/CVE-2023-36884\n- http://seclists.org/fulldisclosure/2023/Jul/43\n- https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2023-36884",
+          "rbitrary PowerShell code in the context of SYSTEM.\n\n## Remediation\nApply Microsoft Exchange security updates. Implement URL rewrite mitigation rules.\n\n## References\n- https://nvd.nist.gov/vuln/detail/CVE-2022-41040\n- https://msrc.microsoft.com/update-guide/vulnerability/CVE-2022-41040\n- http://packetstormsecurity.com/files/170066/Microsoft-Exchange-ProxyNotShell-Remote-Code-Execution.html\n- https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2022-41040\n- https://www.kb.cert.org/vuls/id/915563\n- https://www.secpod.com/blog/microsoft-november-2022-patch-tuesday-patches-65-vulnerabilities-including-6-zero-days/\n- https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2022-41040",
+          "# CVE-2023-23397 \u2014 Microsoft Outlook Elevation of Privilege Vulnerability. An attacker...\n\nIdentifier: CVE-2023-23397\nSeverity: CRITICAL (CVSS base score 9.8 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-03-14. US federal remediation deadline 2023-04-04.\nExploit likelihood (EPSS): 0.9741 probability of exploitation in the next 30 days, which is the 99.9th percentile of all CVEs.\nWeakness class: CWE-20, CWE-294.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none."
+        ],
+        "scores": [
+          0.7129,
+          0.6911,
+          0.6891,
+          0.6865,
+          0.6861
+        ],
+        "retrieval_ms": 23.2,
+        "generation_ms": 0.0,
+        "reference": "A logic issue was addressed with improved checks. This issue is fixed in macOS Ventura 13.4. A sandboxed app may be able to observe system-wide network connections. Remediation: Update macOS to Ventura 13.4 or later."
+      },
+      {
+        "id": "CVE-2023-38831",
+        "question": "What is CVE-2023-38831 and how do I remediate it?",
+        "answerable": true,
+        "expected_cve": "CVE-2023-38831",
+        "style": "id",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2023-38831",
+          "CVE-2021-45046",
+          "CVE-2023-4966",
+          "CVE-2022-40684",
+          "CVE-2023-3079"
+        ],
+        "retrieved_texts": [
+          "# CVE-2023-38831 \u2014 RARLAB WinRAR before 6.23 allows attackers to execute arbitrary code...\n\nIdentifier: CVE-2023-38831\nSeverity: HIGH (CVSS base score 7.8 out of 10) \u2014 high risk; prioritise patching in the current cycle\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-08-24. US federal remediation deadline 2023-09-14. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9781 probability of exploitation in the next 30 days, which is the 99.9th percentile of all CVEs.\nWeakness class: CWE-345, CWE-351.\nCVSS 3.1 vector: CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H.\nExploitability: attack vector local, attack complexity low, privileges required none, user interaction required.\nAffected products: rarlab winrar.\nPublished: 2023-08-23.",
+          "# CVE-2021-45046 \u2014 It was found that the fix to address CVE-2021-44228 in Apache Log4j...\n\nIdentifier: CVE-2021-45046\nSeverity: CRITICAL (CVSS base score 9.0 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-05-01. US federal remediation deadline 2023-05-22. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-917.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity high, privileges required none, user interaction none.",
+          "CVE-2023-4966 (HIGH, CVSS 7.5)\nDescription: Sensitive information disclosure in NetScaler ADC and NetScaler Gateway when configured as a Gateway (VPN virtual server, ICA Proxy, CVPN, RDP Proxy) or AAA virtual server (Citrix Bleed).\nRemediation: Update NetScaler ADC and Gateway to patched versions. Terminate all active sessions after patching.",
+          "# CVE-2022-40684 \u2014 An authentication bypass using an alternate path or channel...\n\nIdentifier: CVE-2022-40684\nSeverity: CRITICAL (CVSS base score 9.8 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2022-10-11. US federal remediation deadline 2022-11-01. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-287.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.",
+          "# CVE-2023-3079 \u2014 Type confusion in V8 in Google Chrome prior to 114.0.5735.110 allowed...\n\nIdentifier: CVE-2023-3079\nSeverity: HIGH (CVSS base score 8.8 out of 10) \u2014 high risk; prioritise patching in the current cycle\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-06-07. US federal remediation deadline 2023-06-28.\nExploit likelihood (EPSS): 0.3211 probability of exploitation in the next 30 days, which is the 98.2th percentile of all CVEs.\nWeakness class: CWE-843.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction required."
+        ],
+        "scores": [
+          0.99,
+          0.7928,
+          0.7926,
+          0.7896,
+          0.7896
+        ],
+        "retrieval_ms": 23.3,
+        "generation_ms": 0.0,
+        "reference": "RARLAB WinRAR before 6.23 allows attackers to execute arbitrary code when a user attempts to view a benign file within a ZIP archive. Remediation: Update WinRAR to version 6.23 or later."
+      },
+      {
+        "id": "CVE-2023-38831[sem]",
+        "question": "Which vulnerability involves RARLAB WinRAR before? Explain it and how to fix it.",
+        "answerable": true,
+        "expected_cve": "CVE-2023-38831",
+        "style": "semantic",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2023-38831",
+          "CVE-2023-21716",
+          "CVE-2023-21608",
+          "CVE-2023-50164",
+          "CVE-2023-36884"
+        ],
+        "retrieved_texts": [
+          "CVE-2023-38831 (HIGH, CVSS 7.8)\nDescription: RARLAB WinRAR before 6.23 allows attackers to execute arbitrary code when a user attempts to view a benign file within a ZIP archive.\nRemediation: Update WinRAR to version 6.23 or later.",
+          "1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.\nAffected products: microsoft office, microsoft office long term servicing channel, microsoft office online server, microsoft office web apps, microsoft sharepoint enterprise server, microsoft sharepoint foundation, microsoft sharepoint server, microsoft word.\nPublished: 2023-02-14.\n\n## Description\nMicrosoft Word Remote Code Execution Vulnerability due to heap overflow when parsing RTF files.\n\n## Remediation\nApply Microsoft February 2023 security update. Avoid opening untrusted RTF files.\n\n## References\n- https://nvd.nist.gov/vuln/detail/CVE-2023-21716\n- https://msrc.microsoft.com/update-guide/vulnerability/CVE-2023-21716",
+          "# CVE-2023-21608 \u2014 Adobe Acrobat Reader use-after-free vulnerability. Successful...\n\nIdentifier: CVE-2023-21608\nSeverity: HIGH (CVSS base score 7.8 out of 10) \u2014 high risk; prioritise patching in the current cycle\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-10-10. US federal remediation deadline 2023-10-31.\nExploit likelihood (EPSS): 0.6148 probability of exploitation in the next 30 days, which is the 99.1th percentile of all CVEs.\nWeakness class: CWE-416.\nCVSS 3.1 vector: CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H.\nExploitability: attack vector local, attack complexity low, privileges required none, user interaction required.\nAffected products: adobe acrobat, adobe acrobat dc, adobe acrobat reader, adobe acrobat reader dc, apple macos, microsoft windows.\nPublished: 2023-01-18.",
+          "# CVE-2023-50164 \u2014 Apache Struts contains an attacker-controlled file upload path...\n\nIdentifier: CVE-2023-50164\nSeverity: HIGH (CVSS base score 7.5 out of 10) \u2014 high risk; prioritise patching in the current cycle\nExploitation status: not listed on the CISA Known Exploited Vulnerabilities catalogue.\nExploit likelihood (EPSS): 0.8082 probability of exploitation in the next 30 days, which is the 99.6th percentile of all CVEs.\nWeakness class: CWE-552.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.\nAffected products: apache struts.\nPublished: 2023-12-07.",
+          "# CVE-2023-36884 \u2014 Microsoft Office and Windows HTML Remote Code Execution...\n\nIdentifier: CVE-2023-36884\nSeverity: HIGH (CVSS base score 8.3 out of 10) \u2014 high risk; prioritise patching in the current cycle\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-07-17. US federal remediation deadline 2023-08-29. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9893 probability of exploitation in the next 30 days, which is the 99.9th percentile of all CVEs.\nWeakness class: CWE-362.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity high, privileges required none, user interaction required."
+        ],
+        "scores": [
+          0.9002,
+          0.7387,
+          0.7321,
+          0.7305,
+          0.7291
+        ],
+        "retrieval_ms": 19.9,
+        "generation_ms": 0.0,
+        "reference": "RARLAB WinRAR before 6.23 allows attackers to execute arbitrary code when a user attempts to view a benign file within a ZIP archive. Remediation: Update WinRAR to version 6.23 or later."
+      },
+      {
+        "id": "CVE-2023-42793",
+        "question": "What is CVE-2023-42793 and how do I remediate it?",
+        "answerable": true,
+        "expected_cve": "CVE-2023-42793",
+        "style": "id",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2023-42793",
+          "CVE-2021-45046",
+          "CVE-2023-4966",
+          "CVE-2023-3079",
+          "CVE-2022-40684"
+        ],
+        "retrieved_texts": [
+          "# CVE-2023-42793 \u2014 An authentication bypass vulnerability in JetBrains TeamCity that...\n\nIdentifier: CVE-2023-42793\nSeverity: CRITICAL (CVSS base score 9.8 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-10-04. US federal remediation deadline 2023-10-25. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-288, CWE-306.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.\nAffected products: jetbrains teamcity.",
+          "# CVE-2021-45046 \u2014 It was found that the fix to address CVE-2021-44228 in Apache Log4j...\n\nIdentifier: CVE-2021-45046\nSeverity: CRITICAL (CVSS base score 9.0 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-05-01. US federal remediation deadline 2023-05-22. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-917.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity high, privileges required none, user interaction none.",
+          "CVE-2023-4966 (HIGH, CVSS 7.5)\nDescription: Sensitive information disclosure in NetScaler ADC and NetScaler Gateway when configured as a Gateway (VPN virtual server, ICA Proxy, CVPN, RDP Proxy) or AAA virtual server (Citrix Bleed).\nRemediation: Update NetScaler ADC and Gateway to patched versions. Terminate all active sessions after patching.",
+          "# CVE-2023-3079 \u2014 Type confusion in V8 in Google Chrome prior to 114.0.5735.110 allowed...\n\nIdentifier: CVE-2023-3079\nSeverity: HIGH (CVSS base score 8.8 out of 10) \u2014 high risk; prioritise patching in the current cycle\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-06-07. US federal remediation deadline 2023-06-28.\nExploit likelihood (EPSS): 0.3211 probability of exploitation in the next 30 days, which is the 98.2th percentile of all CVEs.\nWeakness class: CWE-843.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction required.",
+          "# CVE-2022-40684 \u2014 An authentication bypass using an alternate path or channel...\n\nIdentifier: CVE-2022-40684\nSeverity: CRITICAL (CVSS base score 9.8 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2022-10-11. US federal remediation deadline 2022-11-01. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-287.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none."
+        ],
+        "scores": [
+          0.99,
+          0.7974,
+          0.7916,
+          0.791,
+          0.7892
+        ],
+        "retrieval_ms": 25.7,
+        "generation_ms": 0.0,
+        "reference": "An authentication bypass vulnerability in JetBrains TeamCity that could allow an unauthenticated attacker with HTTP(S) access to a TeamCity server to perform a remote code execution and administrative actions. Remediation: Upgrade TeamCity to 2023.05.4 or later. Apply security patch plugin."
+      },
+      {
+        "id": "CVE-2023-42793[sem]",
+        "question": "Which vulnerability involves authentication bypass JetBrains TeamCity unauthenticated HTTP(S access TeamCity server perform remote code execution administrative? Explain it and how to fix it.",
+        "answerable": true,
+        "expected_cve": "CVE-2023-42793",
+        "style": "semantic",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2023-42793",
+          "CVE-2021-26855",
+          "CVE-2021-34527",
+          "CVE-2023-36884",
+          "CVE-2023-29357"
+        ],
+        "retrieved_texts": [
+          "Exploitability: attack vector network, attack complexity low, privileges required none, user interaction none.\nAffected products: jetbrains teamcity.\nPublished: 2023-09-19.\n\n## Description\nAn authentication bypass vulnerability in JetBrains TeamCity that could allow an unauthenticated attacker with HTTP(S) access to a TeamCity server to perform a remote code execution and administrative actions.\n\n## Remediation\nUpgrade TeamCity to 2023.05.4 or later. Apply security patch plugin.",
+          "CVE-2021-26855 (CRITICAL, CVSS 9.8)\nDescription: Microsoft Exchange Server Remote Code Execution Vulnerability (ProxyLogon). This vulnerability is part of an attack chain that allows unauthenticated attackers to execute arbitrary commands on vulnerable Exchange servers.\nRemediation: Apply Microsoft Exchange Server security update from March 2021. Enable Extended Protection and disable legacy authentication.",
+          ".1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required low, user interaction none.\nAffected products: microsoft windows 10 1507, microsoft windows 10 1607, microsoft windows 10 1809, microsoft windows 10 20h2, microsoft windows 10 21h2, microsoft windows 10 22h2, microsoft windows 11 21h2, microsoft windows 11 22h2, microsoft windows rt 8.1, microsoft windows server 2008.\nPublished: 2021-07-02.\n\n## Description\nWindows Print Spooler Remote Code Execution Vulnerability (PrintNightmare). A remote code execution vulnerability exists when the Windows Print Spooler service improperly performs privileged file operations. An attacker who successfully exploited this vulnerability could run arbitrary code with SYSTEM privileges.",
+          "CVE-2023-36884 (HIGH, CVSS 8.3)\nDescription: Microsoft Office and Windows HTML Remote Code Execution Vulnerability. An attacker could create a specially crafted Microsoft Office document that enables them to perform remote code execution in the context of the victim.\nRemediation: Apply Microsoft July 2023 security updates. Block Office macros from running in files from the internet.",
+          "ility: attack vector network, attack complexity low, privileges required none, user interaction none.\nAffected products: microsoft sharepoint server.\nPublished: 2023-06-14.\n\n## Description\nMicrosoft SharePoint Server Privilege Escalation Vulnerability. An unauthenticated attacker can use a spoofed JWT token to gain administrator privileges.\n\n## Remediation\nApply Microsoft June 2024 security update.\n\n## References\n- https://nvd.nist.gov/vuln/detail/CVE-2023-29357\n- https://msrc.microsoft.com/update-guide/vulnerability/CVE-2023-29357\n- https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2023-29357"
+        ],
+        "scores": [
+          0.9276,
+          0.7588,
+          0.7477,
+          0.7427,
+          0.7356
+        ],
+        "retrieval_ms": 21.8,
+        "generation_ms": 0.0,
+        "reference": "An authentication bypass vulnerability in JetBrains TeamCity that could allow an unauthenticated attacker with HTTP(S) access to a TeamCity server to perform a remote code execution and administrative actions. Remediation: Upgrade TeamCity to 2023.05.4 or later. Apply security patch plugin."
+      },
+      {
+        "id": "CVE-2023-46805",
+        "question": "What is CVE-2023-46805 and how do I remediate it?",
+        "answerable": true,
+        "expected_cve": "CVE-2023-46805",
+        "style": "id",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2023-46805",
+          "CVE-2021-45046",
+          "CVE-2023-4966",
+          "CVE-2022-47966",
+          "CVE-2022-40684"
+        ],
+        "retrieved_texts": [
+          "CVE-2023-46805 (HIGH, CVSS 8.2)\nDescription: An authentication bypass vulnerability in the web component of Ivanti ICS and Ivanti Policy Secure allows an attacker to access restricted resources by bypassing control checks.\nRemediation: Apply Ivanti mitigation. Upgrade to patched versions when available.",
+          "# CVE-2021-45046 \u2014 It was found that the fix to address CVE-2021-44228 in Apache Log4j...\n\nIdentifier: CVE-2021-45046\nSeverity: CRITICAL (CVSS base score 9.0 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-05-01. US federal remediation deadline 2023-05-22. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-917.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity high, privileges required none, user interaction none.",
+          "CVE-2023-4966 (HIGH, CVSS 7.5)\nDescription: Sensitive information disclosure in NetScaler ADC and NetScaler Gateway when configured as a Gateway (VPN virtual server, ICA Proxy, CVPN, RDP Proxy) or AAA virtual server (Citrix Bleed).\nRemediation: Update NetScaler ADC and Gateway to patched versions. Terminate all active sessions after patching.",
+          "CVE-2022-47966 (CRITICAL, CVSS 9.8)\nDescription: Multiple Zoho ManageEngine products are affected by a Remote Code Execution vulnerability due to the usage of an outdated third-party dependency, Apache Santuario.\nRemediation: Update affected ManageEngine products to the latest available builds.",
+          "# CVE-2022-40684 \u2014 An authentication bypass using an alternate path or channel...\n\nIdentifier: CVE-2022-40684\nSeverity: CRITICAL (CVSS base score 9.8 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2022-10-11. US federal remediation deadline 2022-11-01. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-287.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none."
+        ],
+        "scores": [
+          0.99,
+          0.7955,
+          0.792,
+          0.7908,
+          0.7874
+        ],
+        "retrieval_ms": 26.0,
+        "generation_ms": 0.0,
+        "reference": "An authentication bypass vulnerability in the web component of Ivanti ICS and Ivanti Policy Secure allows an attacker to access restricted resources by bypassing control checks. Remediation: Apply Ivanti mitigation. Upgrade to patched versions when available."
+      },
+      {
+        "id": "CVE-2023-46805[sem]",
+        "question": "Which vulnerability involves authentication bypass web component Ivanti ICS Ivanti Policy Secure access restricted resources bypassing control? Explain it and how to fix it.",
+        "answerable": true,
+        "expected_cve": "CVE-2023-46805",
+        "style": "semantic",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2023-46805",
+          "CVE-2023-46818",
+          "CVE-2023-29357",
+          "CVE-2023-20198",
+          "CVE-2022-40684"
+        ],
+        "retrieved_texts": [
+          "CVE-2023-46805 (HIGH, CVSS 8.2)\nDescription: An authentication bypass vulnerability in the web component of Ivanti ICS and Ivanti Policy Secure allows an attacker to access restricted resources by bypassing control checks.\nRemediation: Apply Ivanti mitigation. Upgrade to patched versions when available.",
+          "CVE-2023-46818 (MEDIUM, CVSS 6.5)\nDescription: Ivanti Policy Secure and Ivanti Secure Access Client contain an untrusted search path vulnerability. A local authenticated attacker could exploit this vulnerability to elevate privileges.\nRemediation: Apply Ivanti security updates.",
+          "ility: attack vector network, attack complexity low, privileges required none, user interaction none.\nAffected products: microsoft sharepoint server.\nPublished: 2023-06-14.\n\n## Description\nMicrosoft SharePoint Server Privilege Escalation Vulnerability. An unauthenticated attacker can use a spoofed JWT token to gain administrator privileges.\n\n## Remediation\nApply Microsoft June 2024 security update.\n\n## References\n- https://nvd.nist.gov/vuln/detail/CVE-2023-29357\n- https://msrc.microsoft.com/update-guide/vulnerability/CVE-2023-29357\n- https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2023-29357",
+          "CVE-2023-20198 (CRITICAL, CVSS 10.0)\nDescription: A privilege escalation vulnerability in the web UI of Cisco IOS XE that allows an unauthenticated attacker to create an account on the device with full privilege level 15 access.\nRemediation: Disable the HTTP server feature on internet-facing systems. Apply Cisco security advisories.",
+          "CVE-2022-40684 (CRITICAL, CVSS 9.8)\nDescription: An authentication bypass using an alternate path or channel vulnerability in FortiOS and FortiProxy may allow an unauthenticated attacker to perform operations on the administrative interface via specially crafted HTTP or HTTPS requests.\nRemediation: Update FortiOS to 7.0.7+ or FortiProxy to 7.0.7+ or 7.2.2+. Restrict management access."
+        ],
+        "scores": [
+          0.8957,
+          0.8187,
+          0.79,
+          0.7788,
+          0.7751
+        ],
+        "retrieval_ms": 23.4,
+        "generation_ms": 0.0,
+        "reference": "An authentication bypass vulnerability in the web component of Ivanti ICS and Ivanti Policy Secure allows an attacker to access restricted resources by bypassing control checks. Remediation: Apply Ivanti mitigation. Upgrade to patched versions when available."
+      },
+      {
+        "id": "CVE-2023-4966",
+        "question": "What is CVE-2023-4966 and how do I remediate it?",
+        "answerable": true,
+        "expected_cve": "CVE-2023-4966",
+        "style": "id",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2023-4966",
+          "CVE-2021-45046",
+          "CVE-2022-47966",
+          "CVE-2022-40684",
+          "CVE-2023-1389"
+        ],
+        "retrieved_texts": [
+          "CVE-2023-4966 (HIGH, CVSS 7.5)\nDescription: Sensitive information disclosure in NetScaler ADC and NetScaler Gateway when configured as a Gateway (VPN virtual server, ICA Proxy, CVPN, RDP Proxy) or AAA virtual server (Citrix Bleed).\nRemediation: Update NetScaler ADC and Gateway to patched versions. Terminate all active sessions after patching.",
+          "# CVE-2021-45046 \u2014 It was found that the fix to address CVE-2021-44228 in Apache Log4j...\n\nIdentifier: CVE-2021-45046\nSeverity: CRITICAL (CVSS base score 9.0 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-05-01. US federal remediation deadline 2023-05-22. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-917.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity high, privileges required none, user interaction none.",
+          "CVE-2022-47966 (CRITICAL, CVSS 9.8)\nDescription: Multiple Zoho ManageEngine products are affected by a Remote Code Execution vulnerability due to the usage of an outdated third-party dependency, Apache Santuario.\nRemediation: Update affected ManageEngine products to the latest available builds.",
+          "# CVE-2022-40684 \u2014 An authentication bypass using an alternate path or channel...\n\nIdentifier: CVE-2022-40684\nSeverity: CRITICAL (CVSS base score 9.8 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2022-10-11. US federal remediation deadline 2022-11-01. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-287.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.",
+          "# CVE-2023-1389 \u2014 TP-Link Archer AX21 (AX1800) contains a command injection...\n\nIdentifier: CVE-2023-1389\nSeverity: HIGH (CVSS base score 7.5 out of 10) \u2014 high risk; prioritise patching in the current cycle\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-05-01. US federal remediation deadline 2023-05-22.\nExploit likelihood (EPSS): 1.0000 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-77.\nCVSS 3.1 vector: CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector adjacent_network, attack complexity low, privileges required none, user interaction none.\nAffected products: tp-link archer ax21, tp-link archer ax21 firmware.\nPublished: 2023-03-15."
+        ],
+        "scores": [
+          0.99,
+          0.7943,
+          0.791,
+          0.7889,
+          0.7852
+        ],
+        "retrieval_ms": 26.3,
+        "generation_ms": 0.0,
+        "reference": "Sensitive information disclosure in NetScaler ADC and NetScaler Gateway when configured as a Gateway (VPN virtual server, ICA Proxy, CVPN, RDP Proxy) or AAA virtual server (Citrix Bleed). Remediation: Update NetScaler ADC and Gateway to patched versions. Terminate all active sessions after patching."
+      },
+      {
+        "id": "CVE-2023-4966[sem]",
+        "question": "Which vulnerability involves Sensitive information disclosure NetScaler ADC NetScaler Gateway configured Gateway VPN virtual server ICA Proxy? Explain it and how to fix it.",
+        "answerable": true,
+        "expected_cve": "CVE-2023-4966",
+        "style": "semantic",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2023-4966",
+          "CVE-2021-26855",
+          "CVE-2023-29357",
+          "CVE-2023-23397",
+          "CVE-2022-41040"
+        ],
+        "retrieved_texts": [
+          "CVE-2023-4966 (HIGH, CVSS 7.5)\nDescription: Sensitive information disclosure in NetScaler ADC and NetScaler Gateway when configured as a Gateway (VPN virtual server, ICA Proxy, CVPN, RDP Proxy) or AAA virtual server (Citrix Bleed).\nRemediation: Update NetScaler ADC and Gateway to patched versions. Terminate all active sessions after patching.",
+          "CVE-2021-26855 (CRITICAL, CVSS 9.8)\nDescription: Microsoft Exchange Server Remote Code Execution Vulnerability (ProxyLogon). This vulnerability is part of an attack chain that allows unauthenticated attackers to execute arbitrary commands on vulnerable Exchange servers.\nRemediation: Apply Microsoft Exchange Server security update from March 2021. Enable Extended Protection and disable legacy authentication.",
+          "ility: attack vector network, attack complexity low, privileges required none, user interaction none.\nAffected products: microsoft sharepoint server.\nPublished: 2023-06-14.\n\n## Description\nMicrosoft SharePoint Server Privilege Escalation Vulnerability. An unauthenticated attacker can use a spoofed JWT token to gain administrator privileges.\n\n## Remediation\nApply Microsoft June 2024 security update.\n\n## References\n- https://nvd.nist.gov/vuln/detail/CVE-2023-29357\n- https://msrc.microsoft.com/update-guide/vulnerability/CVE-2023-29357\n- https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2023-29357",
+          "hare, leaking the victim's Net-NTLMv2 hash.\n\n## Remediation\nApply Microsoft March 2023 security update. Block TCP 445/SMB outbound from your network.\n\n## References\n- https://nvd.nist.gov/vuln/detail/CVE-2023-23397\n- https://msrc.microsoft.com/update-guide/vulnerability/CVE-2023-23397\n- https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2023-23397",
+          "CVE-2022-41040 (HIGH, CVSS 8.8)\nDescription: Microsoft Exchange Server Server-Side Request Forgery Vulnerability (ProxyNotShell). An authenticated attacker can trigger this vulnerability to execute arbitrary PowerShell code in the context of SYSTEM.\nRemediation: Apply Microsoft Exchange security updates. Implement URL rewrite mitigation rules."
+        ],
+        "scores": [
+          0.8861,
+          0.8037,
+          0.7937,
+          0.7755,
+          0.7743
+        ],
+        "retrieval_ms": 27.2,
+        "generation_ms": 0.0,
+        "reference": "Sensitive information disclosure in NetScaler ADC and NetScaler Gateway when configured as a Gateway (VPN virtual server, ICA Proxy, CVPN, RDP Proxy) or AAA virtual server (Citrix Bleed). Remediation: Update NetScaler ADC and Gateway to patched versions. Terminate all active sessions after patching."
+      },
+      {
+        "id": "CVE-2023-6345",
+        "question": "What is CVE-2023-6345 and how do I remediate it?",
+        "answerable": true,
+        "expected_cve": "CVE-2023-6345",
+        "style": "id",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2023-6345",
+          "CVE-2021-45046",
+          "CVE-2023-4966",
+          "CVE-2022-40684",
+          "CVE-2023-3079"
+        ],
+        "retrieved_texts": [
+          "# CVE-2023-6345 \u2014 Use after free in Skia in Google Chrome prior to 119.0.6045.199...\n\nIdentifier: CVE-2023-6345\nSeverity: HIGH (CVSS base score 8.8 out of 10) \u2014 high risk; prioritise patching in the current cycle\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-11-30. US federal remediation deadline 2023-12-21.\nExploit likelihood (EPSS): 0.1647 probability of exploitation in the next 30 days, which is the 96.7th percentile of all CVEs.\nWeakness class: CWE-190.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction required.\nAffected products: debian debian linux, fedoraproject fedora, google chrome, microsoft edge chromium.\nPublished: 2023-11-29.",
+          "# CVE-2021-45046 \u2014 It was found that the fix to address CVE-2021-44228 in Apache Log4j...\n\nIdentifier: CVE-2021-45046\nSeverity: CRITICAL (CVSS base score 9.0 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-05-01. US federal remediation deadline 2023-05-22. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-917.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity high, privileges required none, user interaction none.",
+          "CVE-2023-4966 (HIGH, CVSS 7.5)\nDescription: Sensitive information disclosure in NetScaler ADC and NetScaler Gateway when configured as a Gateway (VPN virtual server, ICA Proxy, CVPN, RDP Proxy) or AAA virtual server (Citrix Bleed).\nRemediation: Update NetScaler ADC and Gateway to patched versions. Terminate all active sessions after patching.",
+          "# CVE-2022-40684 \u2014 An authentication bypass using an alternate path or channel...\n\nIdentifier: CVE-2022-40684\nSeverity: CRITICAL (CVSS base score 9.8 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2022-10-11. US federal remediation deadline 2022-11-01. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-287.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.",
+          "# CVE-2023-3079 \u2014 Type confusion in V8 in Google Chrome prior to 114.0.5735.110 allowed...\n\nIdentifier: CVE-2023-3079\nSeverity: HIGH (CVSS base score 8.8 out of 10) \u2014 high risk; prioritise patching in the current cycle\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-06-07. US federal remediation deadline 2023-06-28.\nExploit likelihood (EPSS): 0.3211 probability of exploitation in the next 30 days, which is the 98.2th percentile of all CVEs.\nWeakness class: CWE-843.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction required."
+        ],
+        "scores": [
+          0.99,
+          0.7966,
+          0.7912,
+          0.7906,
+          0.7894
+        ],
+        "retrieval_ms": 27.8,
+        "generation_ms": 0.0,
+        "reference": "Use after free in Skia in Google Chrome prior to 119.0.6045.199 allowed a remote attacker who had compromised the renderer process to potentially perform a sandbox escape via a crafted HTML page. Remediation: Update Google Chrome to 119.0.6045.199 or later."
+      },
+      {
+        "id": "CVE-2023-6345[sem]",
+        "question": "Which vulnerability involves Use after free Skia Google Chrome prior 119? Explain it and how to fix it.",
+        "answerable": true,
+        "expected_cve": "CVE-2023-6345",
+        "style": "semantic",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2023-6345",
+          "CVE-2023-3079",
+          "CVE-2023-7024",
+          "CVE-2023-52426",
+          "CVE-2023-46805"
+        ],
+        "retrieved_texts": [
+          "CVE-2023-6345 (HIGH, CVSS 8.8)\nDescription: Use after free in Skia in Google Chrome prior to 119.0.6045.199 allowed a remote attacker who had compromised the renderer process to potentially perform a sandbox escape via a crafted HTML page.\nRemediation: Update Google Chrome to 119.0.6045.199 or later.",
+          ":N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction required.\nAffected products: apple macos, couchbase couchbase server, debian debian linux, fedoraproject fedora, google chrome, linux linux kernel, microsoft windows.\nPublished: 2023-06-05.\n\n## Description\nType confusion in V8 in Google Chrome prior to 114.0.5735.110 allowed a remote attacker to potentially exploit heap corruption via a crafted HTML page.\n\n## Remediation\nUpdate Chrome to 114.0.5735.110 or later.",
+          "# CVE-2023-7024 \u2014 Heap buffer overflow in WebRTC in Google Chrome prior to...\n\nIdentifier: CVE-2023-7024\nSeverity: HIGH (CVSS base score 8.8 out of 10) \u2014 high risk; prioritise patching in the current cycle\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2024-01-02. US federal remediation deadline 2024-01-23.\nExploit likelihood (EPSS): 0.0736 probability of exploitation in the next 30 days, which is the 93.9th percentile of all CVEs.\nWeakness class: CWE-787.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction required.\nAffected products: debian debian linux, fedoraproject fedora, google chrome.\nPublished: 2023-12-21.",
+          "# CVE-2023-52426 \u2014 Inappropriate implementation in CSP in Google Chrome prior to...\n\nIdentifier: CVE-2023-52426\nSeverity: LOW (CVSS base score 3.7 out of 10) \u2014 low risk; remediate opportunistically\nExploitation status: not listed on the CISA Known Exploited Vulnerabilities catalogue.\nExploit likelihood (EPSS): 0.0037 probability of exploitation in the next 30 days, which is the 30.4th percentile of all CVEs.\nWeakness class: CWE-776.\nCVSS 3.1 vector: CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H.\nExploitability: attack vector local, attack complexity low, privileges required low, user interaction none.\nAffected products: libexpat project libexpat.\nPublished: 2024-02-04.\n\n## Description\nInappropriate implementation in CSP in Google Chrome prior to 122.0.6261.57 allowed a remote attacker to bypass content security policy via a crafted HTML page.",
+          "# CVE-2023-46805 \u2014 An authentication bypass vulnerability in the web component of Ivanti...\n\nIdentifier: CVE-2023-46805\nSeverity: HIGH (CVSS base score 8.2 out of 10) \u2014 high risk; prioritise patching in the current cycle\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2024-01-10. US federal remediation deadline 2024-01-22. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9999 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-287.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:L/A:N.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.\nAffected products: ivanti connect secure, ivanti policy secure.\nPublished: 2024-01-12."
+        ],
+        "scores": [
+          0.8969,
+          0.843,
+          0.8312,
+          0.8286,
+          0.7368
+        ],
+        "retrieval_ms": 25.1,
+        "generation_ms": 0.0,
+        "reference": "Use after free in Skia in Google Chrome prior to 119.0.6045.199 allowed a remote attacker who had compromised the renderer process to potentially perform a sandbox escape via a crafted HTML page. Remediation: Update Google Chrome to 119.0.6045.199 or later."
+      },
+      {
+        "id": "CVE-2024-1709",
+        "question": "What is CVE-2024-1709 and how do I remediate it?",
+        "answerable": true,
+        "expected_cve": "CVE-2024-1709",
+        "style": "id",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2024-1709",
+          "CVE-2021-45046",
+          "CVE-2023-22515",
+          "CVE-2022-26134",
+          "CVE-2024-3400"
+        ],
+        "retrieved_texts": [
+          "# CVE-2024-1709 \u2014 ConnectWise ScreenConnect versions 23.9.7 and prior are affected by...\n\nIdentifier: CVE-2024-1709\nSeverity: CRITICAL (CVSS base score 9.8 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2024-02-22. US federal remediation deadline 2024-02-29. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9996 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-288.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.\nAffected products: connectwise screenconnect.",
+          "# CVE-2021-45046 \u2014 It was found that the fix to address CVE-2021-44228 in Apache Log4j...\n\nIdentifier: CVE-2021-45046\nSeverity: CRITICAL (CVSS base score 9.0 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-05-01. US federal remediation deadline 2023-05-22. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-917.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity high, privileges required none, user interaction none.",
+          "CVE-2023-22515 (CRITICAL, CVSS 10.0)\nDescription: Atlassian Confluence Data Center and Server contain a broken access control vulnerability. An unauthenticated attacker can create a Confluence administrator account to access the instance.\nRemediation: Upgrade Confluence Data Center and Server to fixed versions. Block public access to the /setup/* endpoints.",
+          "CVE-2022-26134 (CRITICAL, CVSS 9.8)\nDescription: Atlassian Confluence Server and Data Center contain an OGNL injection vulnerability that allows an unauthenticated attacker to execute arbitrary code on a Confluence Server or Data Center instance.\nRemediation: Update Confluence to patched versions immediately.",
+          "CVE-2024-3400 (CRITICAL, CVSS 10.0)\nDescription: A command injection vulnerability in the GlobalProtect feature of Palo Alto Networks PAN-OS software enables an unauthenticated attacker to execute arbitrary code with root privileges on the firewall.\nRemediation: Apply Palo Alto Networks security patches. Disable GlobalProtect if not needed."
+        ],
+        "scores": [
+          0.99,
+          0.7906,
+          0.7848,
+          0.7813,
+          0.7773
+        ],
+        "retrieval_ms": 25.6,
+        "generation_ms": 0.0,
+        "reference": "ConnectWise ScreenConnect versions 23.9.7 and prior are affected by an authentication bypass using an alternate path or channel vulnerability. This could allow an attacker direct access to confidential data or critical systems. Remediation: Update ScreenConnect to version 23.9.8 or later."
+      },
+      {
+        "id": "CVE-2024-1709[sem]",
+        "question": "Which vulnerability involves ConnectWise ScreenConnect? Explain it and how to fix it.",
+        "answerable": true,
+        "expected_cve": "CVE-2024-1709",
+        "style": "semantic",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2024-1709",
+          "CVE-2023-4966",
+          "CVE-2023-24880",
+          "CVE-2020-1472",
+          "CVE-2021-26855"
+        ],
+        "retrieved_texts": [
+          "ability: attack vector network, attack complexity low, privileges required none, user interaction none.\nAffected products: connectwise screenconnect.\nPublished: 2024-02-21.\n\n## Description\nConnectWise ScreenConnect versions 23.9.7 and prior are affected by an authentication bypass using an alternate path or channel vulnerability. This could allow an attacker direct access to confidential data or critical systems.\n\n## Remediation\nUpdate ScreenConnect to version 23.9.8 or later.",
+          "low, privileges required none, user interaction none.\nAffected products: citrix netscaler application delivery controller, citrix netscaler gateway.\nPublished: 2023-10-10.\n\n## Description\nSensitive information disclosure in NetScaler ADC and NetScaler Gateway when configured as a Gateway (VPN virtual server, ICA Proxy, CVPN, RDP Proxy) or AAA virtual server (Citrix Bleed).\n\n## Remediation\nUpdate NetScaler ADC and Gateway to patched versions. Terminate all active sessions after patching.\n\n## References\n- https://nvd.nist.gov/vuln/detail/CVE-2023-4966\n- http://packetstormsecurity.com/files/175323/Citrix-Bleed-Session-Token-Leakage-Proof-Of-Concept.html\n- https://support.citrix.com/article/CTX579459\n- https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2023-4966",
+          "CVE-2023-24880 (MEDIUM, CVSS 4.4)\nDescription: Windows SmartScreen Security Feature Bypass Vulnerability. An attacker could craft a file that evades Mark of the Web (MOTW) defenses.\nRemediation: Apply Microsoft March 2023 security update.",
+          "CVE-2020-1472 (CRITICAL, CVSS 10.0)\nDescription: An elevation of privilege vulnerability exists when an attacker establishes a vulnerable Netlogon secure channel connection to a computer, using the Netlogon Remote Protocol (MS-NRPC), aka 'Netlogon Elevation of Privilege Vulnerability' (Zerologon).\nRemediation: Apply Microsoft August 2020 security update. Enable enforcement mode for CVE-2020-1472.",
+          "CVE-2021-26855 (CRITICAL, CVSS 9.8)\nDescription: Microsoft Exchange Server Remote Code Execution Vulnerability (ProxyLogon). This vulnerability is part of an attack chain that allows unauthenticated attackers to execute arbitrary commands on vulnerable Exchange servers.\nRemediation: Apply Microsoft Exchange Server security update from March 2021. Enable Extended Protection and disable legacy authentication."
+        ],
+        "scores": [
+          0.92,
+          0.7306,
+          0.7286,
+          0.7225,
+          0.7213
+        ],
+        "retrieval_ms": 21.9,
+        "generation_ms": 0.0,
+        "reference": "ConnectWise ScreenConnect versions 23.9.7 and prior are affected by an authentication bypass using an alternate path or channel vulnerability. This could allow an attacker direct access to confidential data or critical systems. Remediation: Update ScreenConnect to version 23.9.8 or later."
+      },
+      {
+        "id": "CVE-2019-0708",
+        "question": "What is CVE-2019-0708 (BlueKeep, Windows RDP pre-auth RCE) and what is its CVSS score?",
+        "answerable": false,
+        "expected_cve": null,
+        "style": "id",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2020-1472",
+          "CVE-2023-29336",
+          "CVE-2022-40684",
+          "CVE-2023-4966",
+          "CVE-2023-29357"
+        ],
+        "retrieved_texts": [
+          "CVE-2020-1472 (CRITICAL, CVSS 10.0)\nDescription: An elevation of privilege vulnerability exists when an attacker establishes a vulnerable Netlogon secure channel connection to a computer, using the Netlogon Remote Protocol (MS-NRPC), aka 'Netlogon Elevation of Privilege Vulnerability' (Zerologon).\nRemediation: Apply Microsoft August 2020 security update. Enable enforcement mode for CVE-2020-1472.",
+          "CVE-2023-29336 (HIGH, CVSS 7.8)\nDescription: Win32k Elevation of Privilege Vulnerability in Microsoft Windows. A local attacker could gain SYSTEM privileges.\nRemediation: Apply Microsoft May 2023 security update.",
+          "# CVE-2022-40684 \u2014 An authentication bypass using an alternate path or channel...\n\nIdentifier: CVE-2022-40684\nSeverity: CRITICAL (CVSS base score 9.8 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2022-10-11. US federal remediation deadline 2022-11-01. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-287.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.",
+          "CVE-2023-4966 (HIGH, CVSS 7.5)\nDescription: Sensitive information disclosure in NetScaler ADC and NetScaler Gateway when configured as a Gateway (VPN virtual server, ICA Proxy, CVPN, RDP Proxy) or AAA virtual server (Citrix Bleed).\nRemediation: Update NetScaler ADC and Gateway to patched versions. Terminate all active sessions after patching.",
+          "CVE-2023-29357 (CRITICAL, CVSS 9.8)\nDescription: Microsoft SharePoint Server Privilege Escalation Vulnerability. An unauthenticated attacker can use a spoofed JWT token to gain administrator privileges.\nRemediation: Apply Microsoft June 2024 security update."
+        ],
+        "scores": [
+          0.8179,
+          0.7688,
+          0.7627,
+          0.7601,
+          0.7599
+        ],
+        "retrieval_ms": 24.2,
+        "generation_ms": 0.0,
+        "reference": ""
+      },
+      {
+        "id": "CVE-2017-0144",
+        "question": "What is CVE-2017-0144 (EternalBlue, SMBv1 RCE) and what is its CVSS score?",
+        "answerable": false,
+        "expected_cve": null,
+        "style": "id",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2022-40684",
+          "CVE-2021-45046",
+          "CVE-2021-44228",
+          "CVE-2020-1472",
+          "CVE-2023-29357"
+        ],
+        "retrieved_texts": [
+          "# CVE-2022-40684 \u2014 An authentication bypass using an alternate path or channel...\n\nIdentifier: CVE-2022-40684\nSeverity: CRITICAL (CVSS base score 9.8 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2022-10-11. US federal remediation deadline 2022-11-01. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-287.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.",
+          "# CVE-2021-45046 \u2014 It was found that the fix to address CVE-2021-44228 in Apache Log4j...\n\nIdentifier: CVE-2021-45046\nSeverity: CRITICAL (CVSS base score 9.0 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-05-01. US federal remediation deadline 2023-05-22. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-917.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity high, privileges required none, user interaction none.",
+          "# CVE-2021-44228 \u2014 Apache Log4j2 versions 2.0-beta9 through 2.14.1 JNDI features used in...\n\nIdentifier: CVE-2021-44228\nSeverity: CRITICAL (CVSS base score 10.0 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2021-12-10. US federal remediation deadline 2021-12-24. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 1.0000 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-20, CWE-400, CWE-502, CWE-917.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.",
+          "CVE-2020-1472 (CRITICAL, CVSS 10.0)\nDescription: An elevation of privilege vulnerability exists when an attacker establishes a vulnerable Netlogon secure channel connection to a computer, using the Netlogon Remote Protocol (MS-NRPC), aka 'Netlogon Elevation of Privilege Vulnerability' (Zerologon).\nRemediation: Apply Microsoft August 2020 security update. Enable enforcement mode for CVE-2020-1472.",
+          "# CVE-2023-29357 \u2014 Microsoft SharePoint Server Privilege Escalation Vulnerability. An...\n\nIdentifier: CVE-2023-29357\nSeverity: CRITICAL (CVSS base score 9.8 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2024-01-10. US federal remediation deadline 2024-01-31. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9965 probability of exploitation in the next 30 days, which is the 99.9th percentile of all CVEs.\nWeakness class: CWE-303.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.\nAffected products: microsoft sharepoint server."
+        ],
+        "scores": [
+          0.7793,
+          0.771,
+          0.7707,
+          0.7689,
+          0.7666
+        ],
+        "retrieval_ms": 22.7,
+        "generation_ms": 0.0,
+        "reference": ""
+      },
+      {
+        "id": "CVE-2014-0160",
+        "question": "What is CVE-2014-0160 (Heartbleed, OpenSSL memory disclosure) and what is its CVSS score?",
+        "answerable": false,
+        "expected_cve": null,
+        "style": "id",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2022-40684",
+          "CVE-2022-42475",
+          "CVE-2022-22963",
+          "CVE-2023-22515",
+          "CVE-2021-45046"
+        ],
+        "retrieved_texts": [
+          "# CVE-2022-40684 \u2014 An authentication bypass using an alternate path or channel...\n\nIdentifier: CVE-2022-40684\nSeverity: CRITICAL (CVSS base score 9.8 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2022-10-11. US federal remediation deadline 2022-11-01. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-287.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.",
+          "# CVE-2022-42475 \u2014 A heap-based buffer overflow vulnerability in FortiOS SSL-VPN may...\n\nIdentifier: CVE-2022-42475\nSeverity: CRITICAL (CVSS base score 9.8 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2022-12-13. US federal remediation deadline 2023-01-03. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9947 probability of exploitation in the next 30 days, which is the 99.9th percentile of all CVEs.\nWeakness class: CWE-197, CWE-787.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.",
+          "# CVE-2022-22963 \u2014 In Spring Cloud Function versions 3.1.6, 3.2.2 and older unsupported...\n\nIdentifier: CVE-2022-22963\nSeverity: CRITICAL (CVSS base score 9.8 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2022-08-25. US federal remediation deadline 2022-09-15.\nExploit likelihood (EPSS): 0.9994 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-917, CWE-94.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.",
+          "# CVE-2023-22515 \u2014 Atlassian Confluence Data Center and Server contain a broken access...\n\nIdentifier: CVE-2023-22515\nSeverity: CRITICAL (CVSS base score 10.0 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-10-05. US federal remediation deadline 2023-10-13. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9916 probability of exploitation in the next 30 days, which is the 99.9th percentile of all CVEs.\nWeakness class: CWE-20.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.",
+          "# CVE-2021-45046 \u2014 It was found that the fix to address CVE-2021-44228 in Apache Log4j...\n\nIdentifier: CVE-2021-45046\nSeverity: CRITICAL (CVSS base score 9.0 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-05-01. US federal remediation deadline 2023-05-22. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-917.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity high, privileges required none, user interaction none."
+        ],
+        "scores": [
+          0.7782,
+          0.7705,
+          0.7703,
+          0.7685,
+          0.7682
+        ],
+        "retrieval_ms": 24.8,
+        "generation_ms": 0.0,
+        "reference": ""
+      },
+      {
+        "id": "CVE-2018-7600",
+        "question": "What is CVE-2018-7600 (Drupalgeddon2, Drupal RCE) and what is its CVSS score?",
+        "answerable": false,
+        "expected_cve": null,
+        "style": "id",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2022-40684",
+          "CVE-2021-44228",
+          "CVE-2021-45046",
+          "CVE-2024-23897",
+          "CVE-2023-29357"
+        ],
+        "retrieved_texts": [
+          "# CVE-2022-40684 \u2014 An authentication bypass using an alternate path or channel...\n\nIdentifier: CVE-2022-40684\nSeverity: CRITICAL (CVSS base score 9.8 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2022-10-11. US federal remediation deadline 2022-11-01. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-287.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.",
+          "# CVE-2021-44228 \u2014 Apache Log4j2 versions 2.0-beta9 through 2.14.1 JNDI features used in...\n\nIdentifier: CVE-2021-44228\nSeverity: CRITICAL (CVSS base score 10.0 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2021-12-10. US federal remediation deadline 2021-12-24. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 1.0000 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-20, CWE-400, CWE-502, CWE-917.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.",
+          "# CVE-2021-45046 \u2014 It was found that the fix to address CVE-2021-44228 in Apache Log4j...\n\nIdentifier: CVE-2021-45046\nSeverity: CRITICAL (CVSS base score 9.0 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-05-01. US federal remediation deadline 2023-05-22. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-917.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity high, privileges required none, user interaction none.",
+          "# CVE-2024-23897 \u2014 Jenkins 2.441 and earlier, LTS 2.426.2 and earlier does not disable a...\n\nIdentifier: CVE-2024-23897\nSeverity: CRITICAL (CVSS base score 9.8 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2024-08-19. US federal remediation deadline 2024-09-09. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 1.0000 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-22, CWE-27.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.\nAffected products: jenkins jenkins.",
+          "# CVE-2023-29357 \u2014 Microsoft SharePoint Server Privilege Escalation Vulnerability. An...\n\nIdentifier: CVE-2023-29357\nSeverity: CRITICAL (CVSS base score 9.8 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2024-01-10. US federal remediation deadline 2024-01-31. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9965 probability of exploitation in the next 30 days, which is the 99.9th percentile of all CVEs.\nWeakness class: CWE-303.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.\nAffected products: microsoft sharepoint server."
+        ],
+        "scores": [
+          0.7887,
+          0.7851,
+          0.7841,
+          0.7835,
+          0.7773
+        ],
+        "retrieval_ms": 22.9,
+        "generation_ms": 0.0,
+        "reference": ""
+      },
+      {
+        "id": "CVE-2016-5195",
+        "question": "What is CVE-2016-5195 (Dirty COW, Linux kernel privilege escalation) and what is its CVSS score?",
+        "answerable": false,
+        "expected_cve": null,
+        "style": "id",
+        "condition": "retrieval",
+        "answer": "",
+        "retrieved_cves": [
+          "CVE-2023-0198",
+          "CVE-2020-1472",
+          "CVE-2022-40684",
+          "CVE-2021-45046",
+          "CVE-2021-44228"
+        ],
+        "retrieved_texts": [
+          "# CVE-2023-0198 \u2014 An issue was discovered in the Linux kernel before 6.2. A...\n\nIdentifier: CVE-2023-0198\nSeverity: MEDIUM (CVSS base score 4.3 out of 10) \u2014 medium risk; schedule remediation\nExploitation status: not listed on the CISA Known Exploited Vulnerabilities catalogue.\nExploit likelihood (EPSS): 0.0025 probability of exploitation in the next 30 days, which is the 16.6th percentile of all CVEs.\nWeakness class: CWE-119.\nCVSS 3.1 vector: CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:H.\nExploitability: attack vector local, attack complexity low, privileges required low, user interaction none.\nAffected products: citrix hypervisor, linux linux kernel, nvidia virtual gpu, redhat enterprise linux kernel-based virtual machine, vmware vsphere.\nPublished: 2023-04-01.",
+          "CVE-2020-1472 (CRITICAL, CVSS 10.0)\nDescription: An elevation of privilege vulnerability exists when an attacker establishes a vulnerable Netlogon secure channel connection to a computer, using the Netlogon Remote Protocol (MS-NRPC), aka 'Netlogon Elevation of Privilege Vulnerability' (Zerologon).\nRemediation: Apply Microsoft August 2020 security update. Enable enforcement mode for CVE-2020-1472.",
+          "# CVE-2022-40684 \u2014 An authentication bypass using an alternate path or channel...\n\nIdentifier: CVE-2022-40684\nSeverity: CRITICAL (CVSS base score 9.8 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2022-10-11. US federal remediation deadline 2022-11-01. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-287.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none.",
+          "# CVE-2021-45046 \u2014 It was found that the fix to address CVE-2021-44228 in Apache Log4j...\n\nIdentifier: CVE-2021-45046\nSeverity: CRITICAL (CVSS base score 9.0 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2023-05-01. US federal remediation deadline 2023-05-22. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 0.9998 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-917.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity high, privileges required none, user interaction none.",
+          "# CVE-2021-44228 \u2014 Apache Log4j2 versions 2.0-beta9 through 2.14.1 JNDI features used in...\n\nIdentifier: CVE-2021-44228\nSeverity: CRITICAL (CVSS base score 10.0 out of 10) \u2014 critical risk, typically remotely exploitable with severe impact; patch immediately\nExploitation status: This vulnerability is on the CISA Known Exploited Vulnerabilities catalogue: it is confirmed to be exploited in the wild. Added 2021-12-10. US federal remediation deadline 2021-12-24. It is known to be used in ransomware campaigns.\nExploit likelihood (EPSS): 1.0000 probability of exploitation in the next 30 days, which is the 100.0th percentile of all CVEs.\nWeakness class: CWE-20, CWE-400, CWE-502, CWE-917.\nCVSS 3.1 vector: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H.\nExploitability: attack vector network, attack complexity low, privileges required none, user interaction none."
+        ],
+        "scores": [
+          0.8231,
+          0.8151,
+          0.8145,
+          0.8139,
+          0.8106
+        ],
+        "retrieval_ms": 29.5,
+        "generation_ms": 0.0,
+        "reference": ""
+      }
+    ]
+  },
+  "limitations": [
+    "References are corpus records, not independent expert answers; BLEU/ROUGE measure overlap with source text, not correctness.",
+    "Questions are template-generated and uniform in phrasing.",
+    "Corpus is 50 CVEs, so retrieval scores are optimistic.",
+    "Cloud LLM output is non-deterministic."
+  ]
+}

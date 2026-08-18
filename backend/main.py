@@ -1,4 +1,6 @@
+import json
 import logging
+import os
 import time
 from collections import defaultdict
 import uvicorn
@@ -39,6 +41,7 @@ DEFAULT_RATE_LIMIT = (200, 60)  # 200 requests per 60 seconds for everything els
 @asynccontextmanager
 async def lifespan(app):
     logger.info("Starting VulnDetectRAG v%s", settings.APP_VERSION)
+    _load_provider_prefs()
     from config import ensure_dirs
 
     ensure_dirs()
@@ -227,6 +230,260 @@ async def llm_status():
         "providers": providers,
         "ollama": ollama,
     }
+
+
+#: Where provider toggles are persisted, so a research run's configuration
+#: survives a restart and can be recorded alongside its results.
+PROVIDER_PREFS_FILE = LOG_DIR / "provider_prefs.json"
+
+
+def _load_provider_prefs() -> None:
+    """Restore provider toggles saved by a previous run."""
+    import json
+
+    if not PROVIDER_PREFS_FILE.exists():
+        return
+    try:
+        with open(PROVIDER_PREFS_FILE, "r", encoding="utf-8") as handle:
+            disabled = json.load(handle).get("disabled", [])
+        if disabled:
+            os.environ["LLM_DISABLED_PROVIDERS"] = ",".join(disabled)
+            logger.info("Restored disabled LLM providers: %s", ", ".join(disabled))
+
+        with open(PROVIDER_PREFS_FILE, "r", encoding="utf-8") as handle:
+            prefs = json.load(handle)
+        if "rag_enabled" in prefs:
+            os.environ["RAG_ENABLED"] = "1" if prefs["rag_enabled"] else "0"
+            logger.info("Restored retrieval enabled=%s", prefs["rag_enabled"])
+    except Exception:
+        logger.exception("Could not read provider preferences")
+
+
+def _rebuild_llm_stack() -> None:
+    """Invalidate every cached LLM client so a settings change takes effect.
+
+    Three layers cache a client: the pipeline cache in rag_chain, the singleton
+    in rag_engine, and any pipeline a request already resolved. Clearing only
+    one of them leaves a stale provider serving requests, which is what makes a
+    toggle look broken.
+    """
+    try:
+        from services.rag_engine import rag_engine
+
+        rag_engine.reset()
+    except Exception:
+        logger.exception("Could not reset the RAG engine")
+        from rag_assistant.chains.rag_chain import reset_pipelines
+
+        reset_pipelines()
+
+
+def _save_provider_prefs(disabled) -> None:
+    """Persist provider toggles."""
+    import json
+
+    try:
+        with open(PROVIDER_PREFS_FILE, "w", encoding="utf-8") as handle:
+            json.dump({"disabled": sorted(disabled)}, handle)
+    except Exception:
+        logger.exception("Could not save provider preferences")
+
+
+@app.get("/api/providers")
+async def list_providers():
+    """List every LLM provider with its configuration and enabled state."""
+    from rag_assistant.llm_config import LLMFactory
+
+    disabled = LLMFactory.disabled_providers()
+    model_by_provider = {
+        "groq": settings.GROQ_MODEL,
+        "gemini": settings.GEMINI_MODEL,
+        "openrouter": settings.OPENROUTER_MODEL,
+        "nvidia": settings.NVIDIA_MODEL,
+        "openai": settings.OPENAI_MODEL,
+        "huggingface": settings.HUGGINGFACE_MODEL,
+    }
+    key_by_provider = {
+        "groq": settings.GROQ_API_KEY,
+        "gemini": settings.GEMINI_API_KEY,
+        "openrouter": settings.OPENROUTER_API_KEY,
+        "nvidia": settings.NVIDIA_API_KEY,
+        "openai": settings.OPENAI_API_KEY,
+        "huggingface": settings.HUGGINGFACE_API_KEY,
+    }
+
+    providers = []
+    # The four free cloud backends plus the local one, in preference order.
+    for name in ("groq", "gemini", "openrouter", "nvidia", "ollama"):
+        enabled = name not in disabled
+        has_key = name == "ollama" or bool(key_by_provider.get(name))
+
+        entry = {
+            "provider": name,
+            "enabled": enabled,
+            "has_credentials": has_key,
+            "local": name == "ollama",
+            "model": model_by_provider.get(name, ""),
+            "free_tier": True,
+            "model_count": 0,
+        }
+        # Only enumerate models for providers that could actually serve a
+        # request; listing costs a network round trip.
+        if enabled and has_key:
+            try:
+                entry["model_count"] = len(LLMFactory.list_models(name))
+            except Exception:
+                entry["model_count"] = 0
+        if name == "ollama":
+            status = LLMFactory.check_ollama_available()
+            entry["model"] = status.get("model", "")
+            entry["has_credentials"] = status.get("available", False)
+            entry["error"] = status.get("error", "")
+        providers.append(entry)
+
+    active = next(
+        (p["provider"] for p in providers if p["enabled"] and p["has_credentials"]),
+        "",
+    )
+
+    return {
+        "providers": providers,
+        "active_provider": active,
+        "ensemble_enabled": settings.LLM_ENSEMBLE,
+        "ensemble_mode": settings.LLM_ENSEMBLE_MODE,
+        "fallback_enabled": settings.LLM_FALLBACK,
+        "order": LLMFactory.provider_order(),
+    }
+
+
+@app.post("/api/providers/{provider}")
+async def toggle_provider(provider: str, enabled: bool = True):
+    """Enable or disable one LLM provider at runtime.
+
+    Exists so a research run can isolate a single backend — comparing Groq
+    against Gemini is only meaningful if the others can be switched off.
+    """
+    from fastapi import HTTPException
+    from rag_assistant.llm_config import LLMFactory
+
+    try:
+        disabled = LLMFactory.set_provider_enabled(provider, enabled)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    _save_provider_prefs(disabled)
+
+    _rebuild_llm_stack()
+
+    return {
+        "provider": provider,
+        "enabled": enabled,
+        "disabled_providers": sorted(disabled),
+        "order": LLMFactory.provider_order(),
+    }
+
+
+@app.get("/api/providers/{provider}/models")
+async def list_provider_models(provider: str):
+    """List the models a provider currently offers.
+
+    Lets the UI offer a real choice rather than a hardcoded list that goes
+    stale whenever a provider retires a model.
+    """
+    from fastapi import HTTPException
+    from rag_assistant.llm_config import LLMFactory
+
+    if provider not in LLMFactory.PROVIDERS:
+        raise HTTPException(status_code=400, detail=f"Unknown provider: {provider}")
+
+    current = {
+        "groq": settings.GROQ_MODEL,
+        "gemini": settings.GEMINI_MODEL,
+        "openrouter": settings.OPENROUTER_MODEL,
+        "nvidia": settings.NVIDIA_MODEL,
+    }.get(provider, os.environ.get(f"{provider.upper()}_MODEL", ""))
+
+    return {
+        "provider": provider,
+        "current": os.environ.get(f"{provider.upper()}_MODEL", current),
+        "models": LLMFactory.list_models(provider),
+    }
+
+
+@app.post("/api/providers/{provider}/model")
+async def set_provider_model(provider: str, model: str):
+    """Pin which model a provider should use.
+
+    Model choice is the main independent variable in an LLM comparison, so it
+    has to be changeable without editing configuration and restarting.
+    """
+    from fastapi import HTTPException
+    from rag_assistant.llm_config import LLMFactory
+
+    if provider not in LLMFactory.PROVIDERS:
+        raise HTTPException(status_code=400, detail=f"Unknown provider: {provider}")
+
+    available = LLMFactory.list_models(provider)
+    if available and model not in available:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Model '{model}' is not offered by {provider}.",
+        )
+
+    os.environ[f"{provider.upper()}_MODEL"] = model
+    _rebuild_llm_stack()
+    logger.info("Provider %s pinned to model %s", provider, model)
+
+    return {"provider": provider, "model": model}
+
+
+@app.get("/api/rag-config")
+async def get_rag_config():
+    """Report whether retrieval is enabled, and the corpus it would search."""
+    from rag_assistant.chains.rag_chain import RAGPipeline
+
+    document_count = 0
+    try:
+        from services.rag_engine import rag_engine
+
+        document_count = rag_engine.vector_store.count()
+    except Exception:
+        logger.exception("Could not count vector store documents")
+
+    return {
+        "rag_enabled": RAGPipeline.retrieval_enabled(),
+        "documents": document_count,
+        "collection": settings.CHROMA_COLLECTION,
+        "embedding_model": settings.LOCAL_EMBEDDING_MODEL,
+        "score_threshold": settings.RAG_SCORE_THRESHOLD,
+    }
+
+
+@app.post("/api/rag-config")
+async def set_rag_config(enabled: bool = True):
+    """Turn retrieval on or off.
+
+    With retrieval off the assistant answers purely from the model's own
+    knowledge — the no-RAG baseline needed to show what the knowledge base
+    contributes.
+    """
+    os.environ["RAG_ENABLED"] = "1" if enabled else "0"
+    _rebuild_llm_stack()
+
+    try:
+        with open(PROVIDER_PREFS_FILE, "r", encoding="utf-8") as handle:
+            prefs = json.load(handle)
+    except Exception:
+        prefs = {}
+    prefs["rag_enabled"] = enabled
+    try:
+        with open(PROVIDER_PREFS_FILE, "w", encoding="utf-8") as handle:
+            json.dump(prefs, handle)
+    except Exception:
+        logger.exception("Could not persist RAG toggle")
+
+    logger.info("Retrieval %s", "enabled" if enabled else "disabled")
+    return {"rag_enabled": enabled}
 
 
 @app.get("/api/logs")

@@ -1489,14 +1489,51 @@ class LLMFactory:
     DEFAULT_PROVIDER_ORDER = ('groq', 'gemini', 'openrouter', 'nvidia', 'ollama')
 
     @classmethod
+    def disabled_providers(cls) -> set:
+        """Providers switched off at runtime.
+
+        Backed by an environment variable so it works for the API, the eval
+        script, and a bare Python session alike. Being able to disable a
+        provider is what makes per-provider comparison possible: an ablation
+        that cannot isolate one backend cannot attribute a result to it.
+        """
+        raw = os.getenv('LLM_DISABLED_PROVIDERS', '')
+        return {p.strip().lower() for p in raw.split(',') if p.strip()}
+
+    @classmethod
+    def set_provider_enabled(cls, provider: str, enabled: bool) -> set:
+        """Turn a provider on or off for subsequent requests.
+
+        Returns the updated set of disabled providers.
+        """
+        provider = provider.lower()
+        if provider not in cls.PROVIDERS:
+            raise ValueError(f"Unknown provider: {provider}")
+
+        disabled = cls.disabled_providers()
+        if enabled:
+            disabled.discard(provider)
+        else:
+            disabled.add(provider)
+
+        os.environ['LLM_DISABLED_PROVIDERS'] = ','.join(sorted(disabled))
+        # Catalogues are per-provider and cheap to rebuild; clearing avoids
+        # serving a stale list for a provider that was just re-enabled.
+        _MODEL_CATALOGUE_CACHE.pop(provider, None)
+        logger.info("Provider '%s' %s", provider, "enabled" if enabled else "disabled")
+        return disabled
+
+    @classmethod
     def provider_order(cls) -> List[str]:
-        """Resolve the provider preference list."""
+        """Resolve the provider preference list, minus anything disabled."""
         configured = os.getenv('LLM_PROVIDER_ORDER', '')
         if configured:
             order = [p.strip().lower() for p in configured.split(',') if p.strip()]
         else:
             order = list(cls.DEFAULT_PROVIDER_ORDER)
-        return [p for p in order if p in cls.PROVIDERS]
+
+        disabled = cls.disabled_providers()
+        return [p for p in order if p in cls.PROVIDERS and p not in disabled]
 
     @classmethod
     def is_configured(cls, provider: str) -> bool:
@@ -1506,6 +1543,8 @@ class LLMFactory:
         rather than failing on the user's first question.
         """
         provider = provider.lower()
+        if provider in cls.disabled_providers():
+            return False
         if provider == 'ollama':
             return cls.check_ollama_available()["available"]
         key_env = {

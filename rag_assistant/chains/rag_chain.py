@@ -79,6 +79,16 @@ ANSWER FORMAT:
 - Prioritize CRITICAL and HIGH severity findings.
 - Be precise and technical. No filler, no restating the question."""
 
+    #: Used when retrieval is switched off on purpose (the no-RAG baseline).
+    #: Distinct from NO_CONTEXT_INSTRUCTION: here the model SHOULD answer from
+    #: its own knowledge, because measuring that is the point of the condition.
+    RETRIEVAL_DISABLED_INSTRUCTION = """Retrieval is disabled for this query, so no documents are provided.
+
+Answer from your own knowledge. State the CVSS score, affected versions and
+remediation if you know them. Say plainly when you are unsure of a specific
+value rather than guessing at it. Do not cite [Doc N] — there are no documents
+to cite."""
+
     #: Appended when retrieval found nothing, to make refusal the easy path.
     NO_CONTEXT_INSTRUCTION = """No relevant documents were retrieved from the vulnerability database for this question.
 
@@ -212,6 +222,17 @@ Tell the user plainly that the knowledge base has no matching entry, and suggest
     # Retrieval
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def retrieval_enabled() -> bool:
+        """Whether the retrieval stage runs at all.
+
+        Turning retrieval off converts the assistant into a plain LLM answering
+        from parametric memory. That is the no-RAG baseline: without the
+        ability to switch retrieval off, there is no way to show what the
+        knowledge base actually contributes.
+        """
+        return os.getenv('RAG_ENABLED', '1').lower() not in ('0', 'false', 'no')
+
     def retrieve(self, rag_query: RAGQuery) -> List[SearchResult]:
         """Retrieve context for a query.
 
@@ -220,6 +241,10 @@ Tell the user plainly that the knowledge base has no matching entry, and suggest
         other CVE ID, so an exact metadata lookup runs alongside the semantic
         search and its hits are pinned to the front.
         """
+        if not self.retrieval_enabled():
+            logger.debug("Retrieval disabled (RAG_ENABLED=0); answering without context")
+            return []
+
         filters = dict(rag_query.filters or {})
         if rag_query.source_type:
             filters['source_type'] = rag_query.source_type
@@ -520,6 +545,12 @@ Tell the user plainly that the knowledge base has no matching entry, and suggest
 
         if grounded and context:
             sections.append(context)
+        elif not self.retrieval_enabled():
+            # Retrieval was switched off deliberately (the no-RAG baseline).
+            # Refusing here would measure the refusal instruction rather than
+            # the model's own knowledge, which is the whole point of the
+            # comparison.
+            sections.append(self.RETRIEVAL_DISABLED_INSTRUCTION)
         else:
             sections.append(self.NO_CONTEXT_INSTRUCTION)
 
@@ -716,6 +747,17 @@ def get_rag_pipeline(pipeline_type: str = 'default') -> RAGPipeline:
 
     _PIPELINE_CACHE[pipeline_type] = pipeline
     return pipeline
+
+
+def reset_pipelines() -> None:
+    """Drop cached pipelines so the next call rebuilds them.
+
+    Needed whenever the LLM topology changes — enabling or disabling a
+    provider, or switching model — because a cached pipeline holds a client
+    built from the previous configuration and would keep using it.
+    """
+    _PIPELINE_CACHE.clear()
+    logger.info("RAG pipeline cache cleared; clients will be rebuilt")
 
 
 def available_pipelines() -> List[str]:

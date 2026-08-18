@@ -17,8 +17,17 @@ from models.schemas import ChatRequest, ChatResponse, ChatSource, ChatMessageRes
 logger = logging.getLogger("vulndetect")
 router = APIRouter()
 
-# Initialize the new RAG pipeline
-rag_pipeline = get_rag_pipeline("default")
+
+def get_pipeline(pipeline_type: str = "default"):
+    """Resolve the RAG pipeline for this request.
+
+    Deliberately not a module-level singleton. A pipeline captured at import
+    time keeps the LLM client it was built with, so toggling a provider or
+    switching model in Settings would have no effect until the process
+    restarted. get_rag_pipeline() serves a cached instance that
+    reset_pipelines() can invalidate.
+    """
+    return get_rag_pipeline(pipeline_type)
 
 
 
@@ -29,9 +38,9 @@ async def chat(request: ChatRequest, db: Session = Depends(get_db)):
 
     _store_message(db, session_id, "user", request.message)
 
-    # Use the new standalone rag_assistant module
+    # Resolved per request so Settings toggles take effect immediately.
     query_obj = RAGQuery(question=request.message, session_id=session_id)
-    result = rag_pipeline.query(query_obj)
+    result = get_pipeline().query(query_obj)
     
     # If the response indicates an error, log it
     if hasattr(result, "metadata") and result.metadata.get("error"):

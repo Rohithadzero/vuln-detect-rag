@@ -122,7 +122,16 @@ class Settings(BaseSettings):
     ZAP_PATH: str = ""  # OWASP ZAP
 
     class Config:
-        env_file = ".env"
+        # Absolute path, not ".env". A relative path resolves against the
+        # current working directory, so running anything from the repo root
+        # (scripts/run_eval.py, scripts/seed_cve_data.py) silently loaded no
+        # configuration at all and fell back to defaults — which looked like
+        # "no API keys are set" rather than "the file was not found".
+        # Both locations are read, with backend/.env taking precedence.
+        env_file = (
+            str(PROJECT_ROOT / ".env"),
+            str(PROJECT_ROOT / "backend" / ".env"),
+        )
         env_file_encoding = "utf-8"
         # Ignore unrecognised keys instead of refusing to start. A stray or
         # newly added variable in .env should never prevent the app booting.

@@ -5,6 +5,7 @@ import { startScan, getScanResults, getAttackPaths, listScans, getFavorites, add
 import ScanForm from '../components/ScanForm'
 import ScanResults from '../components/ScanResults'
 import AttackPathGraph from '../components/AttackPathGraph'
+import ScanExplanation from '../components/ScanExplanation'
 
 export default function ScanConsole() {
   const [searchParams] = useSearchParams()
@@ -181,7 +182,7 @@ export default function ScanConsole() {
           {currentScan ? (
             <div className="space-y-4">
               <div className="flex gap-1 bg-white border-3 border-black p-1 shadow-neb-sm">
-                {['results', 'attack-paths'].map((tab) => (
+                {['results', 'explain', 'attack-paths'].map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
@@ -189,11 +190,12 @@ export default function ScanConsole() {
                       activeTab === tab ? 'bg-neo-cyan border-black' : 'hover:bg-gray-100'
                     }`}
                   >
-                    {tab === 'results' ? 'Vulnerabilities' : 'Attack Paths'}
+                    {tab === 'results' ? 'Vulnerabilities' : tab === 'explain' ? 'AI Briefing' : 'Attack Paths'}
                   </button>
                 ))}
               </div>
               {activeTab === 'results' && <ScanResults scan={currentScan} vulnerabilities={vulnerabilities} />}
+              {activeTab === 'explain' && <ScanExplanation scan={currentScan} />}
               {activeTab === 'attack-paths' && <AttackPathGraph paths={attackPaths} />}
             </div>
           ) : (
