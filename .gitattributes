@@ -1,0 +1,14 @@
+# Normalise text files in the repository, but pin line endings per platform
+# where the file format actually depends on them.
+
+* text=auto
+
+# Shell scripts must stay LF. A CRLF checkout makes the kernel read the
+# shebang as "/usr/bin/env bash\r", which does not exist, and the script dies
+# with "bad interpreter: no such file or directory" before running a line.
+*.sh text eol=lf
+
+# Batch files must stay CRLF. cmd.exe mis-parses LF-only labels and can
+# silently mis-handle multi-line blocks.
+*.bat text eol=crlf
+*.cmd text eol=crlf
