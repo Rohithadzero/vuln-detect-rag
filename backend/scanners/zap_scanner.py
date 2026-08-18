@@ -3,6 +3,7 @@ import subprocess
 import json
 import os
 import shutil
+import tempfile
 import hashlib
 import time
 from scanners.base import ScannerAdapter, ScanVulnerability
@@ -242,13 +243,18 @@ class ZAPScanner(ScannerAdapter):
         binary = self._get_binary()
         target_url = target if target.startswith("http") else f"https://{target}"
 
+        # tempfile.gettempdir() rather than a hardcoded /tmp: this project is
+        # Windows-primary, where /tmp does not exist and the report was never
+        # written or read back.
+        report_path = os.path.join(tempfile.gettempdir(), "zap_report.json")
+
         # ZAP CLI command for quick scan
         cmd = [
             binary,
             "-quickurl",
             target_url,
             "-quickout",
-            "/tmp/zap_report.json",
+            report_path,
             "-quickprogress",
             "-cmd",
         ]
@@ -264,7 +270,7 @@ class ZAPScanner(ScannerAdapter):
 
         # Try to read the JSON report
         try:
-            with open("/tmp/zap_report.json", "r") as f:
+            with open(report_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 return self._parse_api_results(data, target)
         except (FileNotFoundError, json.JSONDecodeError):

@@ -486,6 +486,46 @@ async def set_rag_config(enabled: bool = True):
     return {"rag_enabled": enabled}
 
 
+@app.get("/api/eval-metrics")
+async def eval_metrics():
+    """Serve the most recent evaluation results.
+
+    Reports only what `scripts/run_eval.py` actually measured. If that script
+    has not been run there are no metrics to show, and this says so rather than
+    inventing placeholders — the defect that made the previous metrics display
+    misleading.
+    """
+    results_file = LOG_DIR / "eval_results.json"
+    if not results_file.exists():
+        return {
+            "available": False,
+            "message": (
+                "No evaluation has been run yet. Run: "
+                "python scripts/run_eval.py --ablation"
+            ),
+        }
+
+    try:
+        with open(results_file, "r", encoding="utf-8") as handle:
+            payload = json.load(handle)
+    except Exception as e:
+        logger.exception("Could not read evaluation results")
+        return {"available": False, "message": f"Could not read results: {e}"}
+
+    metrics = payload.get("metrics", {})
+    environment = payload.get("environment", {})
+
+    # Records are the per-question detail; they are large and the UI does not
+    # need them, so only the summary is returned.
+    return {
+        "available": True,
+        "environment": environment,
+        "metrics": metrics,
+        "limitations": payload.get("limitations", []),
+        "conditions": list(metrics.keys()),
+    }
+
+
 @app.get("/api/logs")
 async def get_logs():
     """Retrieve backend logs."""

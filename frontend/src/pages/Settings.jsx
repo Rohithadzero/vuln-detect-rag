@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { getBackendLogs, getLLMStatus, getHealth } from '../api/client'
 import { RefreshCw, Download, FileText, Settings as SettingsIcon, Cpu, AlertTriangle, CheckCircle, XCircle } from 'lucide-react'
 import ProviderControls from '../components/ProviderControls'
+import MetricsPanel from '../components/MetricsPanel'
 
 export default function Settings() {
   const [logs, setLogs] = useState('')
@@ -45,6 +46,9 @@ export default function Settings() {
 
       {/* Research controls: per-provider toggles, model choice, RAG on/off */}
       <ProviderControls />
+
+      {/* Evaluation results from the last scripts/run_eval.py run */}
+      <MetricsPanel />
 
       {/* Status Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

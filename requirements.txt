@@ -7,7 +7,13 @@
 #   - Node.js 18.x+
 #   - Nmap (optional, for live scans)
 #   - Nuclei (optional, for live scans)
-#   - Ollama with qwen2.5-coder:7b model (optional, for AI features)
+#
+# LLM backends are all optional and all have a free tier. The app auto-selects
+# whichever is configured (see backend/.env.example):
+#   - Groq, Google Gemini, OpenRouter (free models only), NVIDIA NIM
+#   - Ollama for fully offline use
+# All four cloud providers are reached over plain HTTP via `requests`, so no
+# vendor SDK is required for them.
 #
 # Quick Setup:
 #   Windows:  Double-click Run_VulnDetect.bat
@@ -32,25 +38,49 @@ pydantic>=2.0.0,<3.0.0
 pydantic-settings>=2.0.0,<3.0.0
 python-dotenv>=1.0.0,<2.0.0
 
+# HTTP. Required, not optional: every cloud LLM provider (Groq, Gemini,
+# OpenRouter, NVIDIA), the Ollama client, and the CISA KEV / EPSS / NVD
+# enrichment feeds are all plain HTTP calls through this.
+requests>=2.31.0,<3.0.0
+
 # RAG / AI
 langchain-huggingface>=0.1.0,<1.0.0
-ollama>=0.3.0,<1.0.0
 chromadb>=0.4.0,<1.0.0
+# Provides the local, offline embedding model (all-MiniLM-L6-v2). Imported
+# directly as a fallback when langchain-huggingface is absent.
 sentence-transformers>=2.2.0,<3.0.0
 
-# Vector store alternatives
+# Vector store alternative to ChromaDB (VECTOR_STORE_TYPE=faiss)
 faiss-cpu>=1.7.0,<2.0.0
 numpy>=1.24.0,<2.0.0
 
 # Graph analysis (attack paths)
 networkx>=3.0,<4.0
 
-# NLP evaluation
-nltk>=3.8.0,<4.0.0
-
-# Utilities
-aiofiles>=23.0.0,<24.0.0
+# Async HTTP client used by the Burp and ZAP scanner adapters
 httpx>=0.25.0,<1.0.0
 
-# Security
+# Security: hardens the Nmap XML parser against XXE
 defusedxml>=0.7.0,<1.0.0
+
+# ------------------------------------------------------------------
+# Optional extras — install only if you need that specific backend
+# ------------------------------------------------------------------
+# OpenAI SDK. Needed ONLY for LLM_PROVIDER=openai; Groq and OpenRouter speak
+# the same dialect but are called over plain HTTP, so they do not require it.
+#   pip install openai
+#
+# Ollama SDK is NOT required: the Ollama client talks to the daemon's REST API
+# directly, which also honours a remote OLLAMA_BASE_URL.
+#
+# Redis, for persistent conversation memory across restarts
+# (get_conversation_memory(backend="redis")):
+#   pip install redis
+#
+# ------------------------------------------------------------------
+# Removed in v3.5 remediation
+# ------------------------------------------------------------------
+# nltk      - was declared but never imported; BLEU and ROUGE are implemented
+#             from scratch in backend/services/evaluators.py
+# aiofiles  - was declared but never imported anywhere
+# ollama    - no longer needed, superseded by direct REST calls

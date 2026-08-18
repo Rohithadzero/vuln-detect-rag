@@ -3,6 +3,7 @@ import subprocess
 import json
 import os
 import shutil
+import tempfile
 import hashlib
 from scanners.base import ScannerAdapter, ScanVulnerability
 from config import settings
@@ -201,9 +202,7 @@ class BurpScanner(ScannerAdapter):
             binary,
             "--unpause",
             "--project-file",
-            "/tmp/burp_scan.burp",
-            "--config-file",
-            "/dev/null",
+            os.path.join(tempfile.gettempdir(), "burp_scan.burp"),
         ]
 
         # Burp CLI is limited, return empty to fall back to mock

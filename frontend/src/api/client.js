@@ -62,6 +62,7 @@ export const getProviders = () => api.get('/providers')
 export const toggleProvider = (provider, enabled) => api.post(`/providers/${provider}`, null, { params: { enabled } })
 export const getProviderModels = (provider) => api.get(`/providers/${provider}/models`)
 export const setProviderModel = (provider, model) => api.post(`/providers/${provider}/model`, null, { params: { model } })
+export const getEvalMetrics = () => api.get('/eval-metrics')
 export const getRagConfig = () => api.get('/rag-config')
 export const setRagConfig = (enabled) => api.post('/rag-config', null, { params: { enabled } })
 
