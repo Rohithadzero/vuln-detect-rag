@@ -239,16 +239,30 @@ class ZAPScanner(ScannerAdapter):
         return vulns
 
     def _scan_via_cli(self, target: str) -> list[ScanVulnerability]:
-        """Scan using ZAP CLI."""
+        """Scan using a locally launched ZAP instance.
+
+        Two routes, in order of reliability:
+
+        1. Start ZAP in daemon mode and drive it through the same REST API the
+           remote path uses. This gives structured JSON alerts.
+        2. Fall back to `-quickurl`, which writes a JSON report to disk.
+
+        Both produce parseable JSON; neither depends on scraping console output.
+        """
         binary = self._get_binary()
         target_url = target if target.startswith("http") else f"https://{target}"
 
+        if self._start_daemon():
+            try:
+                return self._scan_via_api(target)
+            finally:
+                self._stop_daemon()
+
         # tempfile.gettempdir() rather than a hardcoded /tmp: this project is
-        # Windows-primary, where /tmp does not exist and the report was never
-        # written or read back.
+        # Windows-primary, where /tmp does not exist, so the report was
+        # previously never written or read back.
         report_path = os.path.join(tempfile.gettempdir(), "zap_report.json")
 
-        # ZAP CLI command for quick scan
         cmd = [
             binary,
             "-quickurl",
@@ -259,8 +273,8 @@ class ZAPScanner(ScannerAdapter):
             "-cmd",
         ]
 
-        logger.info("Running ZAP CLI: %s", " ".join(cmd))
-        result = subprocess.run(
+        logger.info("Running ZAP quick scan: %s", " ".join(cmd))
+        subprocess.run(
             cmd,
             capture_output=True,
             text=True,
@@ -268,22 +282,96 @@ class ZAPScanner(ScannerAdapter):
             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
         )
 
-        # Try to read the JSON report
         try:
             with open(report_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                return self._parse_api_results(data, target)
-        except (FileNotFoundError, json.JSONDecodeError):
-            pass
+            return self._parse_api_results(data, target)
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            logger.warning("ZAP produced no readable report: %s", e)
+            return []
 
-        # Fall back to parsing stdout
-        return self._parse_cli_output(result.stdout, target)
+    def _start_daemon(self) -> bool:
+        """Start ZAP in daemon mode so the REST API becomes usable.
 
-    def _parse_cli_output(self, output: str, target: str) -> list[ScanVulnerability]:
-        """Parse ZAP CLI output into ScanVulnerability objects."""
-        vulns = []
-        # ZAP CLI output parsing is limited, return empty to fall back to mock
-        return vulns
+        ZAP's console output is unstructured and version-dependent, so scraping
+        it was never going to work — the previous `_parse_cli_output` returned
+        an empty list unconditionally, which meant the CLI path silently always
+        fell through to mock data. Launching the daemon and using the same JSON
+        API as the remote path removes the parsing problem entirely.
+        """
+        binary = self._get_binary()
+        if not binary:
+            return False
+
+        cmd = [
+            binary,
+            "-daemon",
+            "-host", self.API_HOST,
+            "-port", str(self.API_PORT),
+            "-config", "api.disablekey=true",
+            # Passive-scan-only startup; the active scan is driven through the
+            # API once the daemon is up.
+            "-config", "api.addrs.addr.name=.*",
+            "-config", "api.addrs.addr.regex=true",
+        ]
+        logger.info("Starting ZAP daemon: %s", " ".join(cmd))
+
+        try:
+            self._daemon = subprocess.Popen(
+                cmd,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+            )
+        except OSError as e:
+            logger.error("Could not start the ZAP daemon: %s", e)
+            return False
+
+        # ZAP takes 20-60s to become responsive depending on the machine.
+        return self._await_daemon(timeout=120)
+
+    def _await_daemon(self, timeout: int = 120) -> bool:
+        """Poll the ZAP API until it answers or the budget runs out."""
+        import httpx
+
+        deadline = time.time() + timeout
+        url = f"http://{self.API_HOST}:{self.API_PORT}/JSON/core/view/version/"
+
+        while time.time() < deadline:
+            try:
+                response = httpx.get(url, timeout=5)
+                if response.status_code == 200:
+                    logger.info("ZAP daemon ready: version %s",
+                                response.json().get("version", "unknown"))
+                    return True
+            except Exception:
+                pass
+            time.sleep(3)
+
+        logger.error("ZAP daemon did not become ready within %ds", timeout)
+        return False
+
+    def _stop_daemon(self) -> None:
+        """Shut down a daemon this adapter started."""
+        daemon = getattr(self, "_daemon", None)
+        if daemon is None:
+            return
+        try:
+            import httpx
+
+            httpx.get(
+                f"http://{self.API_HOST}:{self.API_PORT}/JSON/core/action/shutdown/",
+                timeout=10,
+            )
+            daemon.wait(timeout=30)
+        except Exception:
+            logger.debug("Graceful ZAP shutdown failed; terminating", exc_info=True)
+            try:
+                daemon.terminate()
+            except Exception:
+                pass
+        finally:
+            self._daemon = None
 
     def _severity_to_cvss(self, severity: str) -> float:
         """Convert ZAP risk level to CVSS score."""

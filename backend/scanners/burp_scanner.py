@@ -18,9 +18,22 @@ class BurpScanner(ScannerAdapter):
     This adapter uses the Burp Suite CLI (if available) or the REST API
     to scan targets for web application vulnerabilities.
 
-    Note: Burp Suite Professional is required for full API access.
-    Community edition has limited automation support.
+    REQUIRES A PAID LICENCE. Burp Suite Professional (~$475/yr) is the only
+    edition with a REST API; the free Community edition ships no automation
+    interface at all, so there is no free path to a live Burp scan. This is a
+    vendor restriction, not a gap in this adapter.
+
+    Without Pro running locally this adapter returns clearly-labelled sample
+    data. Every other scanner in this project is free to use.
     """
+
+    #: Surfaced through /api/health so the UI can state the prerequisite rather
+    #: than presenting Burp as though it were freely runnable.
+    requires_licence = True
+    licence_note = (
+        "Requires a Burp Suite Professional licence with the REST API enabled. "
+        "Burp Community has no automation API."
+    )
 
     name = "burp"
 

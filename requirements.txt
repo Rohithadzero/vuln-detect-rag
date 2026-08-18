@@ -73,6 +73,11 @@ defusedxml>=0.7.0,<1.0.0
 # Ollama SDK is NOT required: the Ollama client talks to the daemon's REST API
 # directly, which also honours a remote OLLAMA_BASE_URL.
 #
+# OpenVAS / Greenbone. Needed ONLY to run live OpenVAS scans; also requires a
+# running GVM stack (the Greenbone community containers are the easiest route)
+# and a completed NVT feed sync. Free and open source.
+#   pip install python-gvm
+#
 # Redis, for persistent conversation memory across restarts
 # (get_conversation_memory(backend="redis")):
 #   pip install redis

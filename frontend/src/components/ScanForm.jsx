@@ -1,14 +1,29 @@
 import { useState } from 'react'
 import { Play, Loader2, Star } from 'lucide-react'
 
+// `status` is shown next to each checkbox so the user knows, before starting a
+// scan, whether a tool can actually run. Presenting a simulated scanner as if
+// it were live is the single most misleading thing this UI could do.
 const scanners = [
-  { id: 'nmap', label: 'Nmap', desc: 'Port scanning & service detection' },
-  { id: 'nuclei', label: 'Nuclei', desc: 'Template-based vulnerability scanning' },
-  { id: 'openvas', label: 'OpenVAS', desc: 'Comprehensive vulnerability assessment' },
-  { id: 'nessus', label: 'Nessus', desc: 'Enterprise vulnerability scanner' },
-  { id: 'burp', label: 'Burp Suite', desc: 'Web application security testing' },
-  { id: 'zap', label: 'OWASP ZAP', desc: 'Dynamic application security testing' },
+  { id: 'nmap', label: 'Nmap', desc: 'Port scanning & service detection', status: 'live', free: true },
+  { id: 'nuclei', label: 'Nuclei', desc: 'Template-based vulnerability scanning', status: 'live', free: true },
+  { id: 'zap', label: 'OWASP ZAP', desc: 'Dynamic application security testing', status: 'live', free: true },
+  { id: 'openvas', label: 'OpenVAS', desc: 'Comprehensive vulnerability assessment', status: 'live', free: true, note: 'Needs a running GVM/openvas stack' },
+  { id: 'burp', label: 'Burp Suite', desc: 'Web application security testing', status: 'licence', free: false, note: 'Requires a Burp Pro licence; Community has no automation API' },
+  { id: 'nessus', label: 'Nessus', desc: 'Enterprise vulnerability scanner', status: 'simulated', free: false, note: 'Simulated - not a live scan' },
 ]
+
+const STATUS_STYLES = {
+  live: 'bg-neo-green',
+  licence: 'bg-neo-yellow',
+  simulated: 'bg-neo-orange',
+}
+
+const STATUS_LABELS = {
+  live: 'Live',
+  licence: 'Paid licence',
+  simulated: 'Simulated',
+}
 
 const defaultScanners = ['nmap', 'nuclei']
 
@@ -95,12 +110,37 @@ export default function ScanForm({ onStartScan, loading, onAddFavorite }) {
                 )}
               </div>
               <div className="min-w-0">
-                <div className="text-sm font-bold text-black">{s.label}</div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm font-bold text-black">{s.label}</span>
+                  <span
+                    className={`text-[9px] font-black uppercase px-1.5 py-0.5 border-2 border-black ${STATUS_STYLES[s.status]}`}
+                  >
+                    {STATUS_LABELS[s.status]}
+                  </span>
+                  {s.free && (
+                    <span className="text-[9px] font-black uppercase text-green-700">
+                      Free
+                    </span>
+                  )}
+                </div>
                 <div className="text-[11px] text-gray-600 truncate">{s.desc}</div>
+                {s.note && (
+                  <div className="text-[10px] font-bold text-gray-500 mt-0.5">
+                    {s.note}
+                  </div>
+                )}
               </div>
             </label>
           ))}
         </div>
+
+        {selected.some((id) => scanners.find((s) => s.id === id)?.status !== 'live') && (
+          <p className="mt-3 text-[11px] font-bold bg-neo-orange border-3 border-black p-2">
+            One or more selected tools cannot run live here and will return
+            simulated sample data. Those findings are labelled &quot;Simulated&quot;
+            in the results and do not describe the real target.
+          </p>
+        )}
       </div>
 
       <button
