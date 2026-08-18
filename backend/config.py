@@ -44,7 +44,7 @@ class Settings(BaseSettings):
     # LLM Provider: auto | groq | gemini | ollama | openai | huggingface
     # "auto" picks the first provider in LLM_PROVIDER_ORDER that is configured.
     LLM_PROVIDER: str = "auto"
-    LLM_PROVIDER_ORDER: str = "groq,gemini,ollama"
+    LLM_PROVIDER_ORDER: str = "groq,gemini,openrouter,nvidia,ollama"
     # Fall through to the next provider when one is rate-limited or offline.
     LLM_FALLBACK: bool = True
 
@@ -70,6 +70,21 @@ class Settings(BaseSettings):
     # Google Gemini API (free tier) — https://aistudio.google.com/apikey
     GEMINI_API_KEY: str = ""
     GEMINI_MODEL: str = "gemini-flash-latest"
+
+    # OpenRouter (free-tier models only) — https://openrouter.ai/keys
+    # The client refuses any model that is not zero-cost.
+    OPENROUTER_API_KEY: str = ""
+    OPENROUTER_MODEL: str = "openai/gpt-oss-20b:free"
+    OPENROUTER_SITE_URL: str = "http://localhost:5173"
+    OPENROUTER_APP_NAME: str = "VulnDetectRAG"
+
+    # NVIDIA NIM (free tier) — https://build.nvidia.com
+    NVIDIA_API_KEY: str = ""
+    NVIDIA_MODEL: str = "meta/llama-3.3-70b-instruct"
+
+    # Ensemble orchestration
+    LLM_ENSEMBLE: bool = True
+    LLM_ENSEMBLE_MODE: str = "synthesize"
 
     # OpenAI / HuggingFace (optional)
     OPENAI_API_KEY: str = ""
@@ -146,6 +161,14 @@ class Settings(BaseSettings):
             "GROQ_MODEL": self.GROQ_MODEL,
             "GEMINI_API_KEY": self.GEMINI_API_KEY,
             "GEMINI_MODEL": self.GEMINI_MODEL,
+            "OPENROUTER_API_KEY": self.OPENROUTER_API_KEY,
+            "OPENROUTER_MODEL": self.OPENROUTER_MODEL,
+            "OPENROUTER_SITE_URL": self.OPENROUTER_SITE_URL,
+            "OPENROUTER_APP_NAME": self.OPENROUTER_APP_NAME,
+            "NVIDIA_API_KEY": self.NVIDIA_API_KEY,
+            "NVIDIA_MODEL": self.NVIDIA_MODEL,
+            "LLM_ENSEMBLE": "1" if self.LLM_ENSEMBLE else "0",
+            "LLM_ENSEMBLE_MODE": self.LLM_ENSEMBLE_MODE,
             "OPENAI_API_KEY": self.OPENAI_API_KEY,
             "OPENAI_MODEL": self.OPENAI_MODEL,
             "HUGGINGFACE_API_KEY": self.HUGGINGFACE_API_KEY,

@@ -908,6 +908,7 @@ class GroqClient(RemoteModelResolverMixin, BaseLLMClient):
     supports_tools = True
 
     DEFAULT_ENDPOINT = "https://api.groq.com/openai/v1"
+    SIGNUP_URL = "https://console.groq.com/keys"
 
     PREFERRED_MODELS = (
         'gpt-oss-120b',
@@ -948,8 +949,8 @@ class GroqClient(RemoteModelResolverMixin, BaseLLMClient):
 
         if not self.config.api_key:
             raise LLMUnavailableError(
-                "GROQ_API_KEY is not set. Get a free key at "
-                "https://console.groq.com/keys"
+                f"{self.config.provider.upper()}_API_KEY is not set. "
+                f"See {self.SIGNUP_URL}"
             )
 
         try:
@@ -964,29 +965,34 @@ class GroqClient(RemoteModelResolverMixin, BaseLLMClient):
                 stream=stream,
             )
         except requests.exceptions.RequestException as e:
-            raise LLMUnavailableError(f"Cannot reach the Groq API: {e}") from e
+            raise LLMUnavailableError(
+                f"Cannot reach the {self.config.provider} API: {e}"
+            ) from e
 
         if response.status_code == 429:
             raise LLMUnavailableError(
-                "Groq rate limit reached (free tier). Wait and retry, or switch "
-                "provider with LLM_PROVIDER."
+                f"{self.config.provider} rate limit reached (free tier). Wait and "
+                f"retry, or switch provider with LLM_PROVIDER."
             )
         if response.status_code == 401:
-            raise LLMUnavailableError("Groq rejected the API key. Check GROQ_API_KEY.")
+            raise LLMUnavailableError(
+                f"{self.config.provider} rejected the API key. Check "
+                f"{self.config.provider.upper()}_API_KEY."
+            )
         if response.status_code == 404:
             # Groq retires models frequently; resolve a live one and retry once.
             if self._recover_from_missing_model():
                 payload = dict(payload, model=self.config.model)
                 return self._post(path, payload, stream=stream)
             raise LLMUnavailableError(
-                f"Groq has no model '{self.config.model}' and no replacement "
-                f"could be resolved. See https://console.groq.com/docs/models"
+                f"{self.config.provider} has no model '{self.config.model}' and no "
+                f"replacement could be resolved. See {self.SIGNUP_URL}"
             )
         if response.status_code >= 500:
             # Transient upstream overload, not a configuration problem.
             raise LLMUnavailableError(
-                f"Groq is temporarily unavailable ({response.status_code}) for "
-                f"model '{self.config.model}'."
+                f"{self.config.provider} is temporarily unavailable "
+                f"({response.status_code}) for model '{self.config.model}'."
             )
         response.raise_for_status()
         return response
@@ -1103,6 +1109,151 @@ class GroqClient(RemoteModelResolverMixin, BaseLLMClient):
             "Groq does not provide an embeddings endpoint. Set EMBEDDING_PROVIDER "
             "to 'local' (default), 'gemini', or 'ollama'."
         )
+
+class OpenRouterClient(GroqClient):
+    """OpenRouter client, restricted to zero-cost models.
+
+    OpenRouter aggregates hundreds of models behind one OpenAI-compatible API.
+    Only models that cost nothing are ever selected: the catalogue is filtered
+    on the pricing fields the API itself reports, rather than on the ":free"
+    name suffix, since the suffix is a naming convention and not a guarantee.
+    That filtering is what keeps an accidental paid request impossible.
+
+    Inherits the request/response handling from GroqClient — both speak the
+    OpenAI chat-completions dialect.
+    """
+
+    supports_tools = True
+
+    DEFAULT_ENDPOINT = "https://openrouter.ai/api/v1"
+    SIGNUP_URL = "https://openrouter.ai/keys"
+
+    #: Preferred free models, best first. Larger instruct models lead, since
+    #: grounded extraction from retrieved context rewards instruction-following.
+    PREFERRED_MODELS = (
+        'gpt-oss-20b',
+        'nemotron-3-ultra',
+        'nemotron-3-super',
+        'gemma-4-31b',
+        'gemma-4-26b',
+        'nemotron-3.5-lightning',
+        'nemotron-3-nano',
+        'laguna-s',
+    )
+
+    #: Extra exclusions beyond the shared markers: music generation, safety
+    #: classifiers and vision-only endpoints cannot answer a security question.
+    NON_CHAT_MARKERS = RemoteModelResolverMixin.NON_CHAT_MARKERS + (
+        'content-safety', 'lyria', 'north-mini-code', '-vl',
+    )
+
+    def _list_remote_models(self) -> List[str]:
+        """List OpenRouter models that are free to call.
+
+        The models endpoint needs no authentication, so this works even before
+        a key is configured.
+        """
+        response = self.session.get(f"{self.base_url}/models", timeout=60)
+        response.raise_for_status()
+
+        free_models = []
+        for entry in response.json().get("data", []):
+            pricing = entry.get("pricing") or {}
+            try:
+                prompt_cost = float(pricing.get("prompt", "1") or 1)
+                completion_cost = float(pricing.get("completion", "1") or 1)
+            except (TypeError, ValueError):
+                continue
+            if prompt_cost == 0 and completion_cost == 0:
+                free_models.append(entry["id"])
+
+        logger.info("OpenRouter: %d free models available", len(free_models))
+        return free_models
+
+    def _post(self, path: str, payload: Dict[str, Any], stream: bool = False):
+        """POST to OpenRouter, refusing anything that is not a free model."""
+        model = payload.get("model", self.config.model)
+        if model and not self._is_free_model(model):
+            raise LLMUnavailableError(
+                f"Refusing to call OpenRouter model '{model}': it is not free. "
+                f"This client only uses zero-cost models."
+            )
+        return super()._post(path, payload, stream=stream)
+
+    def _is_free_model(self, model: str) -> bool:
+        """Whether a model is known to be free.
+
+        Falls back to the ":free" suffix only when the catalogue cannot be
+        fetched, so a network blip does not silently permit a paid call to an
+        arbitrary model.
+        """
+        try:
+            return model in self._list_remote_models()
+        except Exception:
+            return model.endswith(":free") or model == "openrouter/free"
+
+    @property
+    def session(self):
+        """Session carrying OpenRouter's attribution headers."""
+        if self._session is None:
+            import requests
+            self._session = requests.Session()
+            self._session.headers.update({
+                # Optional but recommended by OpenRouter for request attribution.
+                "HTTP-Referer": os.getenv(
+                    "OPENROUTER_SITE_URL", "http://localhost:5173"
+                ),
+                "X-Title": os.getenv("OPENROUTER_APP_NAME", "VulnDetectRAG"),
+            })
+        return self._session
+
+    def get_embedding(self, text: str) -> list:
+        """OpenRouter exposes no free embedding endpoint."""
+        raise NotImplementedError(
+            "OpenRouter does not provide embeddings here. Set EMBEDDING_PROVIDER "
+            "to 'local' (default) or 'ollama'."
+        )
+
+
+class NvidiaClient(GroqClient):
+    """NVIDIA NIM client (build.nvidia.com free tier).
+
+    NVIDIA's hosted inference endpoint is OpenAI-compatible, so this inherits
+    request handling from GroqClient and only overrides the endpoint and the
+    model catalogue.
+    """
+
+    supports_tools = True
+
+    DEFAULT_ENDPOINT = "https://integrate.api.nvidia.com/v1"
+    SIGNUP_URL = "https://build.nvidia.com"
+
+    #: Preferred models, best first: large instruct models that follow the
+    #: grounding rules well, then smaller/faster ones.
+    PREFERRED_MODELS = (
+        'llama-3.3-70b',
+        'llama-3.1-70b',
+        'nemotron',
+        'qwen2.5-coder',
+        'mixtral-8x22b',
+        'llama-3.1-8b',
+    )
+
+    NON_CHAT_MARKERS = RemoteModelResolverMixin.NON_CHAT_MARKERS + (
+        'rerank', 'retrieval', 'ocr', 'vila', 'nvclip', 'parakeet',
+        'riva', 'fastpitch', 'stable-diffusion', 'sdxl', 'segment',
+    )
+
+    def _list_remote_models(self) -> List[str]:
+        """List models this NVIDIA account can call."""
+        response = self.session.get(
+            f"{self.base_url}/models",
+            headers={"Authorization": f"Bearer {self.config.api_key}"},
+            timeout=60,
+        )
+        response.raise_for_status()
+        return [entry["id"] for entry in response.json().get("data", [])]
+
 
 class HuggingFaceClient(BaseLLMClient):
     """Hugging Face Inference API client."""
@@ -1326,6 +1477,8 @@ class LLMFactory:
         'ollama': OllamaClient,
         'groq': GroqClient,
         'gemini': GeminiClient,
+        'openrouter': OpenRouterClient,
+        'nvidia': NvidiaClient,
         'huggingface': HuggingFaceClient
     }
 
@@ -1333,7 +1486,7 @@ class LLMFactory:
     #: Cloud providers lead because they need no local model download and no
     #: GPU; Ollama trails as the offline fallback. Override with
     #: LLM_PROVIDER_ORDER, e.g. "ollama,gemini" to prioritise local inference.
-    DEFAULT_PROVIDER_ORDER = ('groq', 'gemini', 'ollama')
+    DEFAULT_PROVIDER_ORDER = ('groq', 'gemini', 'openrouter', 'nvidia', 'ollama')
 
     @classmethod
     def provider_order(cls) -> List[str]:
@@ -1359,6 +1512,8 @@ class LLMFactory:
             'openai': 'OPENAI_API_KEY',
             'groq': 'GROQ_API_KEY',
             'gemini': 'GEMINI_API_KEY',
+            'openrouter': 'OPENROUTER_API_KEY',
+            'nvidia': 'NVIDIA_API_KEY',
             'huggingface': 'HUGGINGFACE_API_KEY',
         }.get(provider)
         return bool(key_env and os.getenv(key_env))
@@ -1421,6 +1576,9 @@ class LLMFactory:
             'groq': os.getenv('GROQ_MODEL', 'openai/gpt-oss-120b'),
             # gemini-2.0-flash is on the free tier and fast enough for chat.
             'gemini': os.getenv('GEMINI_MODEL', 'gemini-flash-latest'),
+            # Free tier only; the client refuses any model that costs money.
+            'openrouter': os.getenv('OPENROUTER_MODEL', 'openai/gpt-oss-20b:free'),
+            'nvidia': os.getenv('NVIDIA_MODEL', 'meta/llama-3.3-70b-instruct'),
             'huggingface': os.getenv('HUGGINGFACE_MODEL', 'meta-llama/Llama-3.1-8B-Instruct')
         }
 
@@ -1439,6 +1597,8 @@ class LLMFactory:
             'groq': os.getenv('GROQ_API_KEY'),
             # GOOGLE_API_KEY is accepted too, matching Google's own tooling.
             'gemini': os.getenv('GEMINI_API_KEY') or os.getenv('GOOGLE_API_KEY'),
+            'openrouter': os.getenv('OPENROUTER_API_KEY'),
+            'nvidia': os.getenv('NVIDIA_API_KEY'),
             'huggingface': os.getenv('HUGGINGFACE_API_KEY')
         }
 
@@ -1493,7 +1653,7 @@ class LLMFactory:
                 ]
                 models.sort(key=lambda m: cls._preference_rank(
                     m, cls.PREFERRED_OLLAMA_MODELS))
-            elif provider in ('groq', 'gemini'):
+            elif provider in ('groq', 'gemini', 'openrouter', 'nvidia'):
                 client = cls.create(provider)
                 models = [
                     m for m in client._list_remote_models()
@@ -1965,7 +2125,7 @@ class FallbackLLMClient(BaseLLMClient):
 
 #: Providers treated as "cloud" for orchestration purposes. These are asked in
 #: parallel; Ollama is held back as the offline last resort.
-CLOUD_PROVIDERS = ('groq', 'gemini')
+CLOUD_PROVIDERS = ('groq', 'gemini', 'openrouter', 'nvidia')
 
 
 def _build_rotating_client(provider: str) -> Optional[BaseLLMClient]:
@@ -1981,6 +2141,8 @@ def _build_rotating_client(provider: str) -> Optional[BaseLLMClient]:
     pinned = {
         'groq': os.getenv('GROQ_MODEL'),
         'gemini': os.getenv('GEMINI_MODEL'),
+        'openrouter': os.getenv('OPENROUTER_MODEL'),
+        'nvidia': os.getenv('NVIDIA_MODEL'),
         'ollama': os.getenv('OLLAMA_MODEL'),
     }.get(provider)
     if pinned:
