@@ -182,11 +182,51 @@ async def health():
 
 @app.get("/api/llm-status")
 async def llm_status():
-    """Check if a local LLM is available via Ollama."""
+    """Report which LLM backends are usable and which one will serve requests.
+
+    Covers every provider rather than only Ollama, so the UI can tell the user
+    that the assistant works via a cloud key even with no local model, instead
+    of showing a bare "Local LLM Not Found".
+    """
     from rag_assistant.llm_config import LLMFactory
 
-    status = LLMFactory.check_ollama_available()
-    return status
+    ollama = LLMFactory.check_ollama_available()
+
+    providers = []
+    for name in LLMFactory.provider_order():
+        configured = LLMFactory.is_configured(name)
+        entry = {
+            "provider": name,
+            "configured": configured,
+            "local": name == "ollama",
+        }
+        if name == "ollama":
+            entry["model"] = ollama.get("model", "")
+            entry["models"] = ollama.get("models", [])
+            entry["error"] = ollama.get("error", "")
+        elif configured:
+            entry["model"] = {
+                "groq": settings.GROQ_MODEL,
+                "gemini": settings.GEMINI_MODEL,
+                "openai": settings.OPENAI_MODEL,
+                "huggingface": settings.HUGGINGFACE_MODEL,
+            }.get(name, "")
+        providers.append(entry)
+
+    active = next((p for p in providers if p["configured"]), None)
+
+    return {
+        # Kept for backward compatibility with the existing frontend, which
+        # reads these top-level Ollama fields.
+        **ollama,
+        "available": bool(active),
+        "active_provider": active["provider"] if active else "",
+        "active_model": active.get("model", "") if active else "",
+        "is_local": active["local"] if active else False,
+        "fallback_enabled": settings.LLM_FALLBACK,
+        "providers": providers,
+        "ollama": ollama,
+    }
 
 
 @app.get("/api/logs")

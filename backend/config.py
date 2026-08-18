@@ -36,22 +36,57 @@ class Settings(BaseSettings):
 
     # Vector DB
     CHROMA_PERSIST_DIR: str = str(DATA_DIR / "chroma")
+    # Must match what the RAG package reads. A mismatch between the collection
+    # written at index time and the one queried at retrieval time makes the
+    # assistant silently retrieve nothing.
     CHROMA_COLLECTION: str = "cve_knowledge"
 
-    # LLM Provider (ollama or groq)
-    LLM_PROVIDER: str = "ollama"
+    # LLM Provider: auto | groq | gemini | ollama | openai | huggingface
+    # "auto" picks the first provider in LLM_PROVIDER_ORDER that is configured.
+    LLM_PROVIDER: str = "auto"
+    LLM_PROVIDER_ORDER: str = "groq,gemini,ollama"
+    # Fall through to the next provider when one is rate-limited or offline.
+    LLM_FALLBACK: bool = True
 
-    # Ollama Local LLM
+    # Generation tuning
+    LLM_TEMPERATURE: float = 0.1
+    LLM_MAX_TOKENS: int = 2000
+    LLM_CONTEXT_WINDOW: int = 8192
+    LLM_TIMEOUT: int = 180
+    # Reasoning models spend their token budget on chain-of-thought and can
+    # return an empty answer; disabled by default.
+    LLM_THINKING: bool = False
+
+    # Ollama Local LLM (offline fallback).
+    # Empty OLLAMA_MODEL means auto-select the best installed local model.
     OLLAMA_BASE_URL: str = "http://localhost:11434"
-    OLLAMA_MODEL: str = "qwen2.5-coder:7b"
+    OLLAMA_MODEL: str = ""
+    OLLAMA_EMBEDDING_MODEL: str = "nomic-embed-text"
 
-    # Groq API
+    # Groq API (free tier) — https://console.groq.com/keys
     GROQ_API_KEY: str = ""
-    GROQ_MODEL: str = "llama-3.1-70b-versatile"
+    GROQ_MODEL: str = "openai/gpt-oss-120b"
 
-    # Embedding (local)
+    # Google Gemini API (free tier) — https://aistudio.google.com/apikey
+    GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-flash-latest"
+
+    # OpenAI / HuggingFace (optional)
+    OPENAI_API_KEY: str = ""
+    OPENAI_MODEL: str = "gpt-4o"
+    HUGGINGFACE_API_KEY: str = ""
+    HUGGINGFACE_MODEL: str = ""
+
+    # Embedding (local by default, so the corpus never leaves the machine)
+    EMBEDDING_PROVIDER: str = "local"
     USE_LOCAL_EMBEDDINGS: bool = True
     LOCAL_EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
+
+    # Retrieval tuning
+    RAG_SCORE_THRESHOLD: float = 0.25
+    RAG_OVERFETCH: int = 4
+    RAG_CONTEXT_BUDGET: int = 6000
+    RAG_HISTORY_BUDGET: int = 2000
 
     # CORS - support environment override with comma-separated list
     # Set CORS_ORIGINS env var with comma-separated URLs
@@ -74,6 +109,9 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
+        # Ignore unrecognised keys instead of refusing to start. A stray or
+        # newly added variable in .env should never prevent the app booting.
+        extra = "ignore"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -83,6 +121,48 @@ class Settings(BaseSettings):
             self.CORS_ORIGINS = _parse_cors_origins(env_origins)
         elif self.CORS_ORIGINS_ENV:
             self.CORS_ORIGINS = _parse_cors_origins(self.CORS_ORIGINS_ENV)
+
+        # The rag_assistant package is standalone and reads its configuration
+        # from the environment. Settings loaded from .env land in this object,
+        # not in os.environ, so they are republished here — otherwise the
+        # backend and the RAG package would silently disagree.
+        self._publish_to_environment()
+
+    def _publish_to_environment(self) -> None:
+        """Export settings the standalone rag_assistant package reads."""
+        exported = {
+            "LLM_PROVIDER": self.LLM_PROVIDER,
+            "LLM_PROVIDER_ORDER": self.LLM_PROVIDER_ORDER,
+            "LLM_FALLBACK": "1" if self.LLM_FALLBACK else "0",
+            "LLM_TEMPERATURE": str(self.LLM_TEMPERATURE),
+            "LLM_MAX_TOKENS": str(self.LLM_MAX_TOKENS),
+            "LLM_CONTEXT_WINDOW": str(self.LLM_CONTEXT_WINDOW),
+            "LLM_TIMEOUT": str(self.LLM_TIMEOUT),
+            "LLM_THINKING": "1" if self.LLM_THINKING else "0",
+            "OLLAMA_BASE_URL": self.OLLAMA_BASE_URL,
+            "OLLAMA_MODEL": self.OLLAMA_MODEL,
+            "OLLAMA_EMBEDDING_MODEL": self.OLLAMA_EMBEDDING_MODEL,
+            "GROQ_API_KEY": self.GROQ_API_KEY,
+            "GROQ_MODEL": self.GROQ_MODEL,
+            "GEMINI_API_KEY": self.GEMINI_API_KEY,
+            "GEMINI_MODEL": self.GEMINI_MODEL,
+            "OPENAI_API_KEY": self.OPENAI_API_KEY,
+            "OPENAI_MODEL": self.OPENAI_MODEL,
+            "HUGGINGFACE_API_KEY": self.HUGGINGFACE_API_KEY,
+            "HUGGINGFACE_MODEL": self.HUGGINGFACE_MODEL,
+            "EMBEDDING_PROVIDER": self.EMBEDDING_PROVIDER,
+            "LOCAL_EMBEDDING_MODEL": self.LOCAL_EMBEDDING_MODEL,
+            "CHROMA_COLLECTION": self.CHROMA_COLLECTION,
+            "VECTOR_STORE_PATH": self.CHROMA_PERSIST_DIR,
+            "RAG_SCORE_THRESHOLD": str(self.RAG_SCORE_THRESHOLD),
+            "RAG_OVERFETCH": str(self.RAG_OVERFETCH),
+            "RAG_CONTEXT_BUDGET": str(self.RAG_CONTEXT_BUDGET),
+            "RAG_HISTORY_BUDGET": str(self.RAG_HISTORY_BUDGET),
+        }
+        for key, value in exported.items():
+            # A real environment variable always wins over the .env file.
+            if value not in ("", None) and not os.environ.get(key):
+                os.environ[key] = str(value)
 
 
 settings = Settings()

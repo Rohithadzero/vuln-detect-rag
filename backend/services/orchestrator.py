@@ -80,6 +80,12 @@ class OrchestratorService:
             # Aggregate
             db_vulns = aggregator_service.aggregate(scan_id, all_vulns)
 
+            # Make the findings answerable by the RAG assistant. Without this
+            # step the assistant can only discuss the static CVE bundle and is
+            # blind to the scan the user just ran.
+            self._update_scan(scan_id, progress=90, current_scanner="indexing")
+            await self._index_results(scan_id, target, db_vulns)
+
             # Compute stats
             severity_counts = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0}
             total_cvss = 0.0
@@ -112,6 +118,34 @@ class OrchestratorService:
                 status="failed",
                 error_message=traceback.format_exc(),
                 current_scanner="",
+            )
+
+    async def _index_results(self, scan_id: int, target: str, db_vulns: list):
+        """Embed scan findings into the vector store, off the event loop.
+
+        Embedding is CPU-bound and slow enough to stall the async loop, so it
+        runs in the executor. Indexing failure must never fail the scan: the
+        results are already persisted, so this is a best-effort enrichment.
+        """
+        if not db_vulns:
+            return
+        try:
+            from services.rag_engine import rag_engine
+
+            loop = asyncio.get_event_loop()
+            added = await loop.run_in_executor(
+                self.executor,
+                rag_engine.index_scan_results,
+                scan_id,
+                target,
+                db_vulns,
+            )
+            logger.info("Indexed %d scan-result chunks for scan %d", added, scan_id)
+        except Exception:
+            logger.exception(
+                "Failed to index scan %d into the vector store; scan results are "
+                "still saved but the RAG assistant will not see them",
+                scan_id,
             )
 
     def create_scan(self, target: str, scanners: list[str]) -> ScanDB:
