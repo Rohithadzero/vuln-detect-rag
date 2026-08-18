@@ -32,9 +32,10 @@ Retrieved documents are partitioned into shards and each shard is sent to a
 Consequences, in the order they matter here:
 
 1. **Rate limiting.** Each provider sees roughly ``context / N`` tokens rather
-   than the whole context, and the work is spread across N independent quotas.
-   Compared with the broadcast ensemble that is an ``N^2`` reduction in tokens
-   charged against any single provider's limit.
+   than the whole context. Against the broadcast ensemble that is an ``N``-fold
+   reduction in tokens charged to any single provider (``C`` -> ``C/N``), and
+   an ``N``-fold reduction in total tokens per question (``N*C`` -> ``C``, plus
+   one small reduce call). Linear in the provider count, not quadratic.
 
 2. **Hallucination.** Each map call reads a handful of documents with one
    instruction — extract what is here, say NOTHING_RELEVANT if the answer is

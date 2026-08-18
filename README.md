@@ -143,9 +143,11 @@ documents support, or reply `NOTHING_RELEVANT`* — and a small **reduce** call
 merges the extracts into the final answer.
 
 - **Rate limiting** — each provider is charged for roughly `context / N` tokens
-  instead of the whole context, and the work is spread across N independent
-  quotas. Against the broadcast ensemble that is an `N²` reduction in tokens
-  billed to any single provider.
+  instead of the whole context. Against the broadcast ensemble that is an
+  `N`-fold reduction in tokens billed to any single provider (`C` → `C/N`), and
+  an `N`-fold reduction in total tokens spent per question (`N·C` → `C`, plus
+  one small reduce call). The saving is linear in the provider count, not
+  quadratic.
 - **Hallucination** — extraction over a handful of documents is a far easier
   task to do faithfully than open-ended synthesis over a wall of text, and the
   reduce step **never sees raw retrieved text at all**. It only sees extracts
