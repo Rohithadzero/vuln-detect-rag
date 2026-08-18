@@ -453,58 +453,77 @@ question set is needed before any claim of correctness.
 
 Run your own: `python scripts/run_eval.py --ablation --limit 20`
 
-### Sharded reading — observed behaviour
+### Sharded reading vs. broadcast — measured
 
-The sharded path is new in this release and has **not yet been run through the
-ablation harness**, so there is no measured token-cost comparison against the
-broadcast ensemble to report here. What follows is a two-query trace, included
-because it shows the mechanism working, not as a benchmark.
+Produced by `python scripts/run_eval.py --ablation --limit 8 --top-k 6`. The
+`sharded` and `full` arms are a controlled pair: identical retrieval, identical
+documents, identical questions, differing only in `RAG_MAP_REDUCE`.
 
-Six retrieved documents, four configured providers:
+| Metric | Sharded | Broadcast (`full`) | Change |
+|--------|---------|--------------------|--------|
+| **Peak tokens on one provider** | **1,562** | 8,310 | **5.3x lower** |
+| **Mean generation latency** | **7.3 s** | 43.0 s | **5.9x faster** |
+| Providers used per query | 2.86 | 1.00 | — |
+| Fabricated CVE IDs | 0 | 0 | tied |
+| CVE fidelity | 0.9375 | 0.9375 | tied |
+| Correct refusals (of 5) | **5** | 4 | +1 |
+| Grounding support rate | 0.9524 | 1.0000 | −0.05 |
+| ROUGE (mean) | 0.2501 | 0.3001 | −0.05 |
+| BLEU (mean) | 0.1062 | 0.1543 | −0.05 |
 
-| Question | Shards | Providers that read them | Shards with content | Claims verified |
-|----------|--------|--------------------------|--------------------|-----------------|
-| "What is Log4Shell and how do I fix it?" | 3 | Groq | 1 of 3 | 3/3 supported |
-| "List the critical vulnerabilities and their CVSS scores." | 3 | Gemini + Groq + OpenRouter | 3 of 3 | 9/9 supported |
+**What this does and does not show.**
 
-Three things in that trace are the design working as intended:
+The cost result is solid and reproducible: two independent runs measured 5.20x
+and 5.32x lower peak per-provider load. That is the claim this design was built
+to support, and the latency gap has the same cause — broadcast hits all four
+providers with the full context at once, so they rate-limit together and the
+rotator then walks entire model catalogues. One broadcast query took nine
+minutes. No sharded query ever fell back.
 
-- The second question genuinely needed evidence from every shard, and three
-  different providers supplied it **concurrently**, each reading ~2 KB rather
-  than the full ~6 KB context.
-- The first question needed only one document. The other two shards returned
-  `NOTHING_RELEVANT` and were dropped, so irrelevant text never reached the
-  reduce step — an answer narrowed by the evidence rather than padded to fill
-  the context.
-- Gemini's pinned model returned a 503 (and, on a later run, a free-tier rate
-  limit) and the client rotated to the next model in its catalogue without
-  failing the query.
+**Sharding did not reduce hallucination.** Both arms fabricated zero CVE IDs on
+answerable questions and scored identical CVE fidelity. Sharded refused one more
+control question; broadcast scored one point higher on grounding support. These
+differences are single-question artefacts on a 21-question set, not effects.
+Retrieval had already taken fabrication to the floor, leaving no headroom for the
+reading strategy to improve on — the hallucination result belongs to retrieval
+and verification, not to sharding.
 
-Both answers passed grounding verification with no fabricated identifiers,
-scores, or citations. **Two queries prove a mechanism runs; they do not measure
-a hallucination rate.** The honest comparison — sharded vs. broadcast vs.
-no-RAG, over the full question set, with tokens billed per provider — is the
-next piece of work, and is what belongs in the paper.
+Sharded trails broadcast by about 0.05 on ROUGE and BLEU. Since references are
+drawn from the corpus, that measures how much source wording survives, and the
+map step's `NOTHING_RELEVANT` filter deliberately discards documents rather than
+paraphrasing them, which lowers overlap. Treat it as a difference in verbosity,
+not accuracy.
 
-Running the baseline for comparison surfaced a fault that had been latent in
-the parallel orchestration all along. NVIDIA's endpoint became unreachable and
-blocked for its full 180-second HTTP read timeout **without ever raising**;
-`as_completed(timeout=…)` then raised out of the collection loop and the
-executor's context manager blocked on shutdown waiting for that same stuck
-thread. One slow provider therefore discarded the answers of the three that had
-already responded and dropped the query to local Ollama. Both the ensemble and
-the map phase now catch that timeout and proceed with whatever arrived —
-`continuing with 3 of 4 providers (stalled: nvidia)` — and the map phase is
-capped below the HTTP read timeout so an unreachable host is abandoned rather
-than waited out. **A baseline that silently degrades to a different model
-produces invalid comparison data**, which is why this mattered enough to fix
-before measuring anything.
+> **Threat to validity, stated up front:** each provider rotates across its model
+> catalogue on rate limits, so the two arms are not guaranteed to be served by
+> the same model. Answer-quality deltas between them are therefore **not** cleanly
+> attributable to the reading strategy. Only the token distribution is a
+> controlled measurement.
 
-> A verifier bug found during this trace is worth recording: several models
-> format identifiers with non-breaking hyphens (`CVE‑2021‑44228`), which
-> matched no pattern, so the verifier reported a clean answer because it had
-> silently checked *nothing*. Dash normalisation now runs before matching. A
-> verification step that cannot fail loudly is worse than none.
+Two bugs found while running this comparison are worth recording, because both
+made the system look worse than it was:
+
+> **The verifier was checking nothing.** Several models format identifiers with
+> non-breaking hyphens (`CVE‑2021‑44228`), which matched no pattern, so every
+> answer was reported clean. `claims_checked: 0` was the only tell. Dash
+> normalisation now runs before matching. A verification step that cannot fail
+> loudly is worse than none.
+
+> **The fabrication metric counted correct refusals.** Answering "CVE-2019-0708
+> is not in the knowledge base" names the identifier, which scored as an
+> invention — penalising exactly the behaviour the grounding rules exist to
+> produce. Identifiers named in the question are now excluded from the check.
+
+Running the baseline also surfaced a fault latent in the parallel orchestration
+all along. NVIDIA's endpoint became unreachable and blocked for its full
+180-second read timeout **without ever raising**; `as_completed(timeout=…)` then
+raised out of the collection loop and the executor's context manager blocked on
+shutdown waiting for that same stuck thread. One slow provider discarded the
+answers of three that had already responded and dropped the query to local
+Ollama. Both the ensemble and the map phase now catch that timeout and proceed
+with whatever arrived, and the map phase is capped below the HTTP read timeout.
+A baseline that silently degrades to a different model produces invalid
+comparison data, which is why this was fixed before measuring anything.
 
 ## License
 
