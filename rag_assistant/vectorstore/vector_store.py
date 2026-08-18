@@ -163,13 +163,23 @@ class ChromaVectorStore(BaseVectorStore):
             try:
                 import chromadb
 
+                # Chroma posts anonymised usage events to its own endpoint by
+                # default. This is a vulnerability platform whose operators are
+                # told the datastore makes no outbound calls, so the dependency's
+                # default is switched off rather than documented as an exception.
+                telemetry_off = chromadb.config.Settings(anonymized_telemetry=False)
+
                 remote_host = os.getenv('CHROMA_HOST')
                 if remote_host:
-                    self._client = chromadb.HttpClient(host=remote_host, port=self.port)
+                    self._client = chromadb.HttpClient(
+                        host=remote_host, port=self.port, settings=telemetry_off,
+                    )
                     logger.info("Using remote ChromaDB at %s:%s", remote_host, self.port)
                 else:
                     os.makedirs(self.persist_directory, exist_ok=True)
-                    self._client = chromadb.PersistentClient(path=self.persist_directory)
+                    self._client = chromadb.PersistentClient(
+                        path=self.persist_directory, settings=telemetry_off,
+                    )
                     logger.info("Using persistent ChromaDB at %s", self.persist_directory)
             except ImportError:
                 logger.error("ChromaDB package not installed")
