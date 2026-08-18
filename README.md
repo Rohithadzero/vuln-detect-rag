@@ -1,6 +1,6 @@
 # Centralized Vulnerability Detection & Intelligent Query (RAG)
 
-![Version](https://img.shields.io/badge/version-v4.0-blue.svg)
+![Version](https://img.shields.io/badge/version-v4.1-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)
 ![Node](https://img.shields.io/badge/node-18.x-lightgrey.svg)
@@ -73,6 +73,39 @@ The AI layer **splits the retrieved evidence across four free cloud providers** 
               ▼
   Plain-language briefing, with verified [Doc N] citations
 ```
+
+## What's New in v4.1
+
+A dependency pin silently disabled the knowledge base.
+
+`requirements.txt` allowed `chromadb<1.0.0`, so a fresh environment installed
+0.6.3. The store in `backend/data/chroma` had been written by a 1.x client: its
+collection row carries an empty `config_json_str` at schema migration 18, while
+the 0.x loader requires a legacy `_type` key. Every read raised
+`KeyError: '_type'`.
+
+The data was never lost — all 190 embeddings sat intact on disk the entire time.
+The client simply could not open them, so retrieval returned zero documents and
+the assistant answered from the model's own memory. That is precisely the
+failure this project exists to prevent, and it presented as a working app.
+
+The pin now requires `chromadb>=1.0.0,<2.0.0`, which reads the existing
+directory unchanged. Nothing was migrated or deleted.
+
+### The seeder was reporting success it had not achieved
+
+`scripts/seed_cve_data.py` called `index_cves()`, discarded the count it
+returned, and printed `len(cve_entries)` unconditionally. A run in which every
+single write failed still finished with `Indexed 50 entries into ChromaDB`
+directly beneath the errors that had just scrolled past.
+
+It now prints the count `index_cves` actually returned, and exits non-zero when
+that count is zero — a state both launchers already surface as a warning that
+the assistant has no corpus to retrieve from.
+
+The general lesson is the same one the grounding verifier taught in v4.0: a
+check that cannot report failure is worse than no check, because it converts an
+outage into a false assurance.
 
 ## What's New in v4.0
 

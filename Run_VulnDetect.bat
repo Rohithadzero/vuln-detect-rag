@@ -1,6 +1,6 @@
 @echo off
 setlocal enabledelayedexpansion
-title VulnDetectRAG v4.0 Startup
+title VulnDetectRAG v4.1 Startup
 color 0b
 
 :: Always operate from the repository root, whatever directory the user
@@ -13,7 +13,7 @@ set "FRONTEND_PORT=5173"
 set "VENV_PY=%~dp0backend\venv\Scripts\python.exe"
 
 echo ===================================================
-echo    VulnDetectRAG v4.0 - Vulnerability Intelligence Platform
+echo    VulnDetectRAG v4.1 - Vulnerability Intelligence Platform
 echo.
 echo    Network      : Nmap, Nuclei, OpenVAS
 echo    Web          : OWASP ZAP, Nikto, testssl/sslyze, WhatWeb
@@ -185,7 +185,7 @@ start http://localhost:%FRONTEND_PORT%
 
 echo.
 echo ===================================================
-echo    VulnDetectRAG v4.0 is running.
+echo    VulnDetectRAG v4.1 is running.
 echo.
 echo    Frontend : http://localhost:%FRONTEND_PORT%
 echo    Backend  : http://%BACKEND_HOST%:%BACKEND_PORT%

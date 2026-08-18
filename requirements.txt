@@ -1,5 +1,5 @@
 # ==========================================
-# VulnDetectRAG v3.5 - Python Dependencies
+# VulnDetectRAG v4.1 - Python Dependencies
 # ==========================================
 #
 # System Requirements:

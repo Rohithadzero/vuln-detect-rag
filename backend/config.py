@@ -28,7 +28,7 @@ def _parse_cors_origins(origins_str: str | None) -> list[str]:
 
 class Settings(BaseSettings):
     APP_NAME: str = "VulnDetectRAG"
-    APP_VERSION: str = "4.0.0"
+    APP_VERSION: str = "4.1.0"
     DEBUG: bool = False
 
     # Database - use absolute path with forward slashes for SQLite
