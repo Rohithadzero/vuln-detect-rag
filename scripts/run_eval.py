@@ -15,11 +15,20 @@ different numbers, which is the property that makes it an experiment.
 
 Conditions (ablation)
 ---------------------
-  full       Retrieval + generation. The system as shipped.
+  sharded    Retrieval + generation, with the retrieved documents split across
+             the cloud providers (map-reduce). The system as shipped.
+  full       Retrieval + generation, with one provider reading the whole
+             context in a single call. The pre-sharding behaviour, kept as the
+             comparison baseline for what sharding changes.
   no_rag     Generation only, retrieval disabled. Isolates how much the
              retrieval layer contributes versus the model's parametric memory.
   retrieval  Retrieval only, no LLM call. Fast, deterministic, and enough to
              measure the retriever on its own.
+
+`sharded` and `full` differ ONLY in how the retrieved context is delivered to
+the models: identical retrieval, identical documents, identical questions. Any
+difference between them is attributable to the reading strategy, which is what
+makes the pair a controlled comparison rather than two unrelated runs.
 
 Metrics
 -------
@@ -30,6 +39,12 @@ Groundedness citation rate, and CVE fidelity: does every CVE ID in the answer
 Refusal      on control questions about CVEs deliberately absent from the
              corpus, does the system correctly decline instead of hallucinating?
 Cost         per-query retrieval and generation latency, and token counts.
+Rate limit   tokens charged to the single busiest provider per question. Free
+             tiers are spent per provider, so the aggregate hides the only
+             quantity that can actually trip a limit.
+Verification the deterministic grounding check applied to each answer:
+             fabricated CVE/CWE IDs, fabricated CVSS scores, and citations to
+             documents that were never supplied.
 
 Known limitations — state these in the paper
 --------------------------------------------
@@ -51,7 +66,8 @@ Known limitations — state these in the paper
 Usage
 -----
     python scripts/run_eval.py                       # full, 10 questions
-    python scripts/run_eval.py --ablation            # all three conditions
+    python scripts/run_eval.py --ablation            # all four conditions
+    python scripts/run_eval.py --condition sharded   # sharded reading only
     python scripts/run_eval.py --limit 25 --repeats 3
     python scripts/run_eval.py --condition retrieval # retrieval only, no LLM
 """
@@ -202,10 +218,22 @@ def build_control_set(corpus: list[dict]) -> list[dict]:
     return controls
 
 
+#: Which conditions drive the generation pipeline (as opposed to retrieval
+#: only), and what each sets RAG_MAP_REDUCE to. `sharded` and `full` are the
+#: controlled pair: same retrieval, same documents, different delivery.
+SHARDING_BY_CONDITION = {"sharded": "1", "full": "0"}
+
+
 def run_condition(pipeline: RAGPipeline, questions: list[dict],
                   condition: str, top_k: int) -> list[dict]:
     """Execute every question under one experimental condition."""
     records = []
+
+    # Set before the first query, not per query: map_reduce_enabled() reads the
+    # environment on every call, so the condition must own this for the whole
+    # run or the two arms of the comparison contaminate each other.
+    if condition in SHARDING_BY_CONDITION:
+        os.environ["RAG_MAP_REDUCE"] = SHARDING_BY_CONDITION[condition]
 
     for index, item in enumerate(questions, 1):
         print(f"  [{index}/{len(questions)}] {item['id']} ...", end="", flush=True)
@@ -262,13 +290,28 @@ def run_condition(pipeline: RAGPipeline, questions: list[dict],
                     "error": result.error,
                 })
 
-            else:  # full
+            else:  # sharded or full — identical except for RAG_MAP_REDUCE
                 response = pipeline.query(
                     RAGQuery(question=item["question"], top_k=top_k,
                              conversation_history=False)
                 )
                 meta = response.metadata
+                reading = meta.get("reading_strategy") or {}
+                grounding_report = meta.get("grounding") or {}
                 record.update({
+                    "reading_strategy": reading.get("strategy"),
+                    "shards": reading.get("shards", 0),
+                    "shards_with_content": reading.get("shards_with_content", 0),
+                    "map_providers": reading.get("map_providers") or [],
+                    "tokens_by_provider": reading.get("tokens_by_provider") or {},
+                    "peak_provider_tokens": reading.get("peak_provider_tokens", 0),
+                    "fell_back": reading.get("fell_back_to_single_call", False),
+                    "verified_clean": grounding_report.get("clean"),
+                    "verified_support_rate": grounding_report.get("support_rate"),
+                    "verified_claims": grounding_report.get("claims_checked", 0),
+                    "unsupported_cves": grounding_report.get("unsupported_cves") or [],
+                    "unsupported_scores": grounding_report.get("unsupported_scores") or [],
+                    "invalid_citations": grounding_report.get("invalid_citations") or [],
                     "answer": response.answer,
                     "grounded": response.grounded,
                     "retrieved_cves": [
@@ -392,7 +435,81 @@ def score_records(records: list[dict]) -> dict:
         "failures": sum(1 for r in records if r.get("error")),
     }
 
+    # --- Rate-limit pressure ----------------------------------------------
+    # Free tiers are spent per provider, so the total across the pipeline is
+    # not the quantity that trips a limit. What matters is the peak charged to
+    # any single endpoint for one question.
+    generated = [r for r in records if r.get("answer")]
+    if generated:
+        peaks, spread = [], []
+        for record in generated:
+            by_provider = record.get("tokens_by_provider") or {}
+            if by_provider:
+                peaks.append(max(by_provider.values()))
+                spread.append(len(by_provider))
+            else:
+                # Single-call conditions bill one provider for everything.
+                total = (record.get("prompt_tokens") or 0) +                         (record.get("completion_tokens") or 0)
+                if total:
+                    peaks.append(total)
+                    spread.append(1)
+        if peaks:
+            metrics["rate_limit"] = {
+                "mean_peak_provider_tokens": round(statistics.fmean(peaks), 1),
+                "max_peak_provider_tokens": max(peaks),
+                "mean_providers_per_query": round(statistics.fmean(spread), 2),
+                "n": len(peaks),
+            }
+
+    # --- Deterministic grounding verification ------------------------------
+    verified = [r for r in generated if r.get("verified_support_rate") is not None]
+    if verified:
+        metrics["verification"] = {
+            "mean_support_rate": round(
+                statistics.fmean(r["verified_support_rate"] for r in verified), 4
+            ),
+            "answers_fully_supported": sum(
+                1 for r in verified if r.get("verified_clean")
+            ),
+            "answers_checked": len(verified),
+            "total_claims_checked": sum(
+                r.get("verified_claims", 0) for r in verified
+            ),
+            "fabricated_cve_ids": sum(
+                len(r.get("unsupported_cves") or []) for r in verified
+            ),
+            "fabricated_cvss_scores": sum(
+                len(r.get("unsupported_scores") or []) for r in verified
+            ),
+            "citations_to_missing_docs": sum(
+                len(r.get("invalid_citations") or []) for r in verified
+            ),
+        }
+
+    # --- Sharding behaviour -------------------------------------------------
+    sharded = [r for r in generated if r.get("reading_strategy") == "sharded"]
+    if sharded:
+        metrics["sharding"] = {
+            "queries_sharded": len(sharded),
+            "queries_generated": len(generated),
+            "mean_shards": round(
+                statistics.fmean(r.get("shards", 0) for r in sharded), 2
+            ),
+            "mean_shards_with_content": round(
+                statistics.fmean(r.get("shards_with_content", 0) for r in sharded), 2
+            ),
+            "fell_back_to_single_call": sum(
+                1 for r in generated if r.get("fell_back")
+            ),
+            "distinct_providers_seen": sorted({
+                p for r in sharded for p in (r.get("map_providers") or [])
+            }),
+        }
+
     return metrics
+
+
+NL = chr(10)
 
 
 def print_report(all_metrics: dict, environment: dict) -> None:
@@ -442,12 +559,62 @@ def print_report(all_metrics: dict, environment: dict) -> None:
             print(f"  Refusal      correct={f['correct_refusals']}/"
                   f"{f['control_questions']}  "
                   f"hallucinated={f['hallucinated_answers']}")
+        if "verification" in metrics:
+            v = metrics["verification"]
+            print(f"  Verified     support_rate={v['mean_support_rate']:.4f}  "
+                  f"clean={v['answers_fully_supported']}/{v['answers_checked']}  "
+                  f"fake_cves={v['fabricated_cve_ids']}  "
+                  f"fake_scores={v['fabricated_cvss_scores']}  "
+                  f"bad_cites={v['citations_to_missing_docs']}")
+        if "sharding" in metrics:
+            sh = metrics["sharding"]
+            print(f"  Sharding     {sh['queries_sharded']}/{sh['queries_generated']} "
+                  f"queries split  mean_shards={sh['mean_shards']:.2f}  "
+                  f"with_content={sh['mean_shards_with_content']:.2f}  "
+                  f"fellback={sh['fell_back_to_single_call']}")
+            print(f"               providers: "
+                  f"{', '.join(sh['distinct_providers_seen']) or 'none'}")
+        if "rate_limit" in metrics:
+            rl = metrics["rate_limit"]
+            print(f"  Rate limit   peak_tokens_on_one_provider="
+                  f"{rl['mean_peak_provider_tokens']:.0f} mean / "
+                  f"{rl['max_peak_provider_tokens']} max  "
+                  f"providers/query={rl['mean_providers_per_query']:.2f}")
         c = metrics["cost"]
         print(f"  Cost         retrieval={c['mean_retrieval_ms']:.1f}ms  "
               f"generation={c['mean_generation_ms']:.1f}ms  "
               f"tokens={c['mean_prompt_tokens']:.0f}/"
               f"{c['mean_completion_tokens']:.0f}  "
               f"failures={c['failures']}")
+
+    if "sharded" in all_metrics and "full" in all_metrics:
+        print(NL + "-" * 74)
+        print("  ABLATION: what sharded reading changes")
+        print("  (identical retrieval and documents; only the delivery differs)")
+        print("-" * 74)
+        sh, fu = all_metrics["sharded"], all_metrics["full"]
+        if "rate_limit" in sh and "rate_limit" in fu:
+            a = sh["rate_limit"]["mean_peak_provider_tokens"]
+            b = fu["rate_limit"]["mean_peak_provider_tokens"]
+            ratio = ("%.2fx lower" % (b / a)) if a else "n/a"
+            print(f"  {'Peak tokens/provider':24} sharded={a:.0f}  full={b:.0f}  ({ratio})")
+        for label, key, sub in (
+            ("Mean support rate", "verification", "mean_support_rate"),
+            ("ROUGE mean", "rouge", "mean"),
+            ("BLEU mean", "bleu", "mean"),
+            ("CVE fidelity", "groundedness", "cve_fidelity"),
+        ):
+            if key in sh and key in fu:
+                a, b = sh[key][sub], fu[key][sub]
+                print(f"  {label:24} sharded={a:.4f}  full={b:.4f}  delta={a - b:+.4f}")
+        if "verification" in sh and "verification" in fu:
+            for label, key in (("Fabricated CVE IDs", "fabricated_cve_ids"),
+                               ("Fabricated CVSS scores", "fabricated_cvss_scores")):
+                a, b = sh["verification"][key], fu["verification"][key]
+                print(f"  {label:24} sharded={a}  full={b}  delta={a - b:+d}")
+        print(f"  {'Mean generation ms':24} "
+              f"sharded={sh['cost']['mean_generation_ms']:.0f}  "
+              f"full={fu['cost']['mean_generation_ms']:.0f}")
 
     if "full" in all_metrics and "no_rag" in all_metrics:
         print("\n" + "-" * 74)
@@ -485,6 +652,14 @@ def print_report(all_metrics: dict, environment: dict) -> None:
     print(f"  - The corpus holds {environment['corpus_cves']} CVEs; retrieval")
     print("    scores are optimistic at this scale (few distractors).")
     print("  - Cloud LLM output is non-deterministic; use --repeats for variance.")
+    print("  - Token counts come from each provider's own usage reporting and")
+    print("    are not directly comparable across providers. The peak-provider")
+    print("    figure indicates rate-limit pressure, not exact billing.")
+    print("  - The sharded and full arms may be served by different providers")
+    print("    and models, because each rotates on rate limits. Differences in")
+    print("    ANSWER QUALITY between them are therefore not cleanly")
+    print("    attributable to the reading strategy alone. Only the token")
+    print("    distribution is a controlled measurement.")
     print("=" * 74)
 
 
@@ -496,9 +671,9 @@ def main() -> int:
                         help="Answerable questions to evaluate (default 10)")
     parser.add_argument("--top-k", type=int, default=5,
                         help="Documents to retrieve per query (default 5)")
-    parser.add_argument("--condition", default="full",
-                        choices=["full", "no_rag", "retrieval"],
-                        help="Single condition to run (default full)")
+    parser.add_argument("--condition", default="sharded",
+                        choices=["sharded", "full", "no_rag", "retrieval"],
+                        help="Single condition to run (default sharded)")
     parser.add_argument("--ablation", action="store_true",
                         help="Run all conditions and compare them")
     parser.add_argument("--repeats", type=int, default=1,
@@ -526,7 +701,8 @@ def main() -> int:
     pipeline = get_rag_pipeline("default")
     pipeline.initialize()
 
-    conditions = ["full", "no_rag", "retrieval"] if args.ablation else [args.condition]
+    conditions = (["sharded", "full", "no_rag", "retrieval"]
+                  if args.ablation else [args.condition])
 
     # Reported so a result can be tied to the exact configuration that produced
     # it — without this the numbers are not reproducible.

@@ -1,6 +1,7 @@
 """LLM configuration and factory for multiple providers."""
 
 import os
+import re
 import time
 import logging
 from typing import Optional, Dict, Any, Union, List, Iterator, Callable, Tuple
@@ -8,6 +9,27 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 
 logger = logging.getLogger(__name__)
+
+
+#: Reasoning models wrap their chain-of-thought in <think>...</think> inside the
+#: normal content field. Ollama's structured `thinking` field is handled
+#: separately, but models served over the OpenAI-compatible APIs emit the tags
+#: inline, and an unstripped block puts raw reasoning in front of the user and
+#: drags every text-overlap metric down. Stripping is unconditional: the tags
+#: are never wanted in an answer.
+_THINK_BLOCK = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
+#: An unclosed opener means the budget ran out mid-thought; everything after it
+#: is reasoning, not answer.
+_THINK_OPEN = re.compile(r"<think>.*$", re.DOTALL | re.IGNORECASE)
+
+
+def strip_reasoning(text: str) -> str:
+    """Remove inline chain-of-thought blocks from generated text."""
+    if not text or '<think' not in text.lower():
+        return text
+    cleaned = _THINK_BLOCK.sub("", text)
+    cleaned = _THINK_OPEN.sub("", cleaned)
+    return cleaned.strip()
 
 
 @dataclass
@@ -94,7 +116,7 @@ class BaseLLMClient(ABC):
         try:
             text = self.generate(prompt, system=system, **kwargs)
             return LLMResult(
-                text=text,
+                text=strip_reasoning(text),
                 model=self.config.model,
                 provider=self.config.provider,
                 latency_ms=round((time.perf_counter() - started) * 1000, 1),
@@ -406,7 +428,7 @@ class OllamaClient(BaseLLMClient):
                 )
 
             return LLMResult(
-                text=text,
+                text=strip_reasoning(text),
                 model=self.config.model,
                 provider=self.config.provider,
                 latency_ms=round((time.perf_counter() - started) * 1000, 1),
@@ -780,7 +802,7 @@ class GeminiClient(RemoteModelResolverMixin, BaseLLMClient):
 
         usage = data.get('usageMetadata', {})
         return LLMResult(
-            text=self._extract_text(data),
+            text=strip_reasoning(self._extract_text(data)),
             model=self.config.model,
             provider=self.config.provider,
             latency_ms=round((time.perf_counter() - started) * 1000, 1),
@@ -1034,7 +1056,7 @@ class GroqClient(RemoteModelResolverMixin, BaseLLMClient):
         usage = data.get('usage', {})
         choice = (data.get('choices') or [{}])[0]
         return LLMResult(
-            text=(choice.get('message') or {}).get('content') or "",
+            text=strip_reasoning((choice.get('message') or {}).get('content') or ""),
             model=self.config.model,
             provider=self.config.provider,
             latency_ms=round((time.perf_counter() - started) * 1000, 1),

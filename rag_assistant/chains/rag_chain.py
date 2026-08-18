@@ -431,9 +431,11 @@ Tell the user plainly that the knowledge base has no matching entry, and suggest
                 raise RuntimeError(llm_result.error)
             answer = llm_result.text
 
-            report = self._verify(answer, context, len(blocks), grounded)
+            report = self._verify(answer, context, len(blocks), grounded,
+                                  rag_query.question)
             if report is not None:
-                answer, report = self._repair(answer, context, len(blocks), report)
+                answer, report = self._repair(answer, context, len(blocks),
+                                              report, rag_query.question)
 
             self.conversation_memory.add_message(
                 session_id=session_id,
@@ -599,7 +601,8 @@ Tell the user plainly that the knowledge base has no matching entry, and suggest
     # ------------------------------------------------------------------
 
     def _verify(self, answer: str, context: str, doc_count: int,
-                grounded: bool) -> Optional[grounding.GroundingReport]:
+                grounded: bool,
+                question: str = "") -> Optional[grounding.GroundingReport]:
         """Check the answer's claims against the retrieved text.
 
         Only meaningful when there was context to check against: with retrieval
@@ -609,12 +612,12 @@ Tell the user plainly that the knowledge base has no matching entry, and suggest
         """
         if not (VERIFY_ANSWERS and grounded and context):
             return None
-        report = grounding.verify_answer(answer, context, doc_count)
+        report = grounding.verify_answer(answer, context, doc_count, question)
         logger.info("Grounding check — %s", report.summary())
         return report
 
     def _repair(self, answer: str, context: str, doc_count: int,
-                report: grounding.GroundingReport
+                report: grounding.GroundingReport, question: str = ""
                 ) -> Tuple[str, grounding.GroundingReport]:
         """Strip unsupported claims, or caveat them if that cannot be done.
 
@@ -644,7 +647,8 @@ Tell the user plainly that the knowledge base has no matching entry, and suggest
             logger.warning("Grounding repair failed: %s", e)
             return grounding.annotate(answer, report), report
 
-        recheck = grounding.verify_answer(repaired.text, context, doc_count)
+        recheck = grounding.verify_answer(repaired.text, context, doc_count,
+                                          question)
         logger.info("Grounding recheck after repair — %s", recheck.summary())
 
         # Only accept the rewrite if it actually improved things. A correction

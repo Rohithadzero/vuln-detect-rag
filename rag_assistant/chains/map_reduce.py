@@ -154,9 +154,26 @@ class MapReduceOutcome:
     def providers_used(self) -> List[str]:
         return sorted({e.provider for e in self.extracts if e.useful})
 
+    def tokens_by_provider(self) -> Dict[str, int]:
+        """Tokens each provider was charged for this question.
+
+        The number that actually matters for rate limiting. A provider's free
+        tier is spent per provider, so the aggregate across the pipeline hides
+        the only quantity that can trip a limit: the peak charged to any single
+        endpoint.
+        """
+        totals: Dict[str, int] = {}
+        for extract in self.extracts:
+            spent = (extract.prompt_tokens or 0) + (extract.completion_tokens or 0)
+            totals[extract.provider] = totals.get(extract.provider, 0) + spent
+        return totals
+
     def stats(self) -> Dict[str, Any]:
         """Flat trace for the API response and evaluation records."""
+        per_provider = self.tokens_by_provider()
         return {
+            'tokens_by_provider': per_provider,
+            'peak_provider_tokens': max(per_provider.values(), default=0),
             'shards': len(self.shards),
             'shards_with_content': sum(1 for e in self.extracts if e.useful),
             'shard_failures': sum(1 for e in self.extracts if e.error),

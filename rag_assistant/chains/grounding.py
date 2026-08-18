@@ -172,7 +172,8 @@ def _context_scores(context: str) -> set:
 
 
 def verify_answer(answer: str, context: str,
-                  documents_supplied: int = 0) -> GroundingReport:
+                  documents_supplied: int = 0,
+                  question: str = "") -> GroundingReport:
     """Check an answer's verifiable claims against the retrieved context.
 
     Args:
@@ -180,6 +181,8 @@ def verify_answer(answer: str, context: str,
         context: Concatenated text of every retrieved document, including the
             metadata headers, since a CVSS score often appears only there.
         documents_supplied: How many [Doc N] blocks were given to the model.
+        question: The question that was asked. Identifiers appearing in it are
+            excluded from the fabrication check — see below.
 
     Returns:
         A report listing unsupported claims. An empty report means every
@@ -190,7 +193,18 @@ def verify_answer(answer: str, context: str,
     context = normalize(context)
     haystack = context.upper()
 
+    # Identifiers the question itself named are not fabrications when the
+    # answer repeats them. The correct response to "what is CVE-2019-0708?"
+    # when that CVE is absent from the corpus is to say so BY NAME -- and
+    # counting that as an invented identifier penalises the exact refusal
+    # behaviour the grounding rules are trying to produce. Without this, a
+    # perfectly grounded refusal scores as a hallucination.
+    asked = {m.upper() for m in CVE_PATTERN.findall(normalize(question))}
+    asked |= {m.upper() for m in CWE_PATTERN.findall(normalize(question))}
+
     for cve in dict.fromkeys(m.upper() for m in CVE_PATTERN.findall(answer)):
+        if cve in asked:
+            continue
         report.claims_checked += 1
         if cve in haystack:
             report.claims_supported += 1
@@ -198,6 +212,8 @@ def verify_answer(answer: str, context: str,
             report.unsupported_cves.append(cve)
 
     for cwe in dict.fromkeys(m.upper() for m in CWE_PATTERN.findall(answer)):
+        if cwe in asked:
+            continue
         report.claims_checked += 1
         if cwe in haystack:
             report.claims_supported += 1
