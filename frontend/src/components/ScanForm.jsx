@@ -5,12 +5,21 @@ import { Play, Loader2, Star } from 'lucide-react'
 // scan, whether a tool can actually run. Presenting a simulated scanner as if
 // it were live is the single most misleading thing this UI could do.
 const scanners = [
-  { id: 'nmap', label: 'Nmap', desc: 'Port scanning & service detection', status: 'live', free: true },
-  { id: 'nuclei', label: 'Nuclei', desc: 'Template-based vulnerability scanning', status: 'live', free: true },
-  { id: 'zap', label: 'OWASP ZAP', desc: 'Dynamic application security testing', status: 'live', free: true },
-  { id: 'openvas', label: 'OpenVAS', desc: 'Comprehensive vulnerability assessment', status: 'live', free: true, note: 'Needs a running GVM/openvas stack' },
-  { id: 'burp', label: 'Burp Suite', desc: 'Web application security testing', status: 'licence', free: false, note: 'Requires a Burp Pro licence; Community has no automation API' },
-  { id: 'nessus', label: 'Nessus', desc: 'Enterprise vulnerability scanner', status: 'simulated', free: false, note: 'Simulated - not a live scan' },
+  // Network and web scanning
+  { id: 'nmap', label: 'Nmap', desc: 'Port scanning & service detection', status: 'live', free: true, group: 'Network' },
+  { id: 'nuclei', label: 'Nuclei', desc: 'Template-based vulnerability scanning', status: 'live', free: true, group: 'Network' },
+  { id: 'zap', label: 'OWASP ZAP', desc: 'Dynamic application security testing', status: 'live', free: true, group: 'Web' },
+  { id: 'nikto', label: 'Nikto', desc: 'Web server misconfiguration & outdated software', status: 'live', free: true, group: 'Web' },
+  { id: 'tlsscan', label: 'testssl / sslyze', desc: 'TLS protocols, ciphers & certificate health', status: 'live', free: true, group: 'Web' },
+  { id: 'whatweb', label: 'WhatWeb', desc: 'Technology & version fingerprinting', status: 'live', free: true, group: 'Web' },
+  { id: 'openvas', label: 'OpenVAS', desc: 'Comprehensive vulnerability assessment', status: 'live', free: true, group: 'Network', note: 'Needs a running GVM stack' },
+  // Supply chain
+  { id: 'trivy', label: 'Trivy', desc: 'Containers, dependencies, IaC & secrets', status: 'live', free: true, group: 'Supply chain', note: 'Scans a path or image, not a hostname' },
+  { id: 'osv', label: 'OSV-Scanner', desc: 'Dependency manifests against the OSV database', status: 'live', free: true, group: 'Supply chain', note: 'Scans a project directory' },
+  { id: 'grype', label: 'Grype', desc: 'Container image & filesystem CVE matching', status: 'live', free: true, group: 'Supply chain', note: 'Scans a path or image' },
+  // Commercial
+  { id: 'burp', label: 'Burp Suite', desc: 'Web application security testing', status: 'licence', free: false, group: 'Commercial', note: 'Requires a Burp Pro licence; Community has no automation API' },
+  { id: 'nessus', label: 'Nessus', desc: 'Enterprise vulnerability scanner', status: 'simulated', free: false, group: 'Commercial', note: 'Simulated - free tier is capped at 16 IPs behind registration' },
 ]
 
 const STATUS_STYLES = {

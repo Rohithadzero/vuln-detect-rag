@@ -29,6 +29,7 @@ class BurpScanner(ScannerAdapter):
 
     #: Surfaced through /api/health so the UI can state the prerequisite rather
     #: than presenting Burp as though it were freely runnable.
+    free = False
     requires_licence = True
     licence_note = (
         "Requires a Burp Suite Professional licence with the REST API enabled. "

@@ -14,16 +14,27 @@ from scanners.openvas_scanner import OpenVASScanner
 from scanners.nessus_scanner import NessusScanner
 from scanners.burp_scanner import BurpScanner
 from scanners.zap_scanner import ZAPScanner
+from scanners.web_tools import NiktoScanner, TLSScanner, WhatWebScanner
+from scanners.supply_chain_tools import TrivyScanner, OSVScanner, GrypeScanner
 from services.aggregator import aggregator_service
 
 
 SCANNER_MAP = {
+    # Network and web scanning
     "nmap": NmapScanner,
     "nuclei": NucleiScanner,
     "openvas": OpenVASScanner,
+    "zap": ZAPScanner,
+    "nikto": NiktoScanner,
+    "tlsscan": TLSScanner,
+    "whatweb": WhatWebScanner,
+    # Supply chain: code, dependencies and container images
+    "trivy": TrivyScanner,
+    "osv": OSVScanner,
+    "grype": GrypeScanner,
+    # Commercial tools, retained but not freely runnable
     "nessus": NessusScanner,
     "burp": BurpScanner,
-    "zap": ZAPScanner,
 }
 
 

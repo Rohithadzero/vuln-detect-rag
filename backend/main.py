@@ -161,25 +161,35 @@ async def root():
 
 @app.get("/api/health")
 async def health():
-    from scanners.nmap_scanner import NmapScanner
-    from scanners.nuclei_scanner import NucleiScanner
-    from scanners.openvas_scanner import OpenVASScanner
-    from scanners.nessus_scanner import NessusScanner
-    from scanners.burp_scanner import BurpScanner
-    from scanners.zap_scanner import ZAPScanner
+    from services.orchestrator import SCANNER_MAP
 
-    scanners = {
-        "nmap": NmapScanner().is_available(),
-        "nuclei": NucleiScanner().is_available(),
-        "openvas": OpenVASScanner().is_available(),
-        "nessus": NessusScanner().is_available(),
-        "burp": BurpScanner().is_available(),
-        "zap": ZAPScanner().is_available(),
-    }
+    # Availability is probed per scanner so the UI can distinguish a tool that
+    # will run live from one that will return simulated data.
+    scanners = {}
+    detail = {}
+    for key, scanner_cls in SCANNER_MAP.items():
+        try:
+            instance = scanner_cls()
+            available = instance.is_available()
+        except Exception:
+            logger.exception("Availability check failed for %s", key)
+            available = False
+            instance = None
+
+        scanners[key] = available
+        detail[key] = {
+            "available": available,
+            "free": getattr(scanner_cls, "free", True),
+            "requires_licence": getattr(scanner_cls, "requires_licence", False),
+            "licence_note": getattr(scanner_cls, "licence_note", ""),
+            "install_hint": getattr(instance, "install_hint", "") if instance else "",
+        }
+
     return {
         "status": "healthy",
         "version": settings.APP_VERSION,
         "scanners": scanners,
+        "scanner_detail": detail,
     }
 
 
