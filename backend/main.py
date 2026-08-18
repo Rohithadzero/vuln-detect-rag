@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from pathlib import Path
 
 from config import settings
 from models.database import init_db
@@ -13,10 +14,15 @@ from api.routes_scan import router as scan_router
 from api.routes_rag import router as rag_router
 from api.routes_cve import router as cve_router
 
+# Use absolute path for log file in data directory
+LOG_DIR = Path(__file__).parent / "data"
+LOG_DIR.mkdir(exist_ok=True)
+LOG_FILE = LOG_DIR / "backend.log"
+
 logging.basicConfig(
     level=logging.DEBUG if settings.DEBUG else logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    handlers=[logging.FileHandler("backend.log"), logging.StreamHandler()],
+    handlers=[logging.FileHandler(LOG_FILE), logging.StreamHandler()],
 )
 logger = logging.getLogger("vulndetect")
 
@@ -56,8 +62,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "Accept"],
 )
 
 
@@ -156,12 +162,16 @@ async def health():
     from scanners.nuclei_scanner import NucleiScanner
     from scanners.openvas_scanner import OpenVASScanner
     from scanners.nessus_scanner import NessusScanner
+    from scanners.burp_scanner import BurpScanner
+    from scanners.zap_scanner import ZAPScanner
 
     scanners = {
         "nmap": NmapScanner().is_available(),
         "nuclei": NucleiScanner().is_available(),
         "openvas": OpenVASScanner().is_available(),
         "nessus": NessusScanner().is_available(),
+        "burp": BurpScanner().is_available(),
+        "zap": ZAPScanner().is_available(),
     }
     return {
         "status": "healthy",
@@ -173,11 +183,8 @@ async def health():
 @app.get("/api/llm-status")
 async def llm_status():
     """Check if a local LLM is available via Ollama."""
-    import sys
-    import os
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
     from rag_assistant.llm_config import LLMFactory
-    
+
     status = LLMFactory.check_ollama_available()
     return status
 
@@ -186,13 +193,12 @@ async def llm_status():
 async def get_logs():
     """Retrieve backend logs."""
     try:
-        with open("backend.log", "r") as f:
+        with open(str(LOG_FILE), "r", encoding="utf-8", errors="replace") as f:
             lines = f.readlines()
-        # Return last 500 lines
         return {"logs": "".join(lines[-500:])}
     except Exception as e:
         return {"logs": f"Could not read logs: {e}"}
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=settings.DEBUG)

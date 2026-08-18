@@ -1,52 +1,56 @@
 # ==========================================
-# PRE-PROJECT COMMANDS & SYSTEM REQUIREMENTS
+# VulnDetectRAG v3.5 - Python Dependencies
 # ==========================================
-# 
-# 1. System Requirements:
-#    - Python 3.10+
-#    - Node.js 18.x+
-#    - Nmap (Required for real local scans)
-#    - Nuclei (Required for real local scans)
-#    - Ollama with qwen2.5-coder:7b model (for AI-powered RAG answers)
 #
-# 2. Setup Commands to run before starting:
+# System Requirements:
+#   - Python 3.10+
+#   - Node.js 18.x+
+#   - Nmap (optional, for live scans)
+#   - Nuclei (optional, for live scans)
+#   - Ollama with qwen2.5-coder:7b model (optional, for AI features)
 #
-#    A. Install Ollama & pull model:
-#       ollama pull qwen2.5-coder:7b
+# Quick Setup:
+#   Windows:  Double-click Run_VulnDetect.bat
+#   Linux/Mac: ./Run_VulnDetect.sh
 #
-#    B. Frontend Dependencies:
-#       cd frontend
-#       npm install
-#
-#    C. Backend Environment & Dependencies:
-#       cd backend
-#       python -m venv venv
-#       # Windows: .\venv\Scripts\activate
-#       # Linux/Mac: source venv/bin/activate
-#       pip install -r requirements.txt
-#
-#    D. Data Setup (One-Time):
-#       cd scripts
-#       python seed_cve_data.py
+# Manual Setup:
+#   cd backend
+#   python -m venv venv
+#   source venv/bin/activate  # Windows: .\venv\Scripts\activate
+#   pip install -r requirements.txt
+#   python main.py
 #
 # ==========================================
-# PYTHON LIBRARIES (Backend Dependencies)
-# ==========================================
+
+# Web framework
 fastapi>=0.110.0,<1.0.0
 uvicorn[standard]>=0.27.0,<1.0.0
+
+# Database & validation
 sqlalchemy>=2.0.0,<3.0.0
 pydantic>=2.0.0,<3.0.0
 pydantic-settings>=2.0.0,<3.0.0
 python-dotenv>=1.0.0,<2.0.0
-langchain>=0.2.0,<1.0.0
-langchain-core>=0.2.0,<1.0.0
-langchain-ollama>=0.1.0,<1.0.0
-langchain-community>=0.2.0,<1.0.0
-langchain-huggingface>=0.0.3,<1.0.0
+
+# RAG / AI
+langchain-huggingface>=0.1.0,<1.0.0
+ollama>=0.3.0,<1.0.0
 chromadb>=0.4.0,<1.0.0
-networkx>=3.0,<4.0
 sentence-transformers>=2.2.0,<3.0.0
+
+# Vector store alternatives
+faiss-cpu>=1.7.0,<2.0.0
+numpy>=1.24.0,<2.0.0
+
+# Graph analysis (attack paths)
+networkx>=3.0,<4.0
+
+# NLP evaluation
 nltk>=3.8.0,<4.0.0
-rouge-score>=0.1.2,<1.0.0
+
+# Utilities
 aiofiles>=23.0.0,<24.0.0
 httpx>=0.25.0,<1.0.0
+
+# Security
+defusedxml>=0.7.0,<1.0.0

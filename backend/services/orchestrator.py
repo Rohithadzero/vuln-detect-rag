@@ -12,6 +12,8 @@ from scanners.nmap_scanner import NmapScanner
 from scanners.nuclei_scanner import NucleiScanner
 from scanners.openvas_scanner import OpenVASScanner
 from scanners.nessus_scanner import NessusScanner
+from scanners.burp_scanner import BurpScanner
+from scanners.zap_scanner import ZAPScanner
 from services.aggregator import aggregator_service
 
 
@@ -20,7 +22,18 @@ SCANNER_MAP = {
     "nuclei": NucleiScanner,
     "openvas": OpenVASScanner,
     "nessus": NessusScanner,
+    "burp": BurpScanner,
+    "zap": ZAPScanner,
 }
+
+
+def _run_scanner_sync(scanner, target: str) -> list[ScanVulnerability]:
+    """Wrapper to run scanner scan synchronously in executor."""
+    try:
+        return scanner.scan(target)
+    except Exception:
+        logger.exception("Scanner %s failed", scanner.name)
+        return []
 
 
 class OrchestratorService:
@@ -50,12 +63,17 @@ class OrchestratorService:
                 )
 
                 scanner = scanner_cls()
-                loop = asyncio.get_running_loop()
-                results = await loop.run_in_executor(
-                    self.executor, scanner.scan, target
-                )
-                if isinstance(results, list):
-                    all_vulns.extend(results)
+
+                # Run scanner in thread executor - scanner.scan is synchronous
+                try:
+                    loop = asyncio.get_event_loop()
+                    results = await loop.run_in_executor(
+                        self.executor, _run_scanner_sync, scanner, target
+                    )
+                    if isinstance(results, list):
+                        all_vulns.extend(results)
+                except Exception as e:
+                    logger.warning(f"Scanner {scanner_name} failed: {e}")
 
             self._update_scan(scan_id, progress=80, current_scanner="aggregating")
 

@@ -1,141 +1,187 @@
 # Centralized Vulnerability Detection & Intelligent Query (RAG)
 
-![Version](https://img.shields.io/badge/version-v2.0-blue.svg)
+![Version](https://img.shields.io/badge/version-v3.5-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)
 ![Node](https://img.shields.io/badge/node-18.x-lightgrey.svg)
 ![Platform](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macOS-lightgrey)
 
-A unified vulnerability scanning platform with RAG-powered intelligence across Nmap, OpenVAS, Nessus, and Nuclei, now featuring **100% local, privacy-first AI** via **Ollama**.
+A unified vulnerability scanning platform with RAG-powered intelligence across Nmap, Nuclei, OpenVAS, Nessus, Burp Suite, and OWASP ZAP, featuring **local or cloud AI** via **Ollama** (local) or **Groq** (cloud API).
 
 ## Architecture
 
 ```text
-Frontend (React + Tailwind)  →  FastAPI Backend  →  SQLite + ChromaDB
-                                    ↓
-                        Scanner Adapters (Nmap/Nuclei/OpenVAS/Nessus)
-                                    ↓
-                        RAG Engine (LangChain + Ollama Local LLM)
+Frontend (React + Neobrutalist UI)  →  FastAPI Backend  →  SQLite + ChromaDB
+                                          ↓
+                              Scanner Adapters (Nmap/Nuclei/Burp/ZAP/OpenVAS/Nessus)
+                                          ↓
+                              RAG Engine (LangChain + Ollama/Groq)
 ```
 
-## What's New in v2.0 🚀
+## What's New in v3.5
 
-- **Full Ollama Integration**: We've transitioned to a completely local, privacy-preserving AI architecture. No external API keys or cloud dependencies required. All queries are resolved locally.
-- **Smart Model Auto-Detection**: The backend intelligently detects local LLMs and falls back securely if none are available, maintaining core functionality.
-- **Single-Click Execution**: Introduced `Run_VulnDetect.bat` for seamless startup. It checks dependencies, provisions Python/Node environments, auto-downloads the AI model, and launches both frontend and backend concurrently with one double-click!
-- **Unified RAG Engine**: Consolidated redundant RAG modules into a single, highly-optimized `rag_engine.py` pipeline.
-- **Enhanced Security Auditing**: Fixed crucial backend vulnerabilities, ensuring robust input sanitization, safe DB loading, and rate limiting in APIs.
+- **Neobrutalist UI Redesign**: Complete frontend overhaul with bold neobrutalist design system — black borders, offset shadows, uppercase typography. Includes a Classic/Color theme toggle with gradient glassmorphism mode.
+- **Theme System**: Switch between Classic (clean neobrutalism) and Color (gradient glassmorphism) themes. Preference is persisted to localStorage.
+- **6 Scanner Support**: Added Burp Suite and OWASP ZAP scanner adapters alongside Nmap, Nuclei, OpenVAS, and Nessus. Each scanner supports live execution with automatic mock fallback.
+- **Security Hardening**:
+  - Fixed XML External Entity (XXE) vulnerability in Nmap XML parser (`defusedxml`)
+  - Fixed `/api/logs` endpoint reading wrong file path
+  - Restricted CORS to specific methods and headers (was `["*"]`)
+  - Added target input validation before subprocess execution
+  - Fixed protocol-relative URL bypass in `sanitizeUrl`
+  - Fixed memory leaks from unreleased Blob URLs in export/download
+  - Bound backend to `127.0.0.1` instead of `0.0.0.0` by default
+  - Set `DEBUG=False` by default
+- **Bug Fixes**:
+  - Fixed race condition in scan polling (duplicate `loadAttackPaths` calls)
+  - Fixed null dereference crash when vulnerabilities array is empty
+  - Fixed undefined CSS class `theme-color-surface` in Layout
+  - Fixed theme value injection via localStorage validation
+- **Launcher Script Fixes**:
+  - `Run_VulnDetect.sh`: Fixed 5 unclosed echo strings (critical parse error), fixed double-cd path bug (`backend/backend`), added `SCRIPT_DIR` resolution for reliable paths, added prerequisite hard stops
+  - `Run_VulnDetect.bat`: Added `%~dp0` for reliable path resolution, added prerequisite hard stops with helpful download links, added directory existence checks, added venv creation error handling
+- **Cleaned Dependencies**: Removed 7 unused packages from `requirements.txt` (langchain base, langchain-core, langchain-ollama, langchain-community, rouge-score, pyyaml, pandas). Added `defusedxml` and `ollama`.
 
 <details>
-<summary>Previous Updates (v1.2 & v1.3)</summary>
+<summary>Previous Updates</summary>
 
-- **v1.3**: Migrated to `langchain-huggingface` core embeddings, fixed metrics display errors, dynamic CVE counting, improved type safety, and optimized severity tracking.
-- **v1.2**: Live real-world vulnerability scanning integration (Nmap & Nuclei), CVSS real-time extraction, and full dashboard live data.
+### v2.0
+- Full Ollama Integration with 100% local AI
+- Smart Model Auto-Detection
+- Single-Click Execution via `Run_VulnDetect.bat`
+- Unified RAG Engine
+
+### v1.3
+- Migrated to `langchain-huggingface` core embeddings
+- Fixed metrics display errors, dynamic CVE counting
+
+### v1.2
+- Live Nmap & Nuclei scanning integration
+- CVSS real-time extraction
 </details>
 
 ## Core Features
 
-- **100% Local AI** — Deep dive into vulnerabilities using offline LLMs (via Ollama). No data leaves your machine.
-- **Multi-Scanner Aggregation** — Normalize outputs from Nmap, Nuclei, OpenVAS, and Nessus into a unified CVE/CVSS schema.
-- **Real Vulnerability Scanning** — Run actual live nmap (`-sV -sC --script vulners`) and nuclei scans directly from the UI.
-- **RAG Chat Assistant** — Ask questions about vulnerabilities, exact remediation steps, and exploit techniques based on the NVD dataset.
-- **Attack Path Modeling** — Visualize potential attack chains using interactive graph analysis.
-- **Scan Orchestration** — Launch, monitor, and manage scans against domains/IPs from a beautiful React dashboard.
+- **100% Local AI** — Vulnerability analysis using offline LLMs via Ollama. No data leaves your machine.
+- **6-Scanner Aggregation** — Normalize outputs from Nmap, Nuclei, Burp Suite, OWASP ZAP, OpenVAS, and Nessus into a unified CVE/CVSS schema.
+- **Real Vulnerability Scanning** — Live nmap (`-sV -sC --script vulners`) and nuclei scans directly from the UI.
+- **RAG Chat Assistant** — Ask about CVEs, remediation steps, and exploit techniques. Supports specialized pipelines (remediation, exploit analysis, attack path).
+- **Attack Path Modeling** — Visualize potential attack chains using NetworkX graph analysis.
+- **Neobrutalist UI** — Bold, distinctive interface with theme switching (Classic/Color modes).
+- **CVE Database** — Browse and search 40+ real-world CVEs with severity filtering.
+- **Scan Export** — Download scan results as JSON or CSV.
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
-| **Frontend** | React, Tailwind CSS, Vite, Lucide Icons, Recharts |
-| **Backend**  | FastAPI, SQLAlchemy, Pydantic |
+| **Frontend** | React 18, Tailwind CSS, Vite, Lucide Icons, Recharts |
+| **Backend** | FastAPI, SQLAlchemy, Pydantic v2 |
 | **Database** | SQLite (Scan State), ChromaDB (Vector Search) |
-| **Local AI** | **Ollama** (`qwen2.5-coder:7b`), LangChain, HuggingFace Sentence-Transformers |
-| **Scanners** | Nmap (Live), Nuclei (Live), OpenVAS (Mock), Nessus (Mock) |
+| **AI** | Ollama (`qwen2.5-coder:7b`) or Groq (`llama-3.1-70b-versatile`), LangChain, HuggingFace Sentence-Transformers |
+| **Scanners** | Nmap (Live), Nuclei (Live), Burp Suite (API/CLI/Mock), OWASP ZAP (API/CLI/Mock), OpenVAS (Mock), Nessus (Mock) |
+| **Security** | defusedxml, SSRF prevention, rate limiting, input sanitization |
 | **Graphing** | NetworkX (Attack Path Calculation) |
 
 ## Prerequisites
 
 1. **Python 3.10+** (Added to system PATH)
 2. **Node.js 18+** (Added to system PATH)
-3. **Ollama** — Install from [ollama.com](https://ollama.com/) (Required for local LLM features)
-4. **Nmap** — [nmap.org](https://nmap.org/) (Required for live port & vulnerability scanning)
-5. **Nuclei** — [projectdiscovery/nuclei](https://github.com/projectdiscovery/nuclei/releases) (Required for active exploitation scanning)
+3. **Ollama** — Install from [ollama.com](https://ollama.com/) (Optional, for local AI)
+4. **Groq API Key** — Get from [console.groq.com](https://console.groq.com/) (Optional, for cloud AI)
+5. **Nmap** — [nmap.org](https://nmap.org/) (Optional, for live scanning)
+6. **Nuclei** — [projectdiscovery/nuclei](https://github.com/projectdiscovery/nuclei/releases) (Optional, for active scanning)
 
-> *Note: If Nmap/Nuclei or Ollama are missing, the platform securely falls back to offline mock data and standard dashboard metrics, ensuring it always starts.*
+> *Note: If scanners or Ollama are missing, the platform falls back to mock data. The application always starts. Use Groq for production deployment without local AI setup.*
 
-## Quickstart (The v2.0 Way)
+## Quickstart
 
-The easiest way to fire up the platform on Windows:
+### Windows
 
 1. Clone or extract the repository.
-2. Double-click the **`Run_VulnDetect.bat`** script.
-3. *That's it.* The script will automatically:
-   - Check all prerequisites.
-   - Install Python pip requirements in a virtual environment.
-   - Install Node NPM modules.
-   - Auto-pull the `qwen2.5-coder:7b` Ollama model.
-   - Launch the FastAPI server.
-   - Launch the React Frontend.
-   - Open `http://localhost:5173` in your default browser.
+2. Double-click **`Run_VulnDetect.bat`**.
+3. The script will:
+   - Verify Python and Node.js are installed (aborts with instructions if missing)
+   - Create a Python virtual environment and install dependencies
+   - Install frontend NPM packages
+   - Auto-pull the `qwen2.5-coder:7b` Ollama model (if Ollama is installed)
+   - Launch backend on `http://localhost:8000`
+   - Launch frontend on `http://localhost:5173`
+   - Open the browser automatically
 
-### Manual Setup (Linux / Mac / Advanced)
+### Linux / macOS
 
-If you prefer to start services manually:
+```bash
+chmod +x Run_VulnDetect.sh
+./Run_VulnDetect.sh
+```
+
+The script performs the same steps as the Windows version, with support for GNOME Terminal, xterm, and macOS Terminal.
+
+### Manual Setup
 
 **1. Start the Backend:**
 ```bash
 cd backend
 python -m venv venv
-source venv/bin/activate  # On Windows: .\venv\Scripts\activate
+source venv/bin/activate  # Windows: .\venv\Scripts\activate
 pip install -r requirements.txt
 python main.py
 ```
 
-**2. Start the Frontend:**
+**2. Start the Frontend (in a new terminal):**
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-**3. Configure Scanner Paths (Optional):**
-Edit `backend/.env` if your Nmap or Nuclei executables aren't in your system PATH:
-```env
-NMAP_PATH=C:\Program Files (x86)\Nmap\nmap.exe
-NUCLEI_PATH=C:\tools\nuclei\nuclei.exe
-```
-
-**4. Seed Vulnerability Knowledge Base (One-time):**
-To ensure the RAG assistant answers accurately based on your local database, populate ChromaDB with sample data:
+**3. Seed Vulnerability Knowledge Base (One-time):**
 ```bash
 cd scripts
 python seed_cve_data.py
 ```
 
-## API Architecture Reference
+**4. Configure Scanner Paths (Optional):**
+Edit `backend/.env` if your scanners aren't in system PATH:
+```env
+NMAP_PATH=C:\Program Files (x86)\Nmap\nmap.exe
+NUCLEI_PATH=C:\tools\nuclei\nuclei.exe
+BURP_PATH=/path/to/burp
+ZAP_PATH=/path/to/zap.sh
+```
+
+## API Reference
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/health` | Diagnostic check (Scanners, LLMs, DB checks) |
-| POST | `/api/scans` | Dispatch a new live scan |
-| GET | `/api/scans/{id}` | Query tracking status |
-| GET | `/api/scans/{id}/attack-paths` | Generate graph attack paths |
-| GET | `/api/scans/{id}/export?format=json\|csv` | Export formatted result reports |
-| POST | `/api/rag/chat` | Chat with the context-aware Ollama assistant |
-| GET | `/api/cve/{cve_id}` | Detailed CVE record retrieval |
+| GET | `/api/health` | System diagnostic (scanners, LLM, DB) |
+| GET | `/api/llm-status` | Check Ollama LLM availability |
+| POST | `/api/scans` | Start a new vulnerability scan |
+| GET | `/api/scans/{id}` | Get scan status |
+| GET | `/api/scans/{id}/results` | Get scan vulnerabilities |
+| GET | `/api/scans/{id}/attack-paths` | Get attack path graph |
+| GET | `/api/scans/{id}/export?format=json\|csv` | Export scan results |
+| DELETE | `/api/scans/{id}` | Delete a scan |
+| POST | `/api/rag/chat` | Chat with RAG assistant |
+| GET | `/api/rag/history/{session}` | Get chat history |
+| GET | `/api/rag/sessions` | List chat sessions |
+| GET | `/api/cve/{cve_id}` | Get CVE details |
+| GET | `/api/cve?q=...&severity=...` | Search CVE database |
+| GET | `/api/logs` | View backend logs |
+
+Full API docs available at `http://localhost:8000/docs` when running.
 
 ## Evaluation Results
-
-The integrated evaluation scripts calculate the precision of our Ollama-based RAG pipeline.
 
 | Metric | Score | Note |
 |--------|-------|------|
 | CVE Detection F1 | 0.6667 | Solid entity extraction accuracy |
-| BLEU Score | 0.2102 | Matches reference phrasing contextually |
+| BLEU Score | 0.2102 | Contextual phrasing match |
 | ROUGE Score | 0.4809 | Excellent topical capture |
 
-> Run your own evaluations with `cd scripts && python run_eval.py`. Make sure your Ollama instance is active.
+Run your own evaluations: `cd scripts && python run_eval.py`
 
 ## License
 
-This project is open-sourced under the MIT License - see the [LICENSE](LICENSE) file for complete details.
+MIT License - see [LICENSE](LICENSE) for details.
