@@ -10,7 +10,9 @@ from dataclasses import dataclass, field
 from ..vectorstore.vector_store import get_vector_store, BaseVectorStore, Document, SearchResult
 from ..embeddings.embedding_service import get_embedding_service, EmbeddingService
 from ..memory.conversation_memory import get_conversation_memory, ConversationMemory
-from ..llm_config import get_llm_client, BaseLLMClient
+from ..llm_config import get_llm_client, get_cloud_clients, BaseLLMClient
+from . import grounding
+from .map_reduce import ShardedReader, map_reduce_enabled, MIN_DOCS_TO_SHARD
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +32,14 @@ CONTEXT_CHAR_BUDGET = int(os.getenv('RAG_CONTEXT_BUDGET', '6000'))
 
 #: Character budget for conversation history in the prompt.
 HISTORY_CHAR_BUDGET = int(os.getenv('RAG_HISTORY_BUDGET', '2000'))
+
+#: Verify the finished answer's claims against the retrieved text.
+VERIFY_ANSWERS = os.getenv('RAG_VERIFY', '1').lower() not in ('0', 'false', 'no')
+
+#: Spend one extra LLM call rewriting an answer that asserted facts the context
+#: does not contain. Off makes unsupported claims visible but leaves them in
+#: place; on removes them at the cost of one small request.
+REPAIR_ANSWERS = os.getenv('RAG_VERIFY_REPAIR', '1').lower() not in ('0', 'false', 'no')
 
 
 @dataclass
@@ -112,6 +122,10 @@ Tell the user plainly that the knowledge base has no matching entry, and suggest
         self.conversation_memory = conversation_memory or get_conversation_memory()
 
         self._initialized = False
+        self._sharded_reader: Optional[ShardedReader] = None
+        #: Set once when sharding is ruled out, so the provider list is not
+        #: re-enumerated on every query.
+        self._sharding_unavailable = False
 
     @property
     def llm_client(self) -> BaseLLMClient:
@@ -124,6 +138,49 @@ Tell the user plainly that the knowledge base has no matching entry, and suggest
         if self._llm_client is None:
             self._llm_client = get_llm_client()
         return self._llm_client
+
+    @property
+    def sharded_reader(self) -> Optional[ShardedReader]:
+        """Reader that splits context across providers, if that is possible.
+
+        Requires at least two configured cloud providers: with one there is
+        nothing to spread the load across, and the extra reduce call would cost
+        more than it saves.
+        """
+        if self._sharded_reader is None and not self._sharding_unavailable:
+            try:
+                clients = get_cloud_clients()
+            except Exception as e:
+                logger.warning("Could not enumerate cloud providers: %s", e)
+                clients = []
+            if len(clients) < 2:
+                self._sharding_unavailable = True
+                logger.info(
+                    "Sharded reading disabled: %d cloud provider(s) configured, "
+                    "2 required", len(clients),
+                )
+                return None
+            self._sharded_reader = ShardedReader(
+                clients, fallback=self.llm_client
+            )
+        return self._sharded_reader
+
+    def _reduce_system(self) -> str:
+        """System prompt for the reduce step.
+
+        The pipeline's own persona is kept — a remediation pipeline should
+        still write like one — with a note that it is reading extracts rather
+        than the documents themselves, so it does not claim to have seen text
+        it was never given.
+        """
+        return (
+            self.SYSTEM_PROMPT
+            + "\n\nYou are working from evidence extracted out of the retrieved "
+              "documents by other analysts, not from the documents themselves. "
+              "Preserve the [Doc N] citations exactly as they appear in the "
+              "extracts. If the extracts do not contain a value, say it is not "
+              "available. Never mention extracts or this process."
+        )
 
     def initialize(self) -> bool:
         """Initialize RAG pipeline components.
@@ -354,7 +411,10 @@ Tell the user plainly that the knowledge base has no matching entry, and suggest
             retrieval_ms = round((time.perf_counter() - retrieval_started) * 1000, 1)
 
             grounded = bool(search_results)
-            context = self._build_context(search_results)
+            blocks = self._render_blocks(search_results)
+            context = (
+                "\n".join(["=== RETRIEVED CONTEXT ==="] + blocks) if blocks else ""
+            )
 
             history = []
             if rag_query.conversation_history:
@@ -364,12 +424,16 @@ Tell the user plainly that the knowledge base has no matching entry, and suggest
 
             prompt = self._build_prompt(rag_query.question, context, history, grounded)
 
-            llm_result = self.llm_client.generate_detailed(
-                prompt, system=self.SYSTEM_PROMPT
+            llm_result, read_stats = self._generate(
+                rag_query.question, blocks, prompt, history, grounded
             )
             if llm_result.error:
                 raise RuntimeError(llm_result.error)
             answer = llm_result.text
+
+            report = self._verify(answer, context, len(blocks), grounded)
+            if report is not None:
+                answer, report = self._repair(answer, context, len(blocks), report)
 
             self.conversation_memory.add_message(
                 session_id=session_id,
@@ -410,6 +474,8 @@ Tell the user plainly that the knowledge base has no matching entry, and suggest
                     'llm_provider': llm_result.provider,
                     'llm_model': llm_result.model,
                     'top_score': round(search_results[0].score, 4) if search_results else 0.0,
+                    'reading_strategy': read_stats,
+                    'grounding': report.as_dict() if report else None,
                 }
             )
 
@@ -465,22 +531,146 @@ Tell the user plainly that the knowledge base has no matching entry, and suggest
         return response.answer
 
     # ------------------------------------------------------------------
+    # Generation
+    # ------------------------------------------------------------------
+
+    def _generate(self, question: str, blocks: List[str], prompt: str,
+                  history: List[Dict[str, Any]],
+                  grounded: bool) -> Tuple[Any, Dict[str, Any]]:
+        """Produce the answer, sharding the context when that is worthwhile.
+
+        Two strategies:
+
+        ``sharded``  Documents are split across the configured cloud providers,
+            each reads only its own slice, and a small reduce call merges the
+            extracts. Each provider is charged for a fraction of the context
+            instead of all of it, so the free-tier quotas last far longer, and
+            each model reads few enough documents to attend to all of them.
+
+        ``single``   One provider reads everything. Used when retrieval is off,
+            when there are too few documents for splitting to pay for its
+            reduce call, or when fewer than two cloud providers are configured.
+
+        Returns:
+            The LLM result and a trace of which strategy ran.
+        """
+        reader = self.sharded_reader if (
+            grounded and blocks and map_reduce_enabled()
+            and len(blocks) >= MIN_DOCS_TO_SHARD
+        ) else None
+
+        if reader is None:
+            result = self.llm_client.generate_detailed(
+                prompt, system=self.SYSTEM_PROMPT
+            )
+            return result, {
+                'strategy': 'single',
+                'documents_read': len(blocks),
+                'reason': self._single_call_reason(grounded, blocks),
+            }
+
+        outcome = reader.run(
+            question=question,
+            blocks=blocks,
+            system=self._reduce_system(),
+            history=self._format_history(history),
+            fallback_prompt=prompt,
+        )
+
+        stats = {'strategy': 'sharded', 'documents_read': len(blocks)}
+        stats.update(outcome.stats())
+        if outcome.fell_back:
+            stats['strategy'] = 'single'
+            stats['reason'] = 'sharded read failed; fell back to one call'
+        return outcome.result, stats
+
+    def _single_call_reason(self, grounded: bool, blocks: List[str]) -> str:
+        """Why the sharded path was skipped, for the metadata trace."""
+        if not map_reduce_enabled():
+            return 'sharding disabled (RAG_MAP_REDUCE=0)'
+        if not grounded or not blocks:
+            return 'no retrieved context to split'
+        if len(blocks) < MIN_DOCS_TO_SHARD:
+            return f'only {len(blocks)} documents; below the sharding threshold'
+        return 'fewer than two cloud providers configured'
+
+    # ------------------------------------------------------------------
+    # Grounding verification
+    # ------------------------------------------------------------------
+
+    def _verify(self, answer: str, context: str, doc_count: int,
+                grounded: bool) -> Optional[grounding.GroundingReport]:
+        """Check the answer's claims against the retrieved text.
+
+        Only meaningful when there was context to check against: with retrieval
+        off, the model is answering from parametric memory by design and every
+        claim would be flagged, which measures the configuration rather than
+        the answer.
+        """
+        if not (VERIFY_ANSWERS and grounded and context):
+            return None
+        report = grounding.verify_answer(answer, context, doc_count)
+        logger.info("Grounding check — %s", report.summary())
+        return report
+
+    def _repair(self, answer: str, context: str, doc_count: int,
+                report: grounding.GroundingReport
+                ) -> Tuple[str, grounding.GroundingReport]:
+        """Strip unsupported claims, or caveat them if that cannot be done.
+
+        One corrective call at most. A second round would cost another request
+        against the same rate limits for diminishing returns, and an answer
+        that is still ungrounded after one correction is better caveated than
+        rewritten again.
+        """
+        if report.clean:
+            return answer, report
+
+        repair_prompt = (
+            grounding.build_repair_prompt(answer, report) if REPAIR_ANSWERS else None
+        )
+        if repair_prompt is None:
+            # Nothing worth a call (e.g. only a stray citation number), or
+            # repair is switched off: make the problem visible instead.
+            return grounding.annotate(answer, report), report
+
+        try:
+            repaired = self.llm_client.generate_detailed(
+                repair_prompt, system=grounding.REPAIR_SYSTEM, temperature=0.0
+            )
+            if repaired.error or not (repaired.text or "").strip():
+                raise RuntimeError(repaired.error or "empty repair response")
+        except Exception as e:
+            logger.warning("Grounding repair failed: %s", e)
+            return grounding.annotate(answer, report), report
+
+        recheck = grounding.verify_answer(repaired.text, context, doc_count)
+        logger.info("Grounding recheck after repair — %s", recheck.summary())
+
+        # Only accept the rewrite if it actually improved things. A correction
+        # that introduces new unsupported claims is worse than the original.
+        if len(recheck.unsupported_cves) + len(recheck.unsupported_scores) >= \
+                len(report.unsupported_cves) + len(report.unsupported_scores):
+            return grounding.annotate(answer, report), report
+
+        return grounding.annotate(repaired.text, recheck), recheck
+
+    # ------------------------------------------------------------------
     # Prompt construction
     # ------------------------------------------------------------------
 
-    def _build_context(self, search_results: List[SearchResult]) -> str:
-        """Build context string from search results.
+    def _render_blocks(self, search_results: List[SearchResult]) -> List[str]:
+        """Render each retrieved document as its own numbered block.
 
-        Args:
-            search_results: Search results
-
-        Returns:
-            Context string
+        Returned as a list rather than one string because the sharded reader
+        deals whole blocks out to different providers. The ``[Doc N]`` numbers
+        are assigned here, globally and once, so a citation means the same
+        document no matter which provider produced it.
         """
         if not search_results:
-            return ""
+            return []
 
-        parts = ["=== RETRIEVED CONTEXT ==="]
+        blocks: List[str] = []
         budget = CONTEXT_CHAR_BUDGET
 
         for i, result in enumerate(search_results, 1):
@@ -513,13 +703,20 @@ Tell the user plainly that the knowledge base has no matching entry, and suggest
 
             if len(block) > budget:
                 block = block[:max(budget, 0)] + "\n[...truncated...]\n"
-            parts.append(block)
+            blocks.append(block)
             budget -= len(block)
             if budget <= 0:
                 logger.debug("Context budget exhausted after %d documents", i)
                 break
 
-        return "\n".join(parts)
+        return blocks
+
+    def _build_context(self, search_results: List[SearchResult]) -> str:
+        """Build the single-prompt context string from search results."""
+        blocks = self._render_blocks(search_results)
+        if not blocks:
+            return ""
+        return "\n".join(["=== RETRIEVED CONTEXT ==="] + blocks)
 
     @staticmethod
     def _describe_source(source_type: str, metadata: Dict[str, Any]) -> str:

@@ -103,6 +103,21 @@ class Settings(BaseSettings):
     RAG_CONTEXT_BUDGET: int = 6000
     RAG_HISTORY_BUDGET: int = 2000
 
+    # Sharded reading: split retrieved documents across the cloud providers so
+    # each is charged for a fraction of the context instead of all of it.
+    RAG_MAP_REDUCE: bool = True
+    RAG_SHARD_CHARS: int = 2500
+    RAG_MIN_DOCS_TO_SHARD: int = 3
+    RAG_MAX_SHARDS: int = 6
+    # Shorter than LLM_TIMEOUT on purpose: an unreachable provider blocks for
+    # its full HTTP read timeout without erroring, and waiting that out delays
+    # every other provider's answer for nothing.
+    RAG_MAP_TIMEOUT: int = 90
+
+    # Post-hoc grounding verification of the finished answer.
+    RAG_VERIFY: bool = True
+    RAG_VERIFY_REPAIR: bool = True
+
     # CORS - support environment override with comma-separated list
     # Set CORS_ORIGINS env var with comma-separated URLs
     CORS_ORIGINS: list[str] = [
@@ -190,6 +205,13 @@ class Settings(BaseSettings):
             "RAG_OVERFETCH": str(self.RAG_OVERFETCH),
             "RAG_CONTEXT_BUDGET": str(self.RAG_CONTEXT_BUDGET),
             "RAG_HISTORY_BUDGET": str(self.RAG_HISTORY_BUDGET),
+            "RAG_MAP_REDUCE": "1" if self.RAG_MAP_REDUCE else "0",
+            "RAG_SHARD_CHARS": str(self.RAG_SHARD_CHARS),
+            "RAG_MIN_DOCS_TO_SHARD": str(self.RAG_MIN_DOCS_TO_SHARD),
+            "RAG_MAX_SHARDS": str(self.RAG_MAX_SHARDS),
+            "RAG_MAP_TIMEOUT": str(self.RAG_MAP_TIMEOUT),
+            "RAG_VERIFY": "1" if self.RAG_VERIFY else "0",
+            "RAG_VERIFY_REPAIR": "1" if self.RAG_VERIFY_REPAIR else "0",
         }
         for key, value in exported.items():
             # A real environment variable always wins over the .env file.

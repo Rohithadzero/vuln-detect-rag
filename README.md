@@ -8,7 +8,7 @@
 
 A unified vulnerability scanning platform with RAG-powered intelligence across **twelve security tools** — network, web and supply chain — with answers grounded in a live-enriched CVE knowledge base.
 
-The AI layer orchestrates **four free cloud providers** (Groq, Google Gemini, OpenRouter, NVIDIA NIM) in parallel and reconciles their answers, falling back to a **fully local Ollama** model when every cloud provider is unreachable.
+The AI layer **splits the retrieved evidence across four free cloud providers** (Groq, Google Gemini, OpenRouter, NVIDIA NIM) so each reads only its own share, then merges their extracts into one cited answer — and falls back to a **fully local Ollama** model when every cloud provider is unreachable. Every finished answer is checked back against the retrieved text before it is returned.
 
 ## Architecture
 
@@ -40,17 +40,38 @@ The AI layer orchestrates **four free cloud providers** (Groq, Google Gemini, Op
   └───────────────────────────────────────────────────────────┘
               │
               ▼
+  Retrieved docs are numbered [Doc 1..N] once, then split into shards
+              │
+              ▼
   ┌───────────────────────────────────────────────────────────┐
-  │  Groq ──┐                                                  │
-  │  Gemini ├─ queried in parallel, answers reconciled         │
-  │  OpenRouter (free models only)                             │
-  │  NVIDIA ─┘   each rotates across its whole model catalogue │
+  │  MAP — each provider reads only its own shard, in parallel │
+  │                                                            │
+  │    docs 1-2  ──▶ Groq        ─┐                            │
+  │    docs 3-4  ──▶ Gemini       │  "extract only what these  │
+  │    docs 5-6  ──▶ OpenRouter   │   docs support, or reply   │
+  │    docs 7-8  ──▶ NVIDIA      ─┘   NOTHING_RELEVANT"        │
+  │                                                            │
+  │  each provider rotates across its whole model catalogue    │
+  └───────────────────────────────────────────────────────────┘
+              │  extracts only — never the raw documents
+              ▼
+  ┌───────────────────────────────────────────────────────────┐
+  │  REDUCE — one small call merges the extracts into an       │
+  │  answer, preserving the original [Doc N] citations         │
   │                                                            │
   │  Ollama (local) — only when every cloud provider fails     │
   └───────────────────────────────────────────────────────────┘
               │
               ▼
-  Plain-language briefing, with [Doc N] citations
+  ┌───────────────────────────────────────────────────────────┐
+  │  VERIFY — every CVE ID, CWE ID, CVSS score and [Doc N]     │
+  │  citation checked against the retrieved text. No LLM call. │
+  │  Unsupported claims → one repair pass, else a visible      │
+  │  caveat appended to the answer.                            │
+  └───────────────────────────────────────────────────────────┘
+              │
+              ▼
+  Plain-language briefing, with verified [Doc N] citations
 ```
 
 ## What's New in v4.0
@@ -101,13 +122,75 @@ had just run. They are now chunked, enriched and indexed, tagged
 `source_type="scan_result"`, with a **plain-language AI briefing** for any
 completed scan (bottom line → fix first → everything else → caveats).
 
-### Multi-provider AI orchestration
+### Sharded reading: the context is split, not broadcast
 
-Four free cloud providers queried **in parallel** and reconciled into one
-answer, each **rotating across its entire model catalogue** so a rate-limited
-or retired model degrades the answer instead of breaking it. Ollama is the
-offline last resort. Cloud-tagged Ollama models are never auto-selected, since
-they would send scan data off-machine.
+The first attempt at multi-provider orchestration asked every provider the
+*same* question with the *same* full context and merged the answers. That was a
+mistake in both directions:
+
+- **It made rate limiting worse.** Four providers each read the entire context,
+  so answering one question cost `4 × context` tokens and burned four free
+  tiers four times as fast as one — while adding no new evidence, since every
+  member read identical text.
+- **It did not help accuracy.** A single prompt carrying every retrieved
+  document asks one model to attend to all of them at once, and recall of any
+  individual fact degrades as the surrounding context grows. Facts in the
+  middle documents are exactly the ones a model papers over from memory.
+
+Retrieved documents are now **partitioned across the providers** instead. Each
+reads only its own shard and is asked one narrow question — *extract what these
+documents support, or reply `NOTHING_RELEVANT`* — and a small **reduce** call
+merges the extracts into the final answer.
+
+- **Rate limiting** — each provider is charged for roughly `context / N` tokens
+  instead of the whole context, and the work is spread across N independent
+  quotas. Against the broadcast ensemble that is an `N²` reduction in tokens
+  billed to any single provider.
+- **Hallucination** — extraction over a handful of documents is a far easier
+  task to do faithfully than open-ended synthesis over a wall of text, and the
+  reduce step **never sees raw retrieved text at all**. It only sees extracts
+  that already carry citations, so it has less opportunity to invent and
+  nothing to invent from.
+- **Latency** — shards for different providers run concurrently. Shards for the
+  *same* provider run sequentially, deliberately: firing them together would
+  spike that provider's requests-per-minute and trigger the very 429s this
+  design exists to avoid.
+
+Document numbers are assigned **globally, once, before sharding**, so a
+`[Doc 7]` citation written by whichever provider happened to read document 7
+still points at document 7 in the source list the user sees.
+
+Sharding is skipped when it would not pay for its reduce call: fewer than three
+documents, no retrieved context, or fewer than two configured cloud providers.
+Each provider still **rotates across its entire model catalogue**, so a
+rate-limited or retired model degrades the answer instead of breaking it, and
+Ollama remains the offline last resort. Cloud-tagged Ollama models are never
+auto-selected, since they would send scan data off-machine.
+
+### Answers are verified against their evidence
+
+The grounding rules in the system prompt are an instruction, not a guarantee: a
+model can be told five times to answer only from the context and still emit a
+CVE ID it remembers from pre-training. Every finished answer is now checked
+against the retrieved text **deterministically, without an LLM call**:
+
+- **Fabricated identifiers** — every CVE and CWE ID in the answer must appear in
+  the retrieved documents.
+- **Fabricated scores** — CVSS values are checked wherever the answer explicitly
+  labels a number as a score, so prose numbers and ports are never mistaken for
+  one.
+- **Fabricated provenance** — a `[Doc 9]` citation when only six documents were
+  supplied is a fabricated source, and is caught as one.
+
+An answer with unsupported claims gets **one** corrective pass that strips them,
+accepted only if the rewrite actually verifies better than the original;
+otherwise a **visible caveat** is appended naming the specific unsupported
+values. An unverifiable claim the reader believes is worse than a caveated one.
+
+Free-text claims are deliberately *not* checked. Any string-matching heuristic
+over prose produces more false alarms than findings, and a noisy verifier gets
+ignored. The grounding report is returned in the response metadata, so the
+evaluation harness can measure it rather than taking the answer's word for it.
 
 ### Honest evaluation
 
@@ -168,15 +251,21 @@ measured from the UI.
   prioritisation follows what is actually being exploited, not just CVSS.
 - **AI scan briefings** — any completed scan is explained in plain language:
   bottom line, what to fix first, everything else, caveats.
-- **Four free cloud providers, orchestrated** — Groq, Gemini, OpenRouter
-  (free models only) and NVIDIA queried in parallel and reconciled, each
-  rotating across its whole model catalogue.
+- **Sharded reading across four free providers** — Groq, Gemini, OpenRouter
+  (free models only) and NVIDIA each read a *different* slice of the retrieved
+  evidence in parallel, then one small call merges their extracts. Cuts the
+  tokens billed to any single free tier and keeps each model's context small
+  enough to attend to. Each provider rotates across its whole model catalogue.
+- **Verified answers** — every CVE ID, CWE ID, CVSS score and `[Doc N]`
+  citation is checked against the retrieved text before the answer is returned.
+  Unsupported claims are stripped, or named in a visible caveat.
 - **Fully local option** — Ollama with local embeddings; nothing leaves the
   machine. Used automatically when no cloud provider is reachable.
 - **Simulated data is labelled** — findings from a scanner that could not run
   are flagged per finding in the API, the UI and the assistant's context.
-- **Research controls** — per-provider toggles, live model selection, and a RAG
-  on/off switch for measuring the no-retrieval baseline.
+- **Research controls** — per-provider toggles, live model selection, a RAG
+  on/off switch for the no-retrieval baseline, and a sharding switch for
+  comparing sharded reading against the broadcast ensemble.
 - **Attack path modelling** — NetworkX graphs of potential lateral movement.
 - **Scan export** — JSON or CSV.
 
@@ -282,6 +371,25 @@ BURP_PATH=/path/to/burp
 ZAP_PATH=/path/to/zap.sh
 ```
 
+## Tuning the RAG pipeline
+
+Set in `backend/.env`. Defaults are sensible; these exist so the pipeline can be
+ablated for measurement rather than only configured.
+
+| Variable | Default | Effect |
+|----------|---------|--------|
+| `RAG_ENABLED` | `1` | `0` switches retrieval off entirely — the no-RAG baseline |
+| `RAG_MAP_REDUCE` | `1` | `0` reverts to one full-context call, for comparing against sharded reading |
+| `RAG_SHARD_CHARS` | `2500` | Target document characters per provider per call. Lower spreads load wider and shrinks each context; raises the number of calls |
+| `RAG_MIN_DOCS_TO_SHARD` | `3` | Below this, one call is cheaper than map calls plus a reduce |
+| `RAG_MAX_SHARDS` | `6` | Ceiling on map calls per question, so a large retrieval cannot fan out and trip the limits sharding exists to avoid |
+| `RAG_MAP_TIMEOUT` | `90` | Wall-clock ceiling on the map phase. Keep below `LLM_TIMEOUT`: an unreachable provider blocks for its full HTTP read timeout without erroring, and waiting it out delays every other provider's answer for nothing |
+| `RAG_VERIFY` | `1` | `0` disables post-hoc grounding verification |
+| `RAG_VERIFY_REPAIR` | `1` | `0` keeps unsupported claims but still caveats them, instead of spending a call to strip them |
+| `RAG_SCORE_THRESHOLD` | `0.25` | Similarity floor below which a document counts as noise, not context |
+| `RAG_OVERFETCH` | `4` | Multiplier on top-k before per-CVE dedupe |
+| `RAG_CONTEXT_BUDGET` | `6000` | Total characters of retrieved context per question |
+
 ## API Reference
 
 | Method | Endpoint | Description |
@@ -342,6 +450,59 @@ of declining, so hallucination is reduced, not eliminated. An expert-graded
 question set is needed before any claim of correctness.
 
 Run your own: `python scripts/run_eval.py --ablation --limit 20`
+
+### Sharded reading — observed behaviour
+
+The sharded path is new in this release and has **not yet been run through the
+ablation harness**, so there is no measured token-cost comparison against the
+broadcast ensemble to report here. What follows is a two-query trace, included
+because it shows the mechanism working, not as a benchmark.
+
+Six retrieved documents, four configured providers:
+
+| Question | Shards | Providers that read them | Shards with content | Claims verified |
+|----------|--------|--------------------------|--------------------|-----------------|
+| "What is Log4Shell and how do I fix it?" | 3 | Groq | 1 of 3 | 3/3 supported |
+| "List the critical vulnerabilities and their CVSS scores." | 3 | Gemini + Groq + OpenRouter | 3 of 3 | 9/9 supported |
+
+Three things in that trace are the design working as intended:
+
+- The second question genuinely needed evidence from every shard, and three
+  different providers supplied it **concurrently**, each reading ~2 KB rather
+  than the full ~6 KB context.
+- The first question needed only one document. The other two shards returned
+  `NOTHING_RELEVANT` and were dropped, so irrelevant text never reached the
+  reduce step — an answer narrowed by the evidence rather than padded to fill
+  the context.
+- Gemini's pinned model returned a 503 (and, on a later run, a free-tier rate
+  limit) and the client rotated to the next model in its catalogue without
+  failing the query.
+
+Both answers passed grounding verification with no fabricated identifiers,
+scores, or citations. **Two queries prove a mechanism runs; they do not measure
+a hallucination rate.** The honest comparison — sharded vs. broadcast vs.
+no-RAG, over the full question set, with tokens billed per provider — is the
+next piece of work, and is what belongs in the paper.
+
+Running the baseline for comparison surfaced a fault that had been latent in
+the parallel orchestration all along. NVIDIA's endpoint became unreachable and
+blocked for its full 180-second HTTP read timeout **without ever raising**;
+`as_completed(timeout=…)` then raised out of the collection loop and the
+executor's context manager blocked on shutdown waiting for that same stuck
+thread. One slow provider therefore discarded the answers of the three that had
+already responded and dropped the query to local Ollama. Both the ensemble and
+the map phase now catch that timeout and proceed with whatever arrived —
+`continuing with 3 of 4 providers (stalled: nvidia)` — and the map phase is
+capped below the HTTP read timeout so an unreachable host is abandoned rather
+than waited out. **A baseline that silently degrades to a different model
+produces invalid comparison data**, which is why this mattered enough to fix
+before measuring anything.
+
+> A verifier bug found during this trace is worth recording: several models
+> format identifiers with non-breaking hyphens (`CVE‑2021‑44228`), which
+> matched no pattern, so the verifier reported a clean answer because it had
+> silently checked *nothing*. Dash normalisation now runs before matching. A
+> verification step that cannot fail loudly is worse than none.
 
 ## License
 

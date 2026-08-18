@@ -1913,22 +1913,43 @@ Rules:
         successes: List[LLMResult] = []
         errors: List[str] = []
 
-        with ThreadPoolExecutor(max_workers=len(self.clients)) as pool:
+        # Neither a `with` block nor an uncaught as_completed timeout: one
+        # provider that hangs instead of erroring (an unreachable host blocking
+        # until its read timeout) would otherwise discard the answers of every
+        # provider that did respond. as_completed raises TimeoutError out of
+        # the loop, and the executor's context manager then blocks on shutdown
+        # waiting for the stuck thread — so a single slow member turned a
+        # working ensemble into a total failure that fell through to Ollama.
+        pool = ThreadPoolExecutor(max_workers=len(self.clients))
+        try:
             futures = {
                 pool.submit(c.generate_detailed, prompt, system=system, **kwargs): c
                 for c in self.clients
             }
-            for future in as_completed(futures, timeout=self.timeout):
-                client = futures[future]
-                try:
-                    result = future.result()
-                    if result.error or not (result.text or "").strip():
-                        raise LLMUnavailableError(result.error or "empty response")
-                    successes.append(result)
-                except Exception as e:
-                    errors.append(f"{client.config.provider}: {e}")
-                    logger.warning("Ensemble member %s failed: %s",
-                                   client.config.provider, e)
+            try:
+                for future in as_completed(futures, timeout=self.timeout):
+                    client = futures[future]
+                    try:
+                        result = future.result()
+                        if result.error or not (result.text or "").strip():
+                            raise LLMUnavailableError(result.error or "empty response")
+                        successes.append(result)
+                    except Exception as e:
+                        errors.append(f"{client.config.provider}: {e}")
+                        logger.warning("Ensemble member %s failed: %s",
+                                       client.config.provider, e)
+            except TimeoutError:
+                stalled = [futures[f].config.provider
+                           for f in futures if not f.done()]
+                errors.append(f"timed out after {self.timeout}s: {', '.join(stalled)}")
+                logger.warning(
+                    "Ensemble timed out after %ss; continuing with %d of %d "
+                    "providers (stalled: %s)",
+                    self.timeout, len(successes), len(self.clients),
+                    ", ".join(stalled),
+                )
+        finally:
+            pool.shutdown(wait=False, cancel_futures=True)
 
         if not successes:
             return LLMResult(
@@ -2192,6 +2213,30 @@ def _build_rotating_client(provider: str) -> Optional[BaseLLMClient]:
     return ModelRotatingClient(provider, models, base.config)
 
 
+def get_cloud_clients() -> List[BaseLLMClient]:
+    """One rotating client per configured, enabled cloud provider.
+
+    Exposed separately from get_llm_client() because the map-reduce reader
+    needs the providers as *independent addressable endpoints* rather than as a
+    single reconciled client: it deals out different context to each one, so it
+    has to know how many there are and be able to target them individually.
+    """
+    order = LLMFactory.provider_order()
+    return [
+        client for name in order if name in CLOUD_PROVIDERS
+        for client in [_build_rotating_client(name)] if client
+    ]
+
+
+def get_local_clients() -> List[BaseLLMClient]:
+    """Rotating clients for every configured non-cloud provider (Ollama)."""
+    order = LLMFactory.provider_order()
+    return [
+        client for name in order if name not in CLOUD_PROVIDERS
+        for client in [_build_rotating_client(name)] if client
+    ]
+
+
 def get_llm_client(provider: Optional[str] = None) -> BaseLLMClient:
     """Build the LLM client according to the configured orchestration policy.
 
@@ -2238,15 +2283,8 @@ def get_llm_client(provider: Optional[str] = None) -> BaseLLMClient:
         ]
         return FallbackLLMClient([primary, *backups]) if backups else primary
 
-    order = LLMFactory.provider_order()
-    cloud = [
-        client for name in order if name in CLOUD_PROVIDERS
-        for client in [_build_rotating_client(name)] if client
-    ]
-    local = [
-        client for name in order if name not in CLOUD_PROVIDERS
-        for client in [_build_rotating_client(name)] if client
-    ]
+    cloud = get_cloud_clients()
+    local = get_local_clients()
 
     if not cloud and not local:
         # Nothing configured: return the default so the caller gets a clear,
