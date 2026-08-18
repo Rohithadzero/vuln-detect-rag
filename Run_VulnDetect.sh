@@ -1,199 +1,179 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# VulnDetectRAG v4.0 launcher (Linux / macOS)
+#
+# Starts the FastAPI backend on 127.0.0.1:8000 and the Vite dev server on
+# :5173. Vite proxies /api to the backend, so the browser only ever talks to
+# 5173 and no CORS configuration is required for local use.
 
-# VulnDetectRAG v3.5 — Startup Script for macOS / Linux
-# Run: chmod +x Run_VulnDetect.sh && ./Run_VulnDetect.sh
+set -uo pipefail
 
-set -e
+cd "$(dirname "$0")"
+ROOT="$(pwd)"
 
-# Resolve script directory
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BACKEND_HOST="127.0.0.1"
+BACKEND_PORT="8000"
+FRONTEND_PORT="5173"
+VENV_PY="${ROOT}/backend/venv/bin/python"
 
-# Colors
-YELLOW='\033[1;33m'
-GREEN='\033[1;32m'
-RED='\033[1;31m'
-CYAN='\033[1;36m'
-NC='\033[0m'
-
-clear
-echo -e "${CYAN}===================================================${NC}"
-echo -e "${CYAN}   VulnDetectRAG v3.5 — Vulnerability Intelligence Platform${NC}"
-echo -e "${CYAN}   (Nmap, Nuclei, OpenVAS, Nessus, Burp Suite, OWASP ZAP)${NC}"
-echo -e "${CYAN}   AI: Ollama (local) or Groq (cloud)${NC}"
-echo -e "${CYAN}===================================================${NC}"
+echo "==================================================="
+echo "   VulnDetectRAG v4.0 - Vulnerability Intelligence Platform"
+echo
+echo "   Network      : Nmap, Nuclei, OpenVAS"
+echo "   Web          : OWASP ZAP, Nikto, testssl/sslyze, WhatWeb"
+echo "   Supply chain : Trivy, OSV-Scanner, Grype"
+echo "   Commercial   : Burp (licence), Nessus (simulated)"
+echo
+echo "   AI: Groq / Gemini / OpenRouter / NVIDIA, Ollama offline"
+echo "==================================================="
 echo
 
-# 1. Check Prerequisites
-echo -e "${YELLOW}[*]${NC} Checking for Python..."
-if command -v python3 >/dev/null 2>&1 || command -v python >/dev/null 2>&1; then
-    echo -e "${GREEN}[OK]${NC} Python found."
+# ---------------------------------------------------------------
+# 1. Prerequisites
+# ---------------------------------------------------------------
+need() {
+    command -v "$1" >/dev/null 2>&1 || {
+        echo "[ERROR] $1 is required but not installed."
+        echo "        $2"
+        exit 1
+    }
+}
+need python3 "Install Python 3.10+ from https://www.python.org/downloads/"
+need npm     "Install Node.js 18+ from https://nodejs.org/"
+
+echo "[*] Checking optional scanners (missing ones are simply unavailable)..."
+for tool in nmap nuclei nikto whatweb trivy osv-scanner grype sslyze testssl.sh zap.sh; do
+    if command -v "$tool" >/dev/null 2>&1; then
+        echo "    [OK] $tool"
+    else
+        echo "    [--] $tool not found"
+    fi
+done
+
+# ---------------------------------------------------------------
+# 2. AI provider configuration
+# ---------------------------------------------------------------
+echo
+if [ -f backend/.env ]; then
+    echo "    [OK] backend/.env present"
 else
-    echo -e "${RED}[ERROR]${NC} Python not found. Please install Python 3.10+"
-    exit 1
+    echo "[WARNING] backend/.env not found."
+    echo "          Copy backend/.env.example to backend/.env and add at least"
+    echo "          one free API key, or install Ollama to run fully offline."
 fi
 
-echo -e "${YELLOW}[*]${NC} Checking for Node.js..."
-if command -v npm >/dev/null 2>&1; then
-    echo -e "${GREEN}[OK]${NC} Node.js found."
-else
-    echo -e "${RED}[ERROR]${NC} Node.js not found. Please install Node.js 18+"
-    exit 1
-fi
-
-echo -e "${YELLOW}[*]${NC} Checking for Nmap..."
-if command -v nmap >/dev/null 2>&1; then
-    echo -e "${GREEN}[OK]${NC} Nmap found."
-else
-    echo -e "${CYAN}[INFO]${NC} Nmap not found. Scanners will use mock data."
-fi
-
-echo -e "${YELLOW}[*]${NC} Checking for Nuclei..."
-if command -v nuclei >/dev/null 2>&1; then
-    echo -e "${GREEN}[OK]${NC} Nuclei found."
-else
-    echo -e "${CYAN}[INFO]${NC} Nuclei not found. Scanner will use mock data."
-fi
-
-echo -e "${YELLOW}[*]${NC} Checking for Ollama..."
 if command -v ollama >/dev/null 2>&1; then
-    echo -e "${GREEN}[OK]${NC} Ollama found."
-    echo -e "${YELLOW}[*]${NC} Ensuring qwen2.5-coder:7b model is downloaded..."
-    ollama run qwen2.5-coder:7b "/bye" >/dev/null 2>&1 || true
+    echo "    [OK] Ollama installed (offline fallback available)"
 else
-    echo -e "${RED}[WARNING]${NC} Ollama not found. AI features will be disabled."
+    echo "    [--] Ollama not installed (cloud providers will be used)"
 fi
 
-echo
-echo -e "${CYAN}Prerequisites check complete.${NC}"
-echo
+cat <<'PRIVACY'
 
-# 2. Backend Setup
-echo -e "${YELLOW}[1/4]${NC} Starting FastAPI Backend..."
-BACKEND_DIR="$SCRIPT_DIR/backend"
-FRONTEND_DIR="$SCRIPT_DIR/frontend"
+[PRIVACY] Cloud providers are enabled by default and receive your scan
+          findings and questions. To keep everything on this machine, set
+          LLM_PROVIDER=ollama in backend/.env, or disable each cloud provider
+          from the Settings page in the UI.
 
-if [[ ! -d "$BACKEND_DIR" ]]; then
-    echo -e "${RED}[ERROR]${NC} backend/ directory not found at $BACKEND_DIR"
+PRIVACY
+
+# ---------------------------------------------------------------
+# 3. Sanity-check the layout
+# ---------------------------------------------------------------
+for dir in backend frontend; do
+    [ -d "$dir" ] || { echo "[ERROR] $dir/ not found. Run this from the project root."; exit 1; }
+done
+
+# ---------------------------------------------------------------
+# 4. Backend dependencies
+# ---------------------------------------------------------------
+echo "[1/4] Preparing FastAPI backend..."
+# A venv directory can exist yet be unusable: if the system Python was upgraded
+# or moved, the venv's interpreter still points at the old install and every
+# command fails. Existence is not a good enough test - it has to actually run.
+if ! "$VENV_PY" -c "import sys" >/dev/null 2>&1; then
+    if [ -d backend/venv ]; then
+        echo "[WARNING] Existing virtual environment is broken, rebuilding it..."
+        rm -rf backend/venv
+    else
+        echo "[*] Creating Python virtual environment..."
+    fi
+    python3 -m venv backend/venv || { echo "[ERROR] venv creation failed."; exit 1; }
+fi
+
+echo "[*] Installing Python dependencies..."
+# requirements.txt lives at the repository root, not in backend/.
+"$VENV_PY" -m pip install -r requirements.txt -q || {
+    echo "[ERROR] Dependency installation failed."
     exit 1
+}
+
+# ---------------------------------------------------------------
+# 5. Seed the knowledge base BEFORE the backend starts
+# ---------------------------------------------------------------
+# Ordering matters: the assistant reports an empty corpus if it starts against
+# an unseeded store. Seeding upserts, so running it every launch is safe.
+echo "[2/4] Seeding the CVE knowledge base (idempotent)..."
+if [ -f scripts/seed_cve_data.py ]; then
+    "$VENV_PY" scripts/seed_cve_data.py || \
+        echo "[WARNING] Seeding failed; the assistant will have no corpus to retrieve from."
+else
+    echo "[INFO] scripts/seed_cve_data.py not found, skipping."
 fi
 
-if [[ ! -d "$BACKEND_DIR/venv" ]]; then
-    echo -e "${YELLOW}[*]${NC} Creating Python virtual environment..."
-    if command -v python3 >/dev/null 2>&1; then
-        python3 -m venv "$BACKEND_DIR/venv"
-    else
-        python -m venv "$BACKEND_DIR/venv"
-    fi
+# ---------------------------------------------------------------
+# 6. Start services
+# ---------------------------------------------------------------
+PIDS=()
+cleanup() {
+    echo
+    echo "[*] Shutting down..."
+    for pid in "${PIDS[@]:-}"; do
+        [ -n "$pid" ] && kill "$pid" 2>/dev/null || true
+    done
+    exit 0
+}
+# Ctrl+C stops both services rather than orphaning the backend.
+trap cleanup INT TERM
+
+echo "[3/4] Starting backend on http://${BACKEND_HOST}:${BACKEND_PORT} ..."
+# Started from backend/ because main.py resolves "main:app" relative to it.
+( cd backend && exec "$VENV_PY" main.py ) &
+PIDS+=($!)
+
+echo "[4/4] Starting frontend on http://localhost:${FRONTEND_PORT} ..."
+if [ ! -d frontend/node_modules ]; then
+    echo "[*] Installing NPM dependencies (first run only)..."
+    ( cd frontend && npm install )
+fi
+( cd frontend && exec npm run dev ) &
+PIDS+=($!)
+
+# ---------------------------------------------------------------
+# 7. Open the UI
+# ---------------------------------------------------------------
+sleep 10
+URL="http://localhost:${FRONTEND_PORT}"
+if command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "$URL" >/dev/null 2>&1 &
+elif command -v open >/dev/null 2>&1; then
+    open "$URL" >/dev/null 2>&1 &
+else
+    echo "[INFO] Open $URL in your browser."
 fi
 
-echo -e "${YELLOW}[*]${NC} Installing Python dependencies..."
-source "$BACKEND_DIR/venv/bin/activate"
-pip install -r "$BACKEND_DIR/requirements.txt" -q
+cat <<EOF
 
-# Open new terminal window for backend
-if [[ "$(uname -s)" == "Darwin" ]]; then
-    # macOS
-    osascript <<EOF
-tell application "Terminal"
-    do script "cd \"$BACKEND_DIR\" && source venv/bin/activate && python main.py"
-end tell
+===================================================
+   VulnDetectRAG v4.0 is running.
+
+   Frontend : http://localhost:${FRONTEND_PORT}
+   Backend  : http://${BACKEND_HOST}:${BACKEND_PORT}
+   API docs : http://${BACKEND_HOST}:${BACKEND_PORT}/docs
+   Health   : http://${BACKEND_HOST}:${BACKEND_PORT}/api/health
+
+   Press Ctrl+C to stop both services.
+===================================================
 EOF
-elif [[ "$(uname -s)" == "Linux" ]]; then
-    if command -v gnome-terminal >/dev/null 2>&1; then
-        gnome-terminal -- bash -c "cd '$BACKEND_DIR' && source venv/bin/activate && python main.py; exec bash"
-    elif command -v xterm >/dev/null 2>&1; then
-        xterm -e "cd '$BACKEND_DIR' && source venv/bin/activate && python main.py" &
-    else
-        echo -e "${YELLOW}[INFO]${NC} Please run manually in another terminal:"
-        echo "  cd $BACKEND_DIR && source venv/bin/activate && python main.py"
-    fi
-else
-    echo -e "${YELLOW}[INFO]${NC} Please run manually: cd backend && source venv/bin/activate && python main.py"
-fi
 
-echo
-# 3. Frontend Setup
-echo -e "${YELLOW}[2/4]${NC} Starting React Frontend..."
-
-if [[ ! -d "$FRONTEND_DIR" ]]; then
-    echo -e "${RED}[ERROR]${NC} frontend/ directory not found at $FRONTEND_DIR"
-    exit 1
-fi
-
-if [[ ! -d "$FRONTEND_DIR/node_modules" ]]; then
-    echo -e "${YELLOW}[*]${NC} Installing NPM dependencies..."
-    (cd "$FRONTEND_DIR" && npm install)
-fi
-
-# Open new terminal window for frontend
-if [[ "$(uname -s)" == "Darwin" ]]; then
-    osascript <<EOF
-tell application "Terminal"
-    do script "cd \"$FRONTEND_DIR\" && npm run dev"
-end tell
-EOF
-elif [[ "$(uname -s)" == "Linux" ]]; then
-    if command -v gnome-terminal >/dev/null 2>&1; then
-        gnome-terminal -- bash -c "cd '$FRONTEND_DIR' && npm run dev; exec bash"
-    elif command -v xterm >/dev/null 2>&1; then
-        xterm -e "cd '$FRONTEND_DIR' && npm run dev" &
-    else
-        echo -e "${YELLOW}[INFO]${NC} Please run manually in another terminal:"
-        echo "  cd $FRONTEND_DIR && npm run dev"
-    fi
-else
-    echo -e "${YELLOW}[INFO]${NC} Please run manually: cd frontend && npm run dev"
-fi
-
-echo
-# 4. Seed CVE Knowledge Base
-echo -e "${YELLOW}[3/4]${NC} Checking CVE Knowledge Base..."
-if [[ -f "$SCRIPT_DIR/scripts/seed_cve_data.py" ]]; then
-    if [[ ! -f "$SCRIPT_DIR/scripts/data/vulndetect.db" ]]; then
-        echo -e "${YELLOW}[*]${NC} Seeding CVE database (first time setup)..."
-        cd "$SCRIPT_DIR/scripts"
-        source "$BACKEND_DIR/venv/bin/activate"
-        python seed_cve_data.py 2>/dev/null || true
-        cd "$SCRIPT_DIR"
-    else
-        echo -e "${GREEN}[OK]${NC} CVE database already initialized."
-    fi
-else
-    echo -e "${CYAN}[INFO]${NC} Seed script not found, skipping CVE initialization."
-fi
-
-echo
-# 5. Launch UI
-echo -e "${YELLOW}[4/4]${NC} Waiting for services to initialize..."
-sleep 5
-
-echo -e "${YELLOW}[*]${NC} Opening browser..."
-if [[ "$(uname -s)" == "Darwin" ]]; then
-    open http://localhost:5173
-elif [[ "$(uname -s)" == "Linux" ]]; then
-    xdg-open http://localhost:5173 2>/dev/null || true
-fi
-
-echo
-echo -e "${CYAN}===================================================${NC}"
-echo -e "${GREEN}   VulnDetectRAG is now running!${NC}"
-echo -e "${CYAN}===================================================${NC}"
-echo
-echo "  Frontend:  http://localhost:5173"
-echo "  Backend:   http://localhost:8000"
-echo "  API Docs:  http://localhost:8000/docs"
-echo
-echo "  Supported Scanners:"
-echo "     - Nmap         (port scanning, vulnerability detection)"
-echo "     - Nuclei       (active vulnerability scanning)"
-echo "     - OpenVAS      (vulnerability management)"
-echo "     - Nessus       (professional vulnerability assessment)"
-echo "     - Burp Suite   (web application security testing)"
-echo "     - OWASP ZAP    (dynamic application security testing)"
-echo
-echo "  Leave the terminal windows open."
-echo "  To stop: close both windows or press Ctrl+C in each."
-echo -e "${CYAN}===================================================${NC}"
-echo
-
-read -p "Press Enter to exit this script..."
+# Wait on the service processes so Ctrl+C reaches the trap.
+wait
