@@ -45,7 +45,12 @@ requests>=2.31.0,<3.0.0
 
 # RAG / AI
 langchain-huggingface>=0.1.0,<1.0.0
-chromadb>=0.4.0,<1.0.0
+# Must be 1.x. An existing store written by 1.x records collection
+# configuration at schema migration 18 with no legacy "_type" key, and a
+# 0.x client raises KeyError: '_type' on every read -- the knowledge base
+# reads as unreachable rather than empty, so retrieval silently returns
+# nothing. Downgrading here does not lose data, it hides it.
+chromadb>=1.0.0,<2.0.0
 # Provides the local, offline embedding model (all-MiniLM-L6-v2). Imported
 # directly as a fallback when langchain-huggingface is absent.
 sentence-transformers>=2.2.0,<3.0.0

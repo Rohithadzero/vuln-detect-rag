@@ -61,11 +61,24 @@ def seed_data():
     finally:
         db.close()
 
-    # Index into ChromaDB for RAG
-    rag_engine.index_cves(cve_entries)
+    # Index into ChromaDB for RAG. Report what was actually written, not what
+    # was offered: printing len(cve_entries) claimed success even when every
+    # single write failed, which is how a completely unreachable vector store
+    # produced a clean "Indexed 50 entries" and a silently empty knowledge base.
+    indexed = rag_engine.index_cves(cve_entries)
 
     print(f"Seeded {inserted} new CVE entries ({len(cve_entries)} total in source)")
-    print(f"Indexed {len(cve_entries)} entries into ChromaDB for RAG")
+    # One entry can yield several chunks, so this count is legitimately
+    # larger than len(cve_entries). Zero is the only failure signal.
+    print(f"Indexed {indexed} chunks from {len(cve_entries)} CVE entries into ChromaDB")
+    if not indexed:
+        print(
+            "ERROR: nothing was indexed. Retrieval will return no documents and "
+            "the assistant will answer without evidence. Check the vector store "
+            "logs above before using the app.",
+            file=sys.stderr,
+        )
+        raise SystemExit(1)
     return inserted
 
 
