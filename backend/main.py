@@ -15,6 +15,7 @@ from models.database import init_db
 from api.routes_scan import router as scan_router
 from api.routes_rag import router as rag_router
 from api.routes_cve import router as cve_router
+from api.routes_graph import router as graph_router
 
 # Use absolute path for log file in data directory
 LOG_DIR = Path(__file__).parent / "data"
@@ -148,6 +149,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 app.include_router(scan_router, prefix="/api")
 app.include_router(rag_router, prefix="/api")
 app.include_router(cve_router, prefix="/api")
+app.include_router(graph_router, prefix="/api")
 
 
 @app.get("/")

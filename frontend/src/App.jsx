@@ -7,6 +7,7 @@ const ScanConsole = lazy(() => import('./pages/ScanConsole'))
 const RAGAssistant = lazy(() => import('./pages/RAGAssistant'))
 const CVEDetail = lazy(() => import('./pages/CVEDetail'))
 const CVEBrowse = lazy(() => import('./pages/CVEBrowse'))
+const KnowledgeGraph = lazy(() => import('./pages/KnowledgeGraph'))
 const Settings = lazy(() => import('./pages/Settings'))
 
 function Loading() {
@@ -40,6 +41,7 @@ export default function App() {
             <Route path="rag" element={<RAGAssistant />} />
             <Route path="cve" element={<CVEBrowse />} />
             <Route path="cve/:cveId" element={<CVEDetail />} />
+            <Route path="graph" element={<KnowledgeGraph />} />
             <Route path="settings" element={<Settings />} />
             <Route path="*" element={<NotFound />} />
           </Route>

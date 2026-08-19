@@ -41,6 +41,15 @@ VERIFY_ANSWERS = os.getenv('RAG_VERIFY', '1').lower() not in ('0', 'false', 'no'
 #: place; on removes them at the cost of one small request.
 REPAIR_ANSWERS = os.getenv('RAG_VERIFY_REPAIR', '1').lower() not in ('0', 'false', 'no')
 
+#: Append MITRE knowledge-graph structure (CWE, CAPEC, ATT&CK) for the CVEs
+#: that retrieval returned. Off falls back to retrieved text alone.
+GRAPH_CONTEXT = os.getenv('RAG_GRAPH_CONTEXT', '1').lower() not in ('0', 'false', 'no')
+
+#: Character budget for the graph block. Kept well under the retrieval budget
+#: on purpose: this is supporting structure, and it must not displace the CVE
+#: text that the answer is meant to be grounded in.
+GRAPH_CHAR_BUDGET = int(os.getenv('RAG_GRAPH_BUDGET', '1500'))
+
 
 @dataclass
 class RAGQuery:
@@ -362,6 +371,53 @@ Tell the user plainly that the knowledge base has no matching entry, and suggest
         return list(dict.fromkeys(m.upper() for m in CVE_PATTERN.findall(text or "")))
 
     @staticmethod
+    def _graph_context(search_results: List[SearchResult]) -> str:
+        """Structural context for the CVEs retrieval actually returned.
+
+        Keyed off the retrieved documents rather than the question, so the
+        graph can only elaborate on evidence already in hand. Expanding from
+        CVE identifiers named in the question instead would let a question
+        about a CVE absent from the corpus still pull in taxonomy, which is
+        how a refusal turns into a confident-sounding answer about a
+        vulnerability the system does not hold.
+
+        Never raises. The graph is an enrichment, and a missing or unreadable
+        graph file must cost structure, not the answer.
+        """
+        if not GRAPH_CONTEXT:
+            return ""
+        try:
+            from rag_assistant.graph import get_knowledge_graph
+
+            graph = get_knowledge_graph()
+            if not graph.load():
+                return ""
+
+            cve_ids = []
+            for result in search_results:
+                cve_id = (result.metadata or {}).get("cve_id")
+                if cve_id and cve_id.upper() not in cve_ids:
+                    cve_ids.append(cve_id.upper())
+            if not cve_ids:
+                return ""
+
+            body = graph.context_for(cve_ids)
+            if not body:
+                return ""
+            if len(body) > GRAPH_CHAR_BUDGET:
+                body = body[:GRAPH_CHAR_BUDGET].rsplit("\n", 1)[0]
+            return (
+                "[Structural context] Weakness, attack-pattern and adversary-"
+                "technique relationships published by MITRE for the "
+                "vulnerabilities above. Use these only to explain how the "
+                "vulnerability could be exploited; they are not a source for "
+                "CVSS scores, affected versions or patch levels.\n" + body
+            )
+        except Exception as exc:  # noqa: BLE001 - enrichment must never break a query
+            logger.warning("Knowledge graph context unavailable: %s", exc)
+            return ""
+
+    @staticmethod
     def _deduplicate(results: List[SearchResult]) -> List[SearchResult]:
         """Collapse repeated coverage of the same vulnerability.
 
@@ -412,6 +468,21 @@ Tell the user plainly that the knowledge base has no matching entry, and suggest
 
             grounded = bool(search_results)
             blocks = self._render_blocks(search_results)
+
+            # Structural context from the MITRE knowledge graph, appended as
+            # an extra block so the retrieved CVE text still leads. It answers
+            # what retrieval cannot: a CVE document describes one flaw, but
+            # not the weakness class behind it, the attack patterns that
+            # exploit that class, or the adversary techniques they map to.
+            #
+            # Appended only when retrieval already succeeded. If nothing was
+            # retrieved the correct answer is a refusal, and supplying graph
+            # context would let the model build a plausible answer out of
+            # taxonomy alone -- the exact failure this system exists to stop.
+            graph_block = self._graph_context(search_results) if grounded else ""
+            if graph_block:
+                blocks = blocks + [graph_block]
+
             context = (
                 "\n".join(["=== RETRIEVED CONTEXT ==="] + blocks) if blocks else ""
             )

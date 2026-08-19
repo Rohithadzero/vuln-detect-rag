@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# VulnDetectRAG v4.1 launcher (Linux / macOS)
+# VulnDetectRAG v4.5 launcher (Linux / macOS)
 #
 # Starts the FastAPI backend on 127.0.0.1:8000 and the Vite dev server on
 # :5173. Vite proxies /api to the backend, so the browser only ever talks to
@@ -16,7 +16,7 @@ FRONTEND_PORT="5173"
 VENV_PY="${ROOT}/backend/venv/bin/python"
 
 echo "==================================================="
-echo "   VulnDetectRAG v4.1 - Vulnerability Intelligence Platform"
+echo "   VulnDetectRAG v4.5 - Vulnerability Intelligence Platform"
 echo
 echo "   Network      : Nmap, Nuclei, OpenVAS"
 echo "   Web          : OWASP ZAP, Nikto, testssl/sslyze, WhatWeb"
@@ -164,7 +164,7 @@ fi
 cat <<EOF
 
 ===================================================
-   VulnDetectRAG v4.1 is running.
+   VulnDetectRAG v4.5 is running.
 
    Frontend : http://localhost:${FRONTEND_PORT}
    Backend  : http://${BACKEND_HOST}:${BACKEND_PORT}

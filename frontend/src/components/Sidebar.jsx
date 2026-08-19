@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { Shield, LayoutDashboard, Scan, MessageSquare, Activity, Database, Settings } from 'lucide-react'
+import { Shield, LayoutDashboard, Scan, MessageSquare, Activity, Database, Network, Settings } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
 
 const navItems = [
@@ -7,6 +7,7 @@ const navItems = [
   { to: '/scans', icon: Scan, label: 'Scan Console', color: 'bg-neo-cyan' },
   { to: '/rag', icon: MessageSquare, label: 'RAG Assistant', color: 'bg-neo-purple' },
   { to: '/cve', icon: Database, label: 'CVE Database', color: 'bg-neo-green' },
+  { to: '/graph', icon: Network, label: 'Knowledge Graph', color: 'bg-neo-orange' },
   { to: '/settings', icon: Settings, label: 'Settings', color: 'bg-neo-pink' },
 ]
 

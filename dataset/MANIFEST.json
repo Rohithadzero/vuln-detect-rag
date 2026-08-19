@@ -1,0 +1,31 @@
+{
+  "files": {
+    "cve_cwe.json": {
+      "bytes": 2155,
+      "sha256": "a8e33953f00c9a659fdb8eb86a047e68825ae4fd55c509a5c51cbfc4db11bfa4",
+      "source": "https://services.nvd.nist.gov/rest/json/cves/2.0"
+    },
+    "raw/capec_3000.csv.zip": {
+      "bytes": 379121,
+      "sha256": "fbd8ba39947847f706079acab9cba21b87888c7da4601cffadeead432e8e8160",
+      "source": "https://capec.mitre.org/data/csv/3000.csv.zip"
+    },
+    "raw/capec_658.csv.zip": {
+      "bytes": 119675,
+      "sha256": "d05ce29381a2420e9da97b4654da2d80093e49149ce78875ecc38f6ed2f960b8",
+      "source": "https://capec.mitre.org/data/csv/658.csv.zip"
+    },
+    "raw/cwe_1000.csv.zip": {
+      "bytes": 641573,
+      "sha256": "6a3d52a7d164d98eb24ca3228039dcd98461379d225dfd395474c0d007537791",
+      "source": "https://cwe.mitre.org/data/csv/1000.csv.zip"
+    },
+    "raw/enterprise_attack.json": {
+      "bytes": 47953963,
+      "sha256": "f7eaf37fe53b50404084fe1fe67237278f7317e61c11ad550295722d13ede259",
+      "source": "https://raw.githubusercontent.com/mitre/cti/master/enterprise-attack/enterprise-attack.json"
+    }
+  },
+  "generated": "2026-08-19T05:45:20Z",
+  "note": "Inputs to scripts/build_knowledge_graph.py. Re-fetch with scripts/fetch_datasets.py --force."
+}

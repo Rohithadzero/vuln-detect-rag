@@ -1,6 +1,6 @@
 # Centralized Vulnerability Detection & Intelligent Query (RAG)
 
-![Version](https://img.shields.io/badge/version-v4.1-blue.svg)
+![Version](https://img.shields.io/badge/version-v4.5-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)
 ![Node](https://img.shields.io/badge/node-18.x-lightgrey.svg)
@@ -73,6 +73,46 @@ The AI layer **splits the retrieved evidence across four free cloud providers** 
               ▼
   Plain-language briefing, with verified [Doc N] citations
 ```
+
+## What's New in v4.5
+
+**Structural knowledge graph (CVE → CWE → CAPEC → ATT&CK).** A CVE record
+tells you what is broken. It does not tell you what an adversary could do with
+it. v4.5 joins the corpus to the MITRE cross-references that answer that:
+
+```
+CVE-2021-44228  →  CWE-502 (deserialization of untrusted data)
+                →  CAPEC-586, CAPEC-13, CAPEC-23, …
+                →  T1027, T1574.006, T1553.002, …  (8 techniques)
+```
+
+2272 nodes, 3239 edges. **Every edge is a published MITRE or NVD
+cross-reference — none is inferred by a model**, so the graph adds structure
+without adding claims.
+
+- `dataset/` holds the sources, with `MANIFEST.json` recording the URL and
+  SHA-256 of each. `python scripts/fetch_datasets.py` downloads them;
+  `python scripts/build_knowledge_graph.py --stats` builds the graph.
+- Held in memory, not in Neo4j — the system runs with no external services and
+  every query is a one- or two-hop walk. `knowledge_graph.cypher` is exported
+  anyway so that is a default, not a lock-in.
+- The RAG pipeline appends graph structure to the prompt, keyed on the
+  documents **retrieval actually returned** rather than on the question. Keying
+  on the question would let a query about an absent CVE pull in taxonomy the
+  model could build a confident answer from, turning a correct refusal into a
+  fabrication. Disable with `RAG_GRAPH_CONTEXT=0`.
+- New **Knowledge Graph** page and `/api/graph/*` endpoints.
+
+Coverage is reported honestly: 48 of 50 corpus CVEs carry a CWE, but only **19
+reach an ATT&CK technique**. The chain breaks where CAPEC has no pattern for
+that weakness. A CVE whose walk ends early is shown as having no mapped
+patterns rather than padded.
+
+**Dashboard fix.** The dashboard went blank the moment its data arrived.
+`useMemo` was called *after* the `loading` and `error` early returns, so the
+hook count changed between the first render and the second and React aborted
+with "rendered more hooks than during the previous render". The hook now runs
+unconditionally, above both returns.
 
 ## What's New in v4.1
 

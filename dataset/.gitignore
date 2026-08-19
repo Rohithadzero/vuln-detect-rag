@@ -1,0 +1,11 @@
+# Downloaded third-party datasets. Re-fetch with scripts/fetch_datasets.py;
+# MANIFEST.json records the exact source and SHA-256 of each.
+raw/
+
+# Build products of scripts/build_knowledge_graph.py.
+knowledge_graph.json
+knowledge_graph.cypher
+
+# cve_cwe.json and MANIFEST.json are deliberately NOT ignored: the first costs
+# ~6 minutes of rate-limited NVD requests to regenerate and is only a few KB,
+# and the second is the record of which inputs produced a given graph.

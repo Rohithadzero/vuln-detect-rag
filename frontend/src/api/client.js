@@ -68,3 +68,11 @@ export const setRagConfig = (enabled) => api.post('/rag-config', null, { params:
 
 export default api
 
+
+// Knowledge graph (CVE -> CWE -> CAPEC -> ATT&CK)
+export const getGraphStats = () => api.get('/graph/stats')
+export const getGraphChain = (cveId) => api.get(`/graph/chain/${cveId}`)
+export const getGraphNode = (nodeId) => api.get(`/graph/node/${nodeId}`)
+export const searchGraph = (q, limit = 25) => api.get('/graph/search', { params: { q, limit } })
+export const getGraphNeighborhood = (nodeId, depth = 2, limit = 120) =>
+  api.get(`/graph/neighborhood/${nodeId}`, { params: { depth, limit } })

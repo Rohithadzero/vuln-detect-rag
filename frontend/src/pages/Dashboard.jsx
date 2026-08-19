@@ -77,6 +77,19 @@ export default function Dashboard() {
     }
   }
 
+  // Must stay above the early returns below. Hooks have to run in the same
+  // order on every render, and the loading/error branches return before this
+  // point on the first pass -- calling useMemo after them changes the hook
+  // count as soon as stats arrive, and React aborts the render with
+  // "rendered more hooks than during the previous render". That crash is why
+  // the dashboard went blank the moment its data loaded.
+  const severityData = useMemo(() => [
+    { name: 'Critical', value: stats?.critical_vulns || 0, color: SEVERITY_COLORS.CRITICAL },
+    { name: 'High', value: stats?.high_vulns || 0, color: SEVERITY_COLORS.HIGH },
+    { name: 'Medium', value: stats?.medium_vulns || 0, color: SEVERITY_COLORS.MEDIUM },
+    { name: 'Low', value: stats?.low_vulns || 0, color: SEVERITY_COLORS.LOW },
+  ].filter(d => d.value > 0), [stats?.critical_vulns, stats?.high_vulns, stats?.medium_vulns, stats?.low_vulns])
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -95,13 +108,6 @@ export default function Dashboard() {
       </div>
     )
   }
-
-  const severityData = useMemo(() => [
-    { name: 'Critical', value: stats?.critical_vulns || 0, color: SEVERITY_COLORS.CRITICAL },
-    { name: 'High', value: stats?.high_vulns || 0, color: SEVERITY_COLORS.HIGH },
-    { name: 'Medium', value: stats?.medium_vulns || 0, color: SEVERITY_COLORS.MEDIUM },
-    { name: 'Low', value: stats?.low_vulns || 0, color: SEVERITY_COLORS.LOW },
-  ].filter(d => d.value > 0), [stats?.critical_vulns, stats?.high_vulns, stats?.medium_vulns, stats?.low_vulns])
 
   return (
     <div className="space-y-6 min-w-0">
