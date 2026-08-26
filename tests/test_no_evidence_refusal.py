@@ -80,3 +80,48 @@ def test_reduce_still_runs_when_one_shard_has_evidence():
     client, outcome = _run(["- affected: openssl 1.0.1 [Doc 1]", "NOTHING_RELEVANT"])
     assert client.reduce_calls == 1
     assert outcome.result.text != NO_EVIDENCE_ANSWER
+
+
+# ---------------------------------------------------------------------------
+# ShardExtract.useful — mixed shards must not be discarded wholesale
+# ---------------------------------------------------------------------------
+
+from rag_assistant.chains.map_reduce import ShardExtract, ContextShard
+
+
+def _extract(text):
+    return ShardExtract(shard=ContextShard(0, ["doc"], [1]),
+                        provider="fake", model="fake-1", text=text)
+
+
+def test_bare_marker_is_not_useful():
+    assert _extract("NOTHING_RELEVANT").useful is False
+
+
+def test_mixed_shard_keeps_its_evidence():
+    """One irrelevant document must not discard the shard's real findings.
+
+    This is the defect that sent 246 answerable questions to the reduce step
+    with no evidence: `useful` tested for the marker as a substring, so an
+    extract annotated per document was thrown away along with its evidence.
+    """
+    e = _extract("- [Doc 1] CVE-2020-18900 heap-based buffer overflow, CVSS 3.3\n"
+                 "- [Doc 2] NOTHING_RELEVANT")
+    assert e.useful is True
+    assert "CVE-2020-18900" in e.content
+    assert "NOTHING_RELEVANT" not in e.content
+
+
+def test_marker_lines_are_stripped_from_content():
+    e = _extract("- [Doc 1] NOTHING_RELEVANT\n- [Doc 2] real finding [Doc 2]")
+    assert e.content == "- [Doc 2] real finding [Doc 2]"
+
+
+def test_errored_extract_is_never_useful():
+    e = _extract("- [Doc 1] something")
+    e.error = "429 rate limited"
+    assert e.useful is False
+
+
+def test_whitespace_only_extract_is_not_useful():
+    assert _extract("   \n  \n").useful is False

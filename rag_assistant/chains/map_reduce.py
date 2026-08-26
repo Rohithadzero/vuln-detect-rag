@@ -142,12 +142,34 @@ class ShardExtract:
     completion_tokens: Optional[int] = None
 
     @property
-    def useful(self) -> bool:
-        """True when the shard contributed something to merge."""
+    def content(self) -> str:
+        """The extract with marker-only lines removed.
+
+        A shard with nothing to offer replies with the bare marker, as the map
+        prompt asks. But a shard holding one relevant document beside two
+        irrelevant ones tends to get annotated per document -- real evidence on
+        one line, the marker on the next -- and those marker lines are noise in
+        the reduce prompt, not evidence.
+        """
         body = (self.text or "").strip()
-        if not body or self.error:
+        if not body:
+            return ""
+        kept = [ln for ln in body.splitlines()
+                if NOTHING_RELEVANT not in ln.upper()]
+        return "\n".join(kept).strip()
+
+    @property
+    def useful(self) -> bool:
+        """True when the shard contributed something to merge.
+
+        Judged on what survives marker removal, not on whether the marker
+        appears anywhere. A substring test discards a mixed shard's genuine
+        findings because one of its documents was irrelevant, which is how 246
+        answerable questions reached the reduce step with no evidence at all.
+        """
+        if self.error:
             return False
-        return NOTHING_RELEVANT not in body.upper()
+        return bool(self.content.strip(" -*\t\r\n"))
 
 
 @dataclass
@@ -433,7 +455,7 @@ ANSWER FORMAT:
                 continue
             parts.append(
                 f"\n[from documents {', '.join(str(n) for n in extract.shard.doc_numbers)}]\n"
-                f"{extract.text.strip()}"
+                f"{extract.content}"
             )
         if history:
             parts.append(f"\n{history}")
