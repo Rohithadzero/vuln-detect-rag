@@ -549,9 +549,15 @@ documents, identical questions, differing only in `RAG_MAP_REDUCE`.
 | Fabricated CVE IDs | 0 | 0 | tied |
 | CVE fidelity | 0.9375 | 0.9375 | tied |
 | Correct refusals (of 5) | **5** | 4 | +1 |
-| Grounding support rate | 0.9524 | 1.0000 | −0.05 |
+| Grounding support rate [^vac] | 0.9524 | 1.0000 | −0.05 |
 | ROUGE (mean) | 0.2501 | 0.3001 | −0.05 |
 | BLEU (mean) | 0.1062 | 0.1543 | −0.05 |
+
+[^vac]: Both figures here are inflated by the same vacuous-pass defect
+    described under the 200-CVE run below: answers yielding no extractable
+    claim are scored 1.0 rather than left unscored. Excluding those, the
+    pilot's sharded rate is 0.9333 (n=15 of 21). Read this row with that
+    caveat; the efficiency rows above are unaffected.
 
 **What this does and does not show.**
 
@@ -659,7 +665,9 @@ Both runs, sharded arm, 6 documents per query:
 | Fell back to single-provider | 0 | **0** |
 | Peak tokens on one provider | 1,562 | **1,148** |
 | Providers used per query | 2.86 | 2.96 |
-| Grounding support rate | 0.9524 | **0.9722** |
+| Grounding support rate — as reported | 0.9524 | 0.9722 |
+| Grounding support rate — excluding zero-claim answers | 0.9333 | 0.9260 |
+| Answers yielding no verifiable claim | 29% | **62%** |
 | CVE fidelity | 0.9375 | 0.9325 |
 | Correct refusals (of 5) | 5 | **5** |
 | Fabricated CVE IDs | 0 | 7 (of 400 answers) |
@@ -668,16 +676,37 @@ Both runs, sharded arm, 6 documents per query:
 What holds up: sharding itself. Every one of 405 queries split across three
 distinct providers, and not one fell back to single-provider reading. Peak load
 charged to any single endpoint fell to 1,148 tokens — 27% below the pilot — which
-is the property this design exists to produce. Grounding support went up, and
-refusal on the five absent-CVE controls stayed perfect with zero hallucinated
-answers.
+is the property this design exists to produce. Refusal on the five absent-CVE
+controls stayed perfect, with zero hallucinated answers.
 
-What does not: the **citation rate collapsed from 0.75 to 0.27**. The likely
-cause is mechanical rather than a regression in answer quality — the share of
-shards returning usable content fell from 0.71 to 0.39, so most shards now
-correctly report `NOTHING_RELEVANT` and the surviving answer is built from a
-single extract with fewer `[Doc N]` anchors to attach. That explanation is
-untested. It is recorded here as an open question, not a finding.
+What does not: the **citation rate collapsed from 0.75 to 0.27**, and the
+grounding score does not mean what an earlier version of this README said it
+meant.
+
+`mean_support_rate` is supported-claims divided by extracted-claims, averaged
+over answers. When an answer yields **no** extractable claim the ratio is
+undefined and the harness records 1.0 — a vacuous pass. At 200 CVEs that is not
+a rare edge case: 62% of sharded answers extract zero claims, against 29% in
+the pilot. Averaging them in is what produces 0.9722.
+
+Excluding vacuous records reverses the direction of the result: grounding
+support goes from 0.9333 to 0.9260 — slightly **down**, not up. Both figures
+are in the table above, because which denominator is right is a judgement call;
+what is not a judgement call is that the as-reported number cannot be read as
+an improvement.
+
+This also explains the citation collapse, and the two are one effect rather
+than two. The share of shards returning usable content fell from 0.71 to 0.39,
+so most shards correctly report `NOTHING_RELEVANT` and the surviving answer is
+built from a single thin extract. A thin answer carries few `[Doc N]` anchors
+*and* few verifiable claims. The sharded arm's flattering grounding score and
+its poor citation rate are the same thinness measured twice.
+
+The `full` arm is far less affected — 4% zero-claim against the sharded arm's
+62% — so this is a property of how sharded reading assembles an answer, not a
+harness-wide artefact. Fixing the metric to treat a zero-claim answer as
+unscored rather than as a pass is open work; the numbers above are reported
+from the harness as it currently stands.
 
 Seven fabricated CVE identifiers appeared across 400 answers where the pilot had
 none. On 21 questions, zero was never strong evidence of zero.
