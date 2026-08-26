@@ -1378,12 +1378,35 @@ class LLMFactory:
     )
 
     @staticmethod
-    def check_ollama_available() -> dict:
+    def check_ollama_available(refresh: bool = False) -> dict:
         """Check if Ollama is running and detect available models.
 
         Talks to the HTTP API rather than shelling out to ``ollama list``, so it
         also works when the daemon is remote or the CLI is not on PATH.
+
+        The result is cached, because this is called several times while
+        serving a single page: ``/api/providers`` calls it directly and again
+        inside the provider loop, and ``is_configured('ollama')`` calls it once
+        more. Uncached, with Ollama not running, each of those waited on its
+        own connection failure and the dashboard spent tens of seconds probing
+        a daemon that was already known to be down.
+
+        Failures are cached for longer than successes. A refused connection is
+        a stable fact for as long as nobody starts the daemon, whereas an
+        available daemon can gain or lose models, so the two deserve different
+        TTLs. Pass ``refresh=True`` to force a probe -- the UI's explicit
+        "recheck" path should, since the user is asking precisely because they
+        just started Ollama.
         """
+        cached = _OLLAMA_STATUS_CACHE.get("entry")
+        if cached and not refresh:
+            fetched_at, value = cached
+            ttl = (_OLLAMA_UP_TTL_SECONDS if value.get("available")
+                   else _OLLAMA_DOWN_TTL_SECONDS)
+            if (time.time() - fetched_at) < ttl:
+                # A copy, so a caller mutating the dict cannot poison the cache.
+                return dict(value, models=list(value.get("models", [])))
+
         result = {
             "available": False,
             "model": "",
@@ -1399,7 +1422,25 @@ class LLMFactory:
             # missing or the daemon is remote, which both of those miss.
             import requests
 
-            response = requests.get(f"{result['base_url']}/api/tags", timeout=10)
+            # Separate connect and read timeouts. The old single 10s value
+            # applied to the connect phase too, so an unreachable daemon held
+            # the request open far longer than establishing a local TCP
+            # connection could ever legitimately need.
+            #
+            # Retries are disabled outright. urllib3 retries a refused
+            # connection by default, and because "localhost" resolves to both
+            # ::1 and 127.0.0.1 on Windows the connect timeout is already paid
+            # once per address; retrying multiplies that again.
+            from requests.adapters import HTTPAdapter
+
+            session = requests.Session()
+            session.mount("http://", HTTPAdapter(max_retries=0))
+            session.mount("https://", HTTPAdapter(max_retries=0))
+            with session:
+                response = session.get(
+                    f"{result['base_url']}/api/tags",
+                    timeout=(_OLLAMA_CONNECT_TIMEOUT, _OLLAMA_READ_TIMEOUT),
+                )
             response.raise_for_status()
             listing = response.json()
 
@@ -1413,7 +1454,7 @@ class LLMFactory:
                     "Ollama is running but has no models installed. "
                     "Run: ollama pull qwen2.5-coder:7b"
                 )
-                return result
+                return _cache_ollama_status(result)
 
             configured = os.getenv('OLLAMA_MODEL')
             if configured and configured in result["models"]:
@@ -1439,9 +1480,9 @@ class LLMFactory:
                 f"Cannot reach Ollama at {result['base_url']}: {e}. "
                 f"Start it with: ollama serve"
             )
-            logger.warning("Failed to check Ollama availability: %s", e)
+            logger.debug("Ollama unavailable at %s: %s", result['base_url'], e)
 
-        return result
+        return _cache_ollama_status(result)
 
     @staticmethod
     def is_cloud_model(model: str) -> bool:
@@ -1743,6 +1784,52 @@ class LLMFactory:
 #: on every request. (provider -> (fetched_at, [model_ids]))
 _MODEL_CATALOGUE_CACHE: Dict[str, Tuple[float, List[str]]] = {}
 _CATALOGUE_TTL_SECONDS = 900
+
+#: Cache of the last Ollama probe. ("entry" -> (fetched_at, status_dict))
+#: A single-key dict rather than a bare global so the value can be replaced
+#: atomically from any thread without a lock: dict item assignment is one
+#: bytecode, and a reader either sees the old tuple or the new one.
+_OLLAMA_STATUS_CACHE: Dict[str, Tuple[float, dict]] = {}
+
+#: An available daemon can gain or lose models between calls, so its status is
+#: held only briefly. A refused connection stays refused until someone starts
+#: the daemon, so it is held longer -- that is the case that was costing whole
+#: seconds per request.
+_OLLAMA_UP_TTL_SECONDS = 30
+_OLLAMA_DOWN_TTL_SECONDS = 120
+
+#: Connecting to a daemon on localhost either succeeds immediately or is
+#: refused immediately; anything slower is a daemon that is not there. Kept low
+#: because "localhost" resolves to both ::1 and 127.0.0.1 on Windows and the
+#: connect timeout is paid once per address, so the wall-clock cost of a cold
+#: probe against a stopped daemon is roughly twice this value. The read timeout
+#: is separate and more generous, since listing many models is real work.
+_OLLAMA_CONNECT_TIMEOUT = 0.6
+_OLLAMA_READ_TIMEOUT = 8.0
+
+
+def _cache_ollama_status(result: dict) -> dict:
+    """Store an Ollama probe result and return it.
+
+    Logging happens here rather than at the call site so it fires on a change
+    of state instead of once per probe. The old code logged a warning every
+    time the check ran, which -- called several times per page load against a
+    daemon that was not running -- produced pages of identical stack traces
+    that buried anything worth reading.
+    """
+    previous = _OLLAMA_STATUS_CACHE.get("entry")
+    was_available = previous[1].get("available") if previous else None
+    now_available = bool(result.get("available"))
+
+    if was_available != now_available:
+        if now_available:
+            logger.info("Ollama available at %s (model '%s')",
+                        result.get("base_url"), result.get("model"))
+        elif result.get("error"):
+            logger.warning("Ollama unavailable: %s", result["error"])
+
+    _OLLAMA_STATUS_CACHE["entry"] = (time.time(), result)
+    return result
 
 
 class ModelRotatingClient(BaseLLMClient):

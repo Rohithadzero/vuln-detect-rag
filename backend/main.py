@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import threading
 import time
 from collections import defaultdict
 import uvicorn
@@ -39,6 +40,40 @@ RATE_LIMITS = {
 DEFAULT_RATE_LIMIT = (200, 60)  # 200 requests per 60 seconds for everything else
 
 
+def _warm_provider_caches() -> None:
+    """Populate the provider caches in the background at startup.
+
+    ``/api/providers`` enumerates each configured provider's model catalogue
+    and probes Ollama. Both are cached, but the first caller pays for filling
+    those caches -- which is always the dashboard's first paint, so the cost
+    landed exactly where it was most visible.
+
+    Warming runs on a daemon thread rather than inside the lifespan body: the
+    work is network-bound and unnecessary for the server to be correct, so it
+    must not delay the port opening. Every failure is swallowed for the same
+    reason -- a provider that cannot be reached at startup is a condition the
+    endpoints already report per provider, not a reason to fail boot.
+    """
+    def warm():
+        from rag_assistant.llm_config import LLMFactory
+
+        try:
+            LLMFactory.check_ollama_available()
+        except Exception:
+            logger.debug("Ollama warm-up failed", exc_info=True)
+
+        for name in ("groq", "gemini", "openrouter", "nvidia"):
+            try:
+                if LLMFactory.is_configured(name):
+                    LLMFactory.list_models(name)
+            except Exception:
+                logger.debug("Catalogue warm-up failed for %s", name,
+                             exc_info=True)
+
+    threading.Thread(target=warm, name="provider-warmup",
+                     daemon=True).start()
+
+
 @asynccontextmanager
 async def lifespan(app):
     logger.info("Starting VulnDetectRAG v%s", settings.APP_VERSION)
@@ -48,6 +83,7 @@ async def lifespan(app):
     ensure_dirs()
     init_db()
     logger.info("Database initialized")
+    _warm_provider_caches()
     yield
     from services.orchestrator import orchestrator_service
 

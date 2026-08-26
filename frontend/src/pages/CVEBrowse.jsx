@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, Bug, ExternalLink } from 'lucide-react'
 import { searchCVEs } from '../api/client'
+import { SkeletonRegion, SkeletonRows } from '../components/Skeleton'
 
 const severityColors = {
   CRITICAL: 'text-severity-critical',
@@ -78,9 +79,9 @@ export default function CVEBrowse() {
 
       <div className="bg-white border-3 border-black shadow-neb divide-y-[3px] divide-black overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center">
-            <div className="w-8 h-8 border-4 border-black border-t-neo-cyan bg-white animate-spin mx-auto" />
-          </div>
+          <SkeletonRegion label="Loading CVEs">
+            <SkeletonRows rows={8} />
+          </SkeletonRegion>
         ) : cves.length > 0 ? (
           cves.map((cve) => (
             <a
@@ -111,7 +112,12 @@ export default function CVEBrowse() {
         )}
       </div>
 
-      <div className="text-[10px] font-bold text-gray-400 text-center uppercase">{cves.length} results</div>
+      {/* Suppressed while loading: `cves` is still the empty initial state, so
+          this rendered "0 results" underneath a list that was in fact loading
+          -- a claim about the data that was not yet true. */}
+      <div className="text-[10px] font-bold text-gray-400 text-center uppercase">
+        {loading ? 'Searching…' : `${cves.length} results`}
+      </div>
     </div>
   )
 }

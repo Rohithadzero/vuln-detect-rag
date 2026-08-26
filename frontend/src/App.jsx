@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
+import Skeleton, { SkeletonRegion, SkeletonStatCards, SkeletonPanel } from './components/Skeleton'
 
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 const ScanConsole = lazy(() => import('./pages/ScanConsole'))
@@ -10,11 +11,23 @@ const CVEBrowse = lazy(() => import('./pages/CVEBrowse'))
 const KnowledgeGraph = lazy(() => import('./pages/KnowledgeGraph'))
 const Settings = lazy(() => import('./pages/Settings'))
 
+// Route-level fallback while a lazily imported page chunk downloads. Generic
+// on purpose: at this point the router knows which route is coming but the
+// module defining its layout has not arrived, so a page header and a couple of
+// blocks is the most honest outline available.
 function Loading() {
   return (
-    <div className="flex items-center justify-center h-full">
-      <div className="w-8 h-8 border-4 border-black border-t-neo-cyan bg-white animate-spin" />
-    </div>
+    <SkeletonRegion label="Loading page" className="space-y-6">
+      <div className="space-y-2">
+        <Skeleton className="h-8 w-56" />
+        <Skeleton className="h-3 w-72" />
+      </div>
+      <SkeletonStatCards count={4} />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <SkeletonPanel />
+        <SkeletonPanel />
+      </div>
+    </SkeletonRegion>
   )
 }
 

@@ -3,6 +3,7 @@ import { getBackendLogs, getLLMStatus, getHealth } from '../api/client'
 import { RefreshCw, Download, FileText, Settings as SettingsIcon, Cpu, AlertTriangle, CheckCircle, XCircle } from 'lucide-react'
 import ProviderControls from '../components/ProviderControls'
 import MetricsPanel from '../components/MetricsPanel'
+import ThemePicker from '../components/ThemePicker'
 
 export default function Settings() {
   const [logs, setLogs] = useState('')
@@ -43,6 +44,10 @@ export default function Settings() {
           <p className="text-sm font-bold text-gray-600 uppercase tracking-wider">Platform configuration and logs</p>
         </div>
       </div>
+
+      {/* Appearance. Placed first because it is the one setting whose effect
+          is visible instantly, and users looking for it expect it at the top. */}
+      <ThemePicker />
 
       {/* Research controls: per-provider toggles, model choice, RAG on/off */}
       <ProviderControls />

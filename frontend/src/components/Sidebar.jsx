@@ -12,7 +12,7 @@ const navItems = [
 ]
 
 export default function Sidebar() {
-  const { theme, setTheme } = useTheme()
+  const { theme, setTheme, themes } = useTheme()
 
   return (
     <aside className="w-64 app-sidebar border-r-[3px] border-black flex flex-col z-10">
@@ -28,28 +28,28 @@ export default function Sidebar() {
         </div>
       </div>
 
+      {/* Two hardcoded buttons could not represent six themes, and a row of six
+          would crowd the sidebar. A select stays one line however many themes
+          exist, and the full picker with descriptions lives in Settings. */}
       <div className="p-4 border-b-[3px] border-black">
-        <p className="text-[10px] font-black uppercase tracking-widest mb-2 text-gray-500">Theme</p>
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => setTheme('classic')}
-            className={`px-3 py-2 text-[10px] font-black uppercase border-3 border-black nb-btn ${theme === 'classic' ? 'bg-neo-yellow' : 'bg-white'}`}
-            aria-pressed={theme === 'classic'}
-            aria-label="Switch to Classic theme"
-          >
-            Classic
-          </button>
-          <button
-            type="button"
-            onClick={() => setTheme('color')}
-            className={`px-3 py-2 text-[10px] font-black uppercase border-3 border-black nb-btn ${theme === 'color' ? 'bg-neo-pink text-white' : 'bg-white'}`}
-            aria-pressed={theme === 'color'}
-            aria-label="Switch to Color theme"
-          >
-            Color
-          </button>
-        </div>
+        <label
+          htmlFor="theme-select"
+          className="block text-[10px] font-black uppercase tracking-widest mb-2 text-gray-500"
+        >
+          Theme
+        </label>
+        <select
+          id="theme-select"
+          value={theme}
+          onChange={(e) => setTheme(e.target.value)}
+          className="w-full px-3 py-2 text-[11px] font-black uppercase bg-white border-3 border-black nb-input cursor-pointer"
+        >
+          {themes.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.label}
+            </option>
+          ))}
+        </select>
       </div>
 
       <nav className="flex-1 p-4 space-y-2">

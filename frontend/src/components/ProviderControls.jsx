@@ -4,6 +4,7 @@ import {
   getProviders, toggleProvider, getProviderModels, setProviderModel,
   getRagConfig, setRagConfig,
 } from '../api/client'
+import Skeleton, { SkeletonRegion } from './Skeleton'
 
 const PROVIDER_LABELS = {
   groq: 'Groq',
@@ -93,10 +94,17 @@ export default function ProviderControls() {
 
   if (!data) {
     return (
-      <div className="bg-white border-3 border-black p-6 shadow-neb flex items-center gap-3">
-        <Loader2 className="w-5 h-5 animate-spin" />
-        <span className="font-bold uppercase text-sm">Loading providers</span>
-      </div>
+      <SkeletonRegion label="Loading providers">
+        <div className="bg-white border-3 border-black p-6 shadow-neb space-y-4">
+          <Skeleton className="h-4 w-48" />
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex items-center justify-between gap-4">
+              <Skeleton className="h-3 w-28" />
+              <Skeleton className="h-6 w-16 flex-shrink-0" />
+            </div>
+          ))}
+        </div>
+      </SkeletonRegion>
     )
   }
 

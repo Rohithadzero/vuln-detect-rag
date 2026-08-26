@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Shield, ExternalLink, Bug } from 'lucide-react'
 import { getCVE } from '../api/client'
 import { sanitizeUrl } from '../utils/sanitize'
+import Skeleton, { SkeletonRegion, SkeletonText, SkeletonCard } from '../components/Skeleton'
 
 const severityColors = {
   CRITICAL: 'bg-severity-critical',
@@ -32,9 +33,17 @@ export default function CVEDetail() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="w-8 h-8 border-4 border-black border-t-neo-cyan bg-white animate-spin" />
-      </div>
+      <SkeletonRegion label="Loading CVE details" className="space-y-4">
+        <Skeleton className="h-3 w-20" />
+        <div className="bg-white border-3 border-black p-6 shadow-neb space-y-4">
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-6 w-44" />
+            <Skeleton className="h-5 w-20" />
+          </div>
+          <SkeletonText lines={4} />
+        </div>
+        <SkeletonCard lines={3} />
+      </SkeletonRegion>
     )
   }
 

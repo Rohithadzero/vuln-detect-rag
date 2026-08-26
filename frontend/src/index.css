@@ -3,6 +3,46 @@
 @tailwind utilities;
 
 @layer utilities {
+  /* Skeleton shimmer.
+   *
+   * A sweep of light across a flat block, rather than a pulsing opacity fade.
+   * The sweep has a direction, which reads as "work is progressing"; a pulse
+   * reads as "this element is disabled" and is easy to mistake for a stuck
+   * state. The base tone sits between the page background and the black
+   * borders so the placeholder is visible without competing with real content.
+   */
+  .skeleton-shimmer {
+    background-color: var(--skeleton-base, #e4e4e7);
+    background-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      var(--skeleton-sheen, rgba(255, 255, 255, 0.85)) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    background-repeat: no-repeat;
+    animation: skeleton-sweep 1.4s ease-in-out infinite;
+  }
+
+  @keyframes skeleton-sweep {
+    from {
+      background-position: -120% 0;
+    }
+    to {
+      background-position: 220% 0;
+    }
+  }
+
+  /* Motion is decorative here: the placeholder still communicates shape and
+   * position without it, and a sweeping highlight is exactly the kind of
+   * repetitive movement that triggers vestibular symptoms. Hold it still. */
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton-shimmer {
+      animation: none;
+      background-image: none;
+    }
+  }
+
   .shadow-neb {
     box-shadow: 6px 6px 0px 0px var(--color-border);
   }
@@ -24,6 +64,8 @@
   --color-text: #0a0a0a;
   --color-text-muted: #525252;
   --color-accent: #000000;
+  --skeleton-base: #e4e4e7;
+  --skeleton-sheen: rgba(255, 255, 255, 0.85);
 }
 
 html {
@@ -263,4 +305,472 @@ body[data-theme='classic'] {
   color: var(--color-text);
   border: 3px solid var(--color-border);
   border-radius: 0;
+}
+
+/* ==========================================================================
+   Additional themes
+   ==========================================================================
+
+   The application markup is written in the neo-brutalist idiom: components
+   carry `border-3 border-black`, `shadow-neb`, `bg-white` and arbitrary
+   `shadow-[4px_4px_0px_0px_#000]` utilities directly. Rather than rewrite
+   every component to be theme-agnostic, each theme below neutralises those
+   utilities from a single `.theme-<id>` scope, exactly as the existing
+   `.theme-color` block already did.
+
+   That is why the selectors are broad and occasionally reach for an
+   attribute substring match: Tailwind emits arbitrary shadow values as
+   literal class names, and matching on the class attribute is the only way to
+   catch every variant without hunting each one through the components.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Standard -- a conventional application look.
+
+   Thin grey borders, small soft shadows, rounded corners, one blue accent.
+   Nothing here is trying to be distinctive; that is the point. This is the
+   theme to pick when the interface should get out of the way.
+   -------------------------------------------------------------------------- */
+body[data-theme='standard'] {
+  background-color: #f8fafc;
+  --skeleton-base: #e8edf3;
+  --skeleton-sheen: rgba(255, 255, 255, 0.9);
+}
+
+.theme-standard {
+  --color-bg: #f8fafc;
+  --color-surface: #ffffff;
+  --color-border: #e2e8f0;
+  --color-text: #0f172a;
+  --color-accent: #2563eb;
+}
+
+.theme-standard .app-shell,
+.theme-standard .app-shell main {
+  background: #f8fafc;
+}
+
+.theme-standard .app-sidebar {
+  background: #ffffff;
+  border-right: 1px solid #e2e8f0;
+}
+
+.theme-standard .app-sidebar-accent {
+  background: #2563eb;
+}
+
+.theme-standard [class*='border-black'],
+.theme-standard .border-3 {
+  border-color: #e2e8f0;
+  border-width: 1px;
+}
+
+.theme-standard .nb-card,
+.theme-standard .nb-card-sm,
+.theme-standard .nb-btn,
+.theme-standard .nb-input,
+.theme-standard .bg-white,
+.theme-standard .chat-user,
+.theme-standard .chat-assistant {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+.theme-standard .nb-card:hover,
+.theme-standard .nb-card-sm:hover,
+.theme-standard .nb-btn:hover {
+  transform: none;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12);
+}
+
+.theme-standard .nb-btn:active {
+  transform: none;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+}
+
+.theme-standard .nb-btn {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 600;
+}
+
+.theme-standard .nb-input {
+  font-family: inherit;
+}
+
+.theme-standard .nb-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.theme-standard [class*='shadow-neb'],
+.theme-standard [class*='_0px_'] {
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08) !important;
+}
+
+.theme-standard .bg-neo-yellow { background-color: #fef3c7; color: #92400e; }
+.theme-standard .bg-neo-pink   { background-color: #fce7f3; color: #9d174d; }
+.theme-standard .bg-neo-cyan   { background-color: #cffafe; color: #155e75; }
+.theme-standard .bg-neo-green  { background-color: #dcfce7; color: #166534; }
+.theme-standard .bg-neo-purple { background-color: #ede9fe; color: #5b21b6; }
+.theme-standard .bg-neo-orange { background-color: #ffedd5; color: #9a3412; }
+.theme-standard .bg-neo-red    { background-color: #fee2e2; color: #991b1b; }
+
+.theme-standard .chat-user {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+.theme-standard .chat-assistant {
+  background: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   Minimal -- quiet.
+
+   No shadows at all, hairline dividers, ordinary type weights. Colour is used
+   only where it carries meaning (severity), never for decoration.
+   -------------------------------------------------------------------------- */
+body[data-theme='minimal'] {
+  background-color: #fafafa;
+  --skeleton-base: #ececee;
+  --skeleton-sheen: rgba(255, 255, 255, 0.95);
+}
+
+.theme-minimal {
+  --color-bg: #fafafa;
+  --color-surface: #ffffff;
+  --color-border: #e4e4e7;
+  --color-text: #18181b;
+  --color-accent: #18181b;
+}
+
+.theme-minimal .app-shell,
+.theme-minimal .app-shell main {
+  background: #fafafa;
+}
+
+.theme-minimal .app-sidebar {
+  background: #ffffff;
+  border-right: 1px solid #e4e4e7;
+}
+
+.theme-minimal .app-sidebar-accent {
+  background: #18181b;
+}
+
+.theme-minimal [class*='border-black'],
+.theme-minimal .border-3 {
+  border-color: #e4e4e7;
+  border-width: 1px;
+}
+
+.theme-minimal .nb-card,
+.theme-minimal .nb-card-sm,
+.theme-minimal .nb-btn,
+.theme-minimal .nb-input,
+.theme-minimal .bg-white,
+.theme-minimal .chat-user,
+.theme-minimal .chat-assistant {
+  border: 1px solid #e4e4e7;
+  border-radius: 4px;
+  box-shadow: none;
+}
+
+.theme-minimal [class*='shadow-neb'],
+.theme-minimal [class*='_0px_'] {
+  box-shadow: none !important;
+}
+
+.theme-minimal .nb-card:hover,
+.theme-minimal .nb-card-sm:hover,
+.theme-minimal .nb-btn:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: #a1a1aa;
+}
+
+.theme-minimal .nb-btn:active {
+  transform: none;
+}
+
+.theme-minimal .nb-btn {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+}
+
+.theme-minimal .nb-input {
+  font-family: inherit;
+}
+
+.theme-minimal .nb-input:focus {
+  border-color: #18181b;
+  box-shadow: none;
+}
+
+/* Decorative colour is drained to a neutral tint; the text carries the
+   meaning instead of the fill. Severity colours are left untouched. */
+.theme-minimal .bg-neo-yellow,
+.theme-minimal .bg-neo-pink,
+.theme-minimal .bg-neo-cyan,
+.theme-minimal .bg-neo-green,
+.theme-minimal .bg-neo-purple,
+.theme-minimal .bg-neo-orange,
+.theme-minimal .bg-neo-red {
+  background-color: #f4f4f5;
+  color: #18181b;
+}
+
+.theme-minimal .chat-user {
+  background: #18181b;
+  color: #ffffff;
+  border-color: #18181b;
+}
+
+.theme-minimal .chat-assistant {
+  background: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   Neumorphic -- soft UI.
+
+   The defining constraint is that surfaces are the SAME colour as the page.
+   Depth comes only from a paired light and dark shadow, so there are no
+   borders anywhere; adding one would break the illusion immediately.
+
+   Contrast is inherently low in this style. Text is held at a genuinely dark
+   tone rather than the mid-grey these designs usually drift to, so body copy
+   still clears a readable contrast ratio against the surface.
+   -------------------------------------------------------------------------- */
+body[data-theme='neumorph'] {
+  background-color: #e0e5ec;
+  --skeleton-base: #d4dae3;
+  --skeleton-sheen: rgba(255, 255, 255, 0.75);
+}
+
+.theme-neumorph {
+  --color-bg: #e0e5ec;
+  --color-surface: #e0e5ec;
+  --color-border: transparent;
+  --color-text: #2d3748;
+  --color-accent: #5a67d8;
+}
+
+.theme-neumorph .app-shell,
+.theme-neumorph .app-shell main,
+.theme-neumorph .app-sidebar {
+  background: #e0e5ec;
+}
+
+.theme-neumorph .app-sidebar {
+  border-right: none;
+}
+
+.theme-neumorph .app-sidebar-accent {
+  background: #5a67d8;
+}
+
+.theme-neumorph [class*='border-black'],
+.theme-neumorph .border-3,
+.theme-neumorph [class*='divide-black'] > * {
+  border-color: transparent;
+}
+
+.theme-neumorph .nb-card,
+.theme-neumorph .nb-card-sm,
+.theme-neumorph .nb-btn,
+.theme-neumorph .bg-white,
+.theme-neumorph .chat-assistant {
+  background: #e0e5ec;
+  border: none;
+  border-radius: 16px;
+  box-shadow: 6px 6px 12px #b8bfc9, -6px -6px 12px #ffffff;
+  color: #2d3748;
+}
+
+.theme-neumorph [class*='shadow-neb'],
+.theme-neumorph [class*='_0px_'] {
+  box-shadow: 6px 6px 12px #b8bfc9, -6px -6px 12px #ffffff !important;
+}
+
+/* Inputs read as recessed rather than raised -- an inset shadow is what tells
+   the user this surface receives text instead of being pressed. */
+.theme-neumorph .nb-input {
+  background: #e0e5ec;
+  border: none;
+  border-radius: 12px;
+  box-shadow: inset 4px 4px 8px #b8bfc9, inset -4px -4px 8px #ffffff;
+}
+
+.theme-neumorph .nb-input:focus {
+  box-shadow: inset 5px 5px 10px #b0b7c1, inset -5px -5px 10px #ffffff;
+}
+
+.theme-neumorph .nb-card:hover,
+.theme-neumorph .nb-card-sm:hover,
+.theme-neumorph .nb-btn:hover {
+  transform: none;
+  box-shadow: 8px 8px 16px #b8bfc9, -8px -8px 16px #ffffff;
+}
+
+/* Pressing inverts the depth. This is the one place the style genuinely
+   communicates state better than a flat design would. */
+.theme-neumorph .nb-btn:active {
+  transform: none;
+  box-shadow: inset 4px 4px 8px #b8bfc9, inset -4px -4px 8px #ffffff !important;
+}
+
+.theme-neumorph .nb-btn {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 600;
+}
+
+.theme-neumorph .bg-neo-yellow { background-color: #f2d675; color: #4a3b00; }
+.theme-neumorph .bg-neo-pink   { background-color: #eba7c7; color: #4a1030; }
+.theme-neumorph .bg-neo-cyan   { background-color: #8fd4e3; color: #04353f; }
+.theme-neumorph .bg-neo-green  { background-color: #9bd9ab; color: #0d3818; }
+.theme-neumorph .bg-neo-purple { background-color: #b5aee6; color: #221448; }
+.theme-neumorph .bg-neo-orange { background-color: #f0b183; color: #4a2306; }
+.theme-neumorph .bg-neo-red    { background-color: #e79a9a; color: #4a0f0f; }
+
+.theme-neumorph .chat-user {
+  background: #5a67d8;
+  color: #ffffff;
+  border: none;
+  border-radius: 16px;
+  box-shadow: 6px 6px 12px #b8bfc9, -6px -6px 12px #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   Midnight -- dark.
+
+   The markup hardcodes `bg-white` and black text in many places, so this
+   theme has to invert those explicitly rather than rely on variables. Text
+   utilities are remapped too: `text-gray-600` on a dark surface is illegible,
+   and it is used throughout for secondary copy.
+   -------------------------------------------------------------------------- */
+body[data-theme='midnight'] {
+  background-color: #0f172a;
+  color: #e2e8f0;
+  --skeleton-base: #263244;
+  --skeleton-sheen: rgba(148, 163, 184, 0.28);
+}
+
+.theme-midnight {
+  --color-bg: #0f172a;
+  --color-surface: #1e293b;
+  --color-border: #334155;
+  --color-text: #e2e8f0;
+  --color-accent: #22d3ee;
+  color: #e2e8f0;
+}
+
+.theme-midnight .app-shell,
+.theme-midnight .app-shell main {
+  background: #0f172a;
+}
+
+.theme-midnight .app-sidebar {
+  background: #111c30;
+  border-right: 1px solid #334155;
+}
+
+.theme-midnight .app-sidebar-accent {
+  background: linear-gradient(90deg, #0e7490 0%, #22d3ee 100%);
+}
+
+.theme-midnight [class*='border-black'],
+.theme-midnight .border-3,
+.theme-midnight [class*='divide-black'] > * {
+  border-color: #334155;
+  border-width: 1px;
+}
+
+.theme-midnight .nb-card,
+.theme-midnight .nb-card-sm,
+.theme-midnight .nb-btn,
+.theme-midnight .nb-input,
+.theme-midnight .bg-white,
+.theme-midnight .chat-assistant {
+  background: #1e293b;
+  color: #e2e8f0;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+.theme-midnight [class*='shadow-neb'],
+.theme-midnight [class*='_0px_'] {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5) !important;
+}
+
+.theme-midnight .nb-card:hover,
+.theme-midnight .nb-card-sm:hover,
+.theme-midnight .nb-btn:hover {
+  transform: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+  border-color: #22d3ee;
+}
+
+.theme-midnight .nb-btn:active {
+  transform: none;
+}
+
+.theme-midnight .nb-btn {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 600;
+}
+
+.theme-midnight .nb-input:focus {
+  border-color: #22d3ee;
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.2);
+}
+
+/* Secondary-text utilities, remapped. Without this every "text-gray-600"
+   caption in the app disappears into the surface behind it. */
+.theme-midnight .text-gray-400,
+.theme-midnight .text-gray-500,
+.theme-midnight .text-gray-600,
+.theme-midnight .text-gray-700 {
+  color: #94a3b8;
+}
+
+.theme-midnight .text-black {
+  color: #e2e8f0;
+}
+
+.theme-midnight .bg-gray-50,
+.theme-midnight .bg-gray-100,
+.theme-midnight .bg-gray-200 {
+  background-color: #263244;
+}
+
+/* Accent fills keep their hue but are darkened enough to carry light text. */
+.theme-midnight .bg-neo-yellow { background-color: #a16207; color: #fef9c3; }
+.theme-midnight .bg-neo-pink   { background-color: #9d174d; color: #fce7f3; }
+.theme-midnight .bg-neo-cyan   { background-color: #0e7490; color: #cffafe; }
+.theme-midnight .bg-neo-green  { background-color: #15803d; color: #dcfce7; }
+.theme-midnight .bg-neo-purple { background-color: #6d28d9; color: #ede9fe; }
+.theme-midnight .bg-neo-orange { background-color: #c2410c; color: #ffedd5; }
+.theme-midnight .bg-neo-red    { background-color: #b91c1c; color: #fee2e2; }
+
+.theme-midnight .text-severity-critical { color: #f87171; }
+.theme-midnight .text-severity-high     { color: #fb923c; }
+.theme-midnight .text-severity-medium   { color: #facc15; }
+.theme-midnight .text-severity-low      { color: #60a5fa; }
+
+.theme-midnight .bg-severity-critical { background-color: #450a0a; border-color: #f87171; color: #fecaca; }
+.theme-midnight .bg-severity-high     { background-color: #431407; border-color: #fb923c; color: #fed7aa; }
+.theme-midnight .bg-severity-medium   { background-color: #422006; border-color: #facc15; color: #fef08a; }
+.theme-midnight .bg-severity-low      { background-color: #172554; border-color: #60a5fa; color: #bfdbfe; }
+
+.theme-midnight .chat-user {
+  background: #0e7490;
+  color: #ecfeff;
+  border-color: #0e7490;
 }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { BarChart3, AlertTriangle, Loader2, RefreshCw } from 'lucide-react'
+import { BarChart3, AlertTriangle, RefreshCw } from 'lucide-react'
 import { getEvalMetrics } from '../api/client'
+import { SkeletonRegion, SkeletonCard } from './Skeleton'
 
 /**
  * Evaluation results from the last `scripts/run_eval.py` run.
@@ -29,10 +30,9 @@ export default function MetricsPanel() {
 
   if (loading) {
     return (
-      <div className="bg-white border-3 border-black p-6 shadow-neb flex items-center gap-3">
-        <Loader2 className="w-5 h-5 animate-spin" />
-        <span className="font-bold uppercase text-sm">Loading metrics</span>
-      </div>
+      <SkeletonRegion label="Loading metrics">
+        <SkeletonCard lines={4} />
+      </SkeletonRegion>
     )
   }
 

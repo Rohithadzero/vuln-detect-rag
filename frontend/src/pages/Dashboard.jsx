@@ -8,6 +8,7 @@ import {
   Shield, AlertTriangle, TrendingUp, Activity, ChevronRight
 } from 'lucide-react'
 import { getStats, getHealth, startScan } from '../api/client'
+import Skeleton, { SkeletonRegion, SkeletonStatCards, SkeletonPanel } from '../components/Skeleton'
 
 const SEVERITY_COLORS = {
   CRITICAL: '#ef4444',
@@ -91,10 +92,27 @@ export default function Dashboard() {
   ].filter(d => d.value > 0), [stats?.critical_vulns, stats?.high_vulns, stats?.medium_vulns, stats?.low_vulns])
 
   if (loading) {
+    // Mirrors the real layout below -- header, scan form, four stat tiles,
+    // three panels -- so nothing shifts position when the data lands.
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="w-8 h-8 border-4 border-black border-t-neo-yellow bg-white animate-spin" />
-      </div>
+      <SkeletonRegion label="Loading dashboard" className="space-y-6 min-w-0">
+        <div className="flex flex-col gap-4">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-56" />
+            <Skeleton className="h-3 w-72" />
+          </div>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <Skeleton bordered className="h-[50px] flex-1 min-w-0" />
+            <Skeleton bordered className="h-[50px] w-full sm:w-32 flex-shrink-0" />
+          </div>
+        </div>
+        <SkeletonStatCards count={4} />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <SkeletonPanel />
+          <SkeletonPanel />
+          <SkeletonPanel />
+        </div>
+      </SkeletonRegion>
     )
   }
 
