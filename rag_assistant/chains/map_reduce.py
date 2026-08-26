@@ -69,6 +69,16 @@ logger = logging.getLogger(__name__)
 #: can drop the shard without a model having to interpret the wording.
 NOTHING_RELEVANT = "NOTHING_RELEVANT"
 
+# Returned verbatim when every shard reports NOTHING_RELEVANT. Deterministic on
+# purpose: the reduce prompt opens with an "EVIDENCE EXTRACTED" header and tells
+# the model to answer from the evidence above, so handing it an empty evidence
+# block asserts that evidence exists and invites the model to supply some from
+# memory. Refusing here costs no tokens and cannot hallucinate.
+NO_EVIDENCE_ANSWER = (
+    "The knowledge base has no matching entry for this question. None of the "
+    "retrieved documents bear on it, so there is no grounded answer to give."
+)
+
 #: Target characters of document text per map call. Small enough that a model
 #: attends to every document in the shard, large enough that a typical enriched
 #: CVE record is not split across two calls.
@@ -502,10 +512,28 @@ ANSWER FORMAT:
                     fallback_prompt or question, system, shards, extracts,
                     started, **kwargs
                 )
-            # Providers answered, and none of the documents were relevant. That
-            # is a real, useful finding: say so rather than inventing coverage.
+            # Providers answered, and none of the documents were relevant.
+            # Say so and stop. Falling through to the reduce step here would
+            # send a prompt whose evidence section is empty but whose header
+            # claims evidence was extracted, which reliably produces a
+            # confident answer drawn from the model's parametric memory --
+            # exactly the hallucination the retrieval layer exists to prevent.
             logger.info(
                 "%d shards read, none relevant to the question", len(shards)
+            )
+            return MapReduceOutcome(
+                result=LLMResult(
+                    text=NO_EVIDENCE_ANSWER,
+                    model="",
+                    provider="map_reduce(no_evidence)",
+                    latency_ms=round((time.perf_counter() - started) * 1000, 1),
+                    prompt_tokens=sum(e.prompt_tokens or 0 for e in extracts),
+                    completion_tokens=sum(
+                        e.completion_tokens or 0 for e in extracts
+                    ),
+                ),
+                shards=shards,
+                extracts=extracts,
             )
 
         reduce_prompt = self._reduce_prompt(question, useful, history)
