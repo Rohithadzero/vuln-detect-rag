@@ -373,7 +373,23 @@ def score_records(records: list[dict]) -> dict:
             metrics["retrieval_by_style"] = by_style
 
     # --- Generation quality ------------------------------------------------
-    scored = [r for r in answerable if r.get("answer") and r.get("reference")]
+    # An answer must survive tokenisation, not merely be non-empty: a reply of
+    # a single zero-width space is truthy, tokenises to nothing, and makes
+    # evaluate_bleu return an error result with no bleu_1 key -- which used to
+    # abort the whole aggregation after every question had already been run.
+    scored = [
+        r for r in answerable
+        if evaluator_service._tokenize(r.get("answer") or "")
+        and evaluator_service._tokenize(r.get("reference") or "")
+    ]
+    unscorable = sum(
+        1 for r in answerable
+        if (r.get("answer") or "").strip()
+        and not evaluator_service._tokenize(r.get("answer") or "")
+    )
+    if unscorable:
+        print("  note: %d answer(s) had no scorable tokens and were excluded "
+              "from BLEU/ROUGE" % unscorable)
     if scored:
         bleu_scores, rouge_scores = [], []
         for record in scored:
@@ -389,7 +405,8 @@ def score_records(records: list[dict]) -> dict:
             "median": round(statistics.median(b.score for b in bleu_scores), 4),
             "stdev": round(statistics.pstdev([b.score for b in bleu_scores]), 4),
             "bleu_1_mean": round(
-                statistics.fmean(b.details["bleu_1"] for b in bleu_scores), 4
+                statistics.fmean(b.details.get("bleu_1", 0.0)
+                                 for b in bleu_scores), 4
             ),
             "n": len(bleu_scores),
         }
@@ -398,10 +415,12 @@ def score_records(records: list[dict]) -> dict:
             "median": round(statistics.median(r.score for r in rouge_scores), 4),
             "stdev": round(statistics.pstdev([r.score for r in rouge_scores]), 4),
             "rouge_1_f1_mean": round(
-                statistics.fmean(r.details["rouge_1"]["f1"] for r in rouge_scores), 4
+                statistics.fmean(r.details.get("rouge_1", {}).get("f1", 0.0)
+                                 for r in rouge_scores), 4
             ),
             "rouge_l_f1_mean": round(
-                statistics.fmean(r.details["rouge_l"]["f1"] for r in rouge_scores), 4
+                statistics.fmean(r.details.get("rouge_l", {}).get("f1", 0.0)
+                                 for r in rouge_scores), 4
             ),
             "n": len(rouge_scores),
         }
@@ -414,6 +433,30 @@ def score_records(records: list[dict]) -> dict:
             [r.get("retrieved_texts") or [] for r in with_answers],
         )
         metrics["groundedness"] = grounded.details
+
+        # CVE fidelity, recomputed from the per-answer grounding report.
+        #
+        # evaluate_groundedness above checks answer CVE IDs against
+        # `retrieved_texts`, but those are the API's `sources` payload, which
+        # rag_engine truncates to 300 characters per document. Any identifier
+        # appearing past that cut reads as invented, and an identifier the
+        # question itself named is counted too. Both inflate the hallucination
+        # count: on the 200-CVE broadcast arm the truncated check scored 0.7714
+        # against a true 0.9974.
+        #
+        # chains/rag_chain.py already verifies every answer against the FULL
+        # context and excludes identifiers the question named, so prefer that
+        # verdict wherever it was recorded and keep the truncated figure beside
+        # it for comparison rather than silently swapping the definition.
+        verified = [r for r in with_answers if r.get("unsupported_cves") is not None]
+        if verified:
+            clean = sum(1 for r in verified if not r["unsupported_cves"])
+            metrics["groundedness"]["cve_fidelity_truncated_context"] =                 metrics["groundedness"]["cve_fidelity"]
+            metrics["groundedness"]["cve_fidelity"] = round(clean / len(verified), 4)
+            metrics["groundedness"]["cve_fidelity_n"] = len(verified)
+            metrics["groundedness"]["fabricated_cve_ids"] = sum(
+                len(r["unsupported_cves"]) for r in verified
+            )
 
     # --- Refusal on out-of-corpus questions --------------------------------
     control_answers = [r["answer"] for r in controls if r.get("answer")]
