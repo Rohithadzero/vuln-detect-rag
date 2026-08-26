@@ -497,6 +497,14 @@ Full API docs at `http://localhost:8000/docs` when running.
 
 ## Evaluation Results
 
+Two evaluations are reported. The **pilot** below ran 21 questions against a
+50-CVE corpus and is what the earlier versions of this README quoted. The
+**200-CVE run** further down is larger by an order of magnitude and corrects
+two figures the pilot got optimistically wrong; read it as the current
+measurement and the pilot as history.
+
+### Pilot: 50 CVEs, 21 questions
+
 Produced by `python scripts/run_eval.py --ablation`, which runs the live
 pipeline end to end. Configuration: Groq `openai/gpt-oss-120b`, embeddings
 `all-MiniLM-L6-v2`, 180 indexed chunks from 50 CVEs, top-k 5, 16 answerable
@@ -517,16 +525,17 @@ appears in the retrieved context; an identifier that does not was invented.
 
 **Read these honestly.** Reference texts are drawn from the corpus itself, so
 BLEU and ROUGE measure overlap with source material rather than correctness.
-Retrieval scores hit@k = 1.0, but that is an artefact of construction —
-identifier-style questions are resolved by exact lookup and description-style
-questions reuse the indexed wording — so it is **not** evidence of retrieval
-quality. The system still answered 2 of 5 questions about absent CVEs instead
+Retrieval scores hit@k = 1.0 here, but that is an artefact of construction and
+of corpus size — identifier-style questions are resolved by exact lookup and
+description-style questions reuse the indexed wording — so it is **not**
+evidence of retrieval quality. The 200-CVE run below measures 0.885 on the
+description-style half and supersedes this figure. The system still answered 2 of 5 questions about absent CVEs instead
 of declining, so hallucination is reduced, not eliminated. An expert-graded
 question set is needed before any claim of correctness.
 
 Run your own: `python scripts/run_eval.py --ablation --limit 20`
 
-### Sharded reading vs. broadcast — measured
+#### Sharded reading vs. broadcast
 
 Produced by `python scripts/run_eval.py --ablation --limit 8 --top-k 6`. The
 `sharded` and `full` arms are a controlled pair: identical retrieval, identical
@@ -597,6 +606,106 @@ Ollama. Both the ensemble and the map phase now catch that timeout and proceed
 with whatever arrived, and the map phase is capped below the HTTP read timeout.
 A baseline that silently degrades to a different model produces invalid
 comparison data, which is why this was fixed before measuring anything.
+
+### 200-CVE run — larger corpus, and what it changed
+
+The pilot's corpus held 50 CVEs skewed hard toward CRITICAL and HIGH, and 21
+questions. That is small enough that two of its headline numbers were artefacts
+of the corpus rather than properties of the system. This run rebuilds the corpus
+at 200 CVEs, balanced 50 per CVSS v3 severity band, and asks 405 questions.
+
+```bash
+python scripts/build_corpus_200.py      # 200 CVEs from NVD 2.0, balanced
+python scripts/prewarm_enrichment.py    # warm the rate-limited NVD cache
+python scripts/run_eval_200.py --condition retrieval   # no API key needed
+python scripts/run_eval_200.py --condition sharded
+```
+
+The corpus and its vector store are separate files (`sample_nvd_200.json`,
+collection `cve_knowledge_200`), so the pilot's corpus and results stay exactly
+as they were and both runs remain reproducible.
+
+| Property | Value |
+|---|---|
+| Severity bands | 50 CRITICAL / 50 HIGH / 50 MEDIUM / 50 LOW |
+| Publication years | 148 from 2026, 11 from 2025, 41 from 2017–2024 |
+| Indexed chunks | 510 |
+| Questions | 400 answerable (200 CVEs x 2 phrasings) + 5 refusal controls |
+| Overlap with the pilot corpus | 0 |
+
+#### Retrieval is not perfect, and the pilot said it was
+
+| Metric | Pilot (50 CVEs) | 200 CVEs |
+|---|---|---|
+| hit@k | 1.0000 | 0.9875 |
+| P@1 — all questions | 1.0000 | 0.9425 |
+| **P@1 — description-style only** | **1.0000** | **0.8850** |
+| MRR | 1.0000 | 0.9631 |
+
+Identifier-style questions still resolve perfectly, because an exact CVE ID is a
+lookup rather than a semantic match. The description-style half is the honest
+number, and at 200 CVEs it drops to 0.885. **The pilot's perfect retrieval was a
+small-corpus artefact**: with 50 records there are too few near-neighbours for a
+wrong one to win. Anyone quoting hit@k = 1.0 from the older tables should stop.
+
+#### Sharded reading at scale
+
+Both runs, sharded arm, 6 documents per query:
+
+| Metric | Pilot (n=21) | 200 CVEs (n=405) |
+|---|---|---|
+| Queries split across providers | 21/21 | **405/405** |
+| Mean shards per query | 2.86 | 2.98 |
+| Fell back to single-provider | 0 | **0** |
+| Peak tokens on one provider | 1,562 | **1,148** |
+| Providers used per query | 2.86 | 2.96 |
+| Grounding support rate | 0.9524 | **0.9722** |
+| CVE fidelity | 0.9375 | 0.9325 |
+| Correct refusals (of 5) | 5 | **5** |
+| Fabricated CVE IDs | 0 | 7 (of 400 answers) |
+| Citation rate | 0.7500 | 0.2675 |
+
+What holds up: sharding itself. Every one of 405 queries split across three
+distinct providers, and not one fell back to single-provider reading. Peak load
+charged to any single endpoint fell to 1,148 tokens — 27% below the pilot — which
+is the property this design exists to produce. Grounding support went up, and
+refusal on the five absent-CVE controls stayed perfect with zero hallucinated
+answers.
+
+What does not: the **citation rate collapsed from 0.75 to 0.27**. The likely
+cause is mechanical rather than a regression in answer quality — the share of
+shards returning usable content fell from 0.71 to 0.39, so most shards now
+correctly report `NOTHING_RELEVANT` and the surviving answer is built from a
+single extract with fewer `[Doc N]` anchors to attach. That explanation is
+untested. It is recorded here as an open question, not a finding.
+
+Seven fabricated CVE identifiers appeared across 400 answers where the pilot had
+none. On 21 questions, zero was never strong evidence of zero.
+
+> **The `full` (broadcast) and `no_rag` arms at 200 CVEs are still running.**
+> This section will gain their numbers when they land. Until then the
+> broadcast comparison above is the pilot's, at n=21.
+
+#### A measurement caveat found while running this
+
+`EnsembleLLMClient` caps the broadcast path at a fixed 120-second wall clock and
+proceeds with whichever providers finished. When a provider stalls, the recorded
+`generation_ms` is that ceiling — a censored lower bound, not a measurement. Six
+of the first questions in the 200-CVE broadcast arm hit it exactly. The warning
+this logs is invisible under `run_eval.py`'s `logging.ERROR` level, so the only
+tell is a suspiciously tight cluster at 122 s. Broadcast latency from that arm
+will be reported as a median with the censoring stated, not as a bare mean.
+
+#### ROUGE is not comparable between the two runs
+
+NVD publishes no remediation prose. Where a reference carries NVD's own `Patch`
+or `Vendor Advisory` tag the corpus builder points the `solution` field at it;
+the rest get a generic line. Nothing is invented, but `run_eval.py` builds its
+ROUGE reference as `description + " Remediation: " + solution`, so references in
+the 200-CVE corpus are description-dominated and thinner than the hand-written
+remediation text in the original 50. **Do not read the two ROUGE columns side by
+side.** Grounding support, CVE fidelity, citation rate and every efficiency
+measure are unaffected, and grounding support is the primary metric regardless.
 
 ## License
 
