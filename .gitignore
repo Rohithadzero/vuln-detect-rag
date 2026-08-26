@@ -55,3 +55,23 @@ nul
 # out of the repo while remaining on disk for reference.
 archive/EMET/
 archive/v1.5/
+
+# Documents. The root README is the only prose file this repo publishes;
+# every other Markdown file and every PDF stays local. Research manuscripts,
+# their sources and their build artifacts are kept out of the repository
+# entirely -- they are written and reviewed elsewhere.
+*.pdf
+*.md
+!/README.md
+paper/
+research_paper.md
+
+# Archives and notebooks kept beside the project but not published.
+*.zip
+*.ipynb
+*.xlsx
+
+# Resumable evaluation checkpoints. Transient per-run state, rewritten every
+# few questions while an evaluation is in flight; the finished results file
+# is what carries the measurements.
+backend/data/eval_*_checkpoint.json
