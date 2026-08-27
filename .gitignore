@@ -63,6 +63,7 @@ archive/v1.5/
 *.pdf
 *.md
 !/README.md
+!/CHANGES.md
 paper/
 research_paper.md
 

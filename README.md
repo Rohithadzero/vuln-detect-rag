@@ -8,7 +8,7 @@
 
 A unified vulnerability scanning platform with RAG-powered intelligence across **twelve security tools** — network, web and supply chain — with answers grounded in a live-enriched CVE knowledge base.
 
-The AI layer **splits the retrieved evidence across four free cloud providers** (Groq, Google Gemini, OpenRouter, NVIDIA NIM) so each reads only its own share, then merges their extracts into one cited answer — and falls back to a **fully local Ollama** model when every cloud provider is unreachable. Every finished answer is checked back against the retrieved text before it is returned.
+The AI layer **splits the retrieved evidence across several free cloud providers** (Groq, Google Gemini, NVIDIA NIM, and OpenRouter where its free tier allows) so each reads only its own share, then merges their extracts into one cited answer — and falls back to a **fully local Ollama** model when every cloud provider is unreachable. Every finished answer is checked back against the retrieved text before it is returned.
 
 ## Architecture
 
@@ -48,8 +48,8 @@ The AI layer **splits the retrieved evidence across four free cloud providers** 
   │                                                            │
   │    docs 1-2  ──▶ Groq        ─┐                            │
   │    docs 3-4  ──▶ Gemini       │  "extract only what these  │
-  │    docs 5-6  ──▶ OpenRouter   │   docs support, or reply   │
-  │    docs 7-8  ──▶ NVIDIA      ─┘   NOTHING_RELEVANT"        │
+  │    docs 5-6  ──▶ NVIDIA      ─┘   docs support, or reply   │
+  │                                   NOTHING_RELEVANT"        │
   │                                                            │
   │  each provider rotates across its whole model catalogue    │
   └───────────────────────────────────────────────────────────┘
@@ -321,16 +321,21 @@ measured from the UI.
   `ScanVulnerability`, deduplicated by CVE with severity normalised from CVSS.
 - **Grounded RAG assistant** — hybrid retrieval (exact CVE-ID lookup + semantic
   search) over an enriched knowledge base. Answers cite `[Doc N]`, and the
-  assistant declines rather than inventing when the corpus has no answer.
+  assistant declines rather than inventing when the corpus has no answer. When
+  no shard finds relevant evidence the refusal is **deterministic — returned
+  without consulting a model at all**, so it cannot be talked out of it and
+  cannot regress when providers rotate.
 - **Live threat intelligence** — CISA KEV, FIRST EPSS, NVD 2.0 and OSV, so
   prioritisation follows what is actually being exploited, not just CVSS.
 - **AI scan briefings** — any completed scan is explained in plain language:
   bottom line, what to fix first, everything else, caveats.
-- **Sharded reading across four free providers** — Groq, Gemini, OpenRouter
-  (free models only) and NVIDIA each read a *different* slice of the retrieved
-  evidence in parallel, then one small call merges their extracts. Cuts the
-  tokens billed to any single free tier and keeps each model's context small
-  enough to attend to. Each provider rotates across its whole model catalogue.
+- **Sharded reading across free providers** — Groq, Gemini and NVIDIA each read
+  a *different* slice of the retrieved evidence in parallel, then one small call
+  merges their extracts. Cuts the tokens billed to any single free tier and
+  keeps each model's context small enough to attend to. OpenRouter is supported
+  and configured, but is left out of the default rotation: its free models draw
+  on an upstream shared pool that rate-limits independently of your account.
+  Each provider rotates across its model catalogue when one is throttled.
 - **Verified answers** — every CVE ID, CWE ID, CVSS score and `[Doc N]`
   citation is checked against the retrieved text before the answer is returned.
   Unsupported claims are stripped, or named in a visible caveat.
@@ -553,11 +558,11 @@ documents, identical questions, differing only in `RAG_MAP_REDUCE`.
 | ROUGE (mean) | 0.2501 | 0.3001 | −0.05 |
 | BLEU (mean) | 0.1062 | 0.1543 | −0.05 |
 
-[^vac]: Both figures here are inflated by the same vacuous-pass defect
-    described under the 200-CVE run below: answers yielding no extractable
-    claim are scored 1.0 rather than left unscored. Excluding those, the
-    pilot's sharded rate is 0.9333 (n=15 of 21). Read this row with that
-    caveat; the efficiency rows above are unaffected.
+[^vac]: Both figures here are inflated by a vacuous-pass defect in the
+    harness at the time: an answer yielding no extractable claim was scored
+    1.0 rather than left unscored. Excluding those, the pilot's sharded rate
+    is 0.9333 (n=15 of 21). Read this row with that caveat; the efficiency
+    rows above are unaffected. See [CHANGES.md](CHANGES.md).
 
 **What this does and does not show.**
 
@@ -613,18 +618,20 @@ with whatever arrived, and the map phase is capped below the HTTP read timeout.
 A baseline that silently degrades to a different model produces invalid
 comparison data, which is why this was fixed before measuring anything.
 
-### 200-CVE run — larger corpus, and what it changed
+### 200-CVE run — the current measurement
 
-The pilot's corpus held 50 CVEs skewed hard toward CRITICAL and HIGH, and 21
-questions. That is small enough that two of its headline numbers were artefacts
-of the corpus rather than properties of the system. This run rebuilds the corpus
-at 200 CVEs, balanced 50 per CVSS v3 severity band, and asks 405 questions.
+The pilot above held 50 CVEs skewed toward CRITICAL and HIGH, and 21 questions.
+That is small enough that two of its headline numbers were artefacts of the
+corpus rather than properties of the system. This run rebuilds the corpus at
+200 CVEs, balanced 50 per CVSS v3 severity band, and asks 405 questions of
+every arm. **Read this section as the measurement and the pilot as history.**
 
 ```bash
 python scripts/build_corpus_200.py      # 200 CVEs from NVD 2.0, balanced
 python scripts/prewarm_enrichment.py    # warm the rate-limited NVD cache
 python scripts/run_eval_200.py --condition retrieval   # no API key needed
 python scripts/run_eval_200.py --condition sharded
+python scripts/run_eval_200.py --condition full        # broadcast baseline
 ```
 
 The corpus and its vector store are separate files (`sample_nvd_200.json`,
@@ -634,7 +641,7 @@ as they were and both runs remain reproducible.
 | Property | Value |
 |---|---|
 | Severity bands | 50 CRITICAL / 50 HIGH / 50 MEDIUM / 50 LOW |
-| Publication years | 148 from 2026, 11 from 2025, 41 from 2017–2024 |
+| Publication years | 148 from 2026, 11 from 2025, 41 from 2017-2024 |
 | Indexed chunks | 510 |
 | Questions | 400 answerable (200 CVEs x 2 phrasings) + 5 refusal controls |
 | Overlap with the pilot corpus | 0 |
@@ -645,96 +652,122 @@ as they were and both runs remain reproducible.
 |---|---|---|
 | hit@k | 1.0000 | 0.9875 |
 | P@1 — all questions | 1.0000 | 0.9425 |
-| **P@1 — description-style only** | **1.0000** | **0.8850** |
+| P@1 — identifier-style | 1.0000 | 1.0000 |
+| **P@1 — description-style** | **1.0000** | **0.8850** |
 | MRR | 1.0000 | 0.9631 |
 
-Identifier-style questions still resolve perfectly, because an exact CVE ID is a
-lookup rather than a semantic match. The description-style half is the honest
-number, and at 200 CVEs it drops to 0.885. **The pilot's perfect retrieval was a
-small-corpus artefact**: with 50 records there are too few near-neighbours for a
-wrong one to win. Anyone quoting hit@k = 1.0 from the older tables should stop.
+Identifier-style questions still resolve perfectly, because an exact CVE ID is
+a lookup rather than a semantic match. The description-style half is the honest
+number, and at 200 CVEs it drops to 0.885. **The pilot's perfect retrieval was
+a small-corpus artefact** — with 50 records there are too few near-neighbours
+for a wrong one to win. Anyone quoting hit@k = 1.0 from the older tables should
+stop.
 
-#### Sharded reading at scale
+#### Sharded reading vs. broadcast, 405 questions each
 
-Both runs, sharded arm, 6 documents per query:
+Identical corpus, identical retrieval, identical questions. The only variable
+is whether the retrieved set is partitioned across providers or handed whole to
+each of them.
 
-| Metric | Pilot (n=21) | 200 CVEs (n=405) |
+| Metric | Sharded | Broadcast | |
+|---|---|---|---|
+| **Peak tokens on one provider** | **1,282** | 11,474 | **9.0x lower** |
+| **Median generation latency** | **6.6 s** | 13.0 s | **2.0x faster** |
+| Mean generation latency | 11.5 s | 19.0 s | |
+| Mean prompt tokens per question | 3,470 | 8,906 | 2.6x lower |
+| Providers used per query | 2.97 | 1.00 | |
+| Queries partitioned | 398 / 405 | — | |
+| Fell back to a single call | 7 | — | |
+| CVE fidelity | **1.0000** | 0.9950 | |
+| Fabricated CVE IDs (of 400) | **0** | 2 | |
+| Citation rate | 0.8475 | 0.8475 | tied |
+| Grounding support | 0.9914 | 0.9900 | |
+| Grounding support, non-vacuous | 0.9905 | 0.9897 | |
+| Correct refusals (of 5) | **5** | **5** | tied |
+| Hallucinated control answers | **0** | **0** | tied |
+| ROUGE (surface overlap) | 0.1914 | 0.2092 | |
+| Query failures | 0 | 0 | |
+
+**Peak per-provider load is the result this design exists to produce**, and it
+holds at scale: 1,282 tokens against 11,474, a 9.0-fold reduction across 405
+paired queries. That is larger than the pilot's 5.3x, because a bigger corpus
+retrieves more text for broadcast to duplicate across every provider while
+sharding still hands each one only its slice.
+
+Latency is 2.0x on medians. Medians rather than means because
+`EnsembleLLMClient` caps the broadcast path at a fixed 120-second wall clock
+and proceeds with whichever providers finished — 16 broadcast questions hit
+that ceiling exactly, so their recorded time is a censored lower bound, not a
+measurement. The sharded arm hit it once in 405.
+
+#### Evidence actually merges now
+
+| | Pilot (n=16) | 200 CVEs (n=400) |
 |---|---|---|
-| Queries split across providers | 21/21 | **405/405** |
-| Mean shards per query | 2.86 | 2.98 |
-| Fell back to single-provider | 0 | **0** |
-| Peak tokens on one provider | 1,562 | **1,148** |
-| Providers used per query | 2.86 | 2.96 |
-| Grounding support rate — as reported | 0.9524 | 0.9722 |
-| Grounding support rate — excluding zero-claim answers | 0.9333 | 0.9260 |
-| Answers yielding no verifiable claim | 29% | **62%** |
-| CVE fidelity | 0.9375 | 0.9325 |
-| Correct refusals (of 5) | 5 | **5** |
-| Fabricated CVE IDs | 0 | 7 (of 400 answers) |
-| Citation rate | 0.7500 | 0.2675 |
+| Mean shards planned | 2.86 | 2.98 |
+| Mean shards carrying content | 0.71 | **1.56** |
+| Queries merging 2+ extracts | **0** | **230 (57.5%)** |
+| Queries reaching the reducer with no evidence | — | 12 (3.0%) |
 
-What holds up: sharding itself. Every one of 405 queries split across three
-distinct providers, and not one fell back to single-provider reading. Peak load
-charged to any single endpoint fell to 1,148 tokens — 27% below the pilot — which
-is the property this design exists to produce. Refusal on the five absent-CVE
-controls stayed perfect, with zero hallucinated answers.
+In the pilot exactly one shard ever returned content, so the reduce step was
+never synthesising partial evidence from several providers — it was rewriting a
+single extract. At 200 CVEs **the majority of queries merge two or more
+extracts**, which is the behaviour the design describes.
 
-What does not: the **citation rate collapsed from 0.75 to 0.27**, and the
-grounding score does not mean what an earlier version of this README said it
-meant.
+#### Quality is a tie; efficiency is not
 
-`mean_support_rate` is supported-claims divided by extracted-claims, averaged
-over answers. When an answer yields **no** extractable claim the ratio is
-undefined and the harness records 1.0 — a vacuous pass. At 200 CVEs that is not
-a rare edge case: 62% of sharded answers extract zero claims, against 29% in
-the pilot. Averaging them in is what produces 0.9722.
+On this corpus sharding neither helps nor hurts answer quality in any way the
+data supports. Citation rate is identical to four decimal places. Grounding
+support differs by 0.0014. Both arms refuse all five absent-CVE controls with
+zero hallucinated answers. Sharding fabricates no CVE identifiers where
+broadcast fabricates two, and 2 of 400 is too small to claim an effect from.
 
-Excluding vacuous records reverses the direction of the result: grounding
-support goes from 0.9333 to 0.9260 — slightly **down**, not up. Both figures
-are in the table above, because which denominator is right is a judgement call;
-what is not a judgement call is that the as-reported number cannot be read as
-an improvement.
+That is the honest shape of the result: **a large, reproducible efficiency win
+at no measurable cost in grounding**, rather than an improvement in answer
+quality. Fabrication was already near the floor once retrieval worked, so this
+question set cannot distinguish a reading strategy robust to fabrication
+pressure from one never tested under it. A harder set — near-miss identifiers,
+evidence spanning several records, deliberate distractors — is needed for that.
 
-This also explains the citation collapse, and the two are one effect rather
-than two. The share of shards returning usable content fell from 0.71 to 0.39,
-so most shards correctly report `NOTHING_RELEVANT` and the surviving answer is
-built from a single thin extract. A thin answer carries few `[Doc N]` anchors
-*and* few verifiable claims. The sharded arm's flattering grounding score and
-its poor citation rate are the same thinness measured twice.
+ROUGE is 0.019 lower under sharding. Since references are drawn from the corpus
+itself, that measures how much source wording survives, and the map step's
+`NOTHING_RELEVANT` filter discards documents rather than paraphrasing them.
+Treat it as a difference in verbosity, not accuracy.
 
-The `full` arm is far less affected — 4% zero-claim against the sharded arm's
-62% — so this is a property of how sharded reading assembles an answer, not a
-harness-wide artefact. Fixing the metric to treat a zero-claim answer as
-unscored rather than as a pass is open work; the numbers above are reported
-from the harness as it currently stands.
+#### Refusal is deterministic, not a model's decision
 
-Seven fabricated CVE identifiers appeared across 400 answers where the pilot had
-none. On 21 questions, zero was never strong evidence of zero.
+When every shard reports `NOTHING_RELEVANT` and none failed to be read, the
+sharded path returns a refusal **without calling a model at all**. It costs no
+reduce tokens, cannot be argued out of the refusal, and cannot regress when
+providers rotate to a weaker model. Broadcast has no equivalent point at which
+it knows the evidence was empty.
 
-> **The `full` (broadcast) and `no_rag` arms at 200 CVEs are still running.**
-> This section will gain their numbers when they land. Until then the
-> broadcast comparison above is the pilot's, at n=21.
+The distinction matters because it is the difference between a measured
+property and a guaranteed one. Both arms score 5/5 here; only one of them
+scores 5/5 by construction.
 
-#### A measurement caveat found while running this
+#### Threats to validity
 
-`EnsembleLLMClient` caps the broadcast path at a fixed 120-second wall clock and
-proceeds with whichever providers finished. When a provider stalls, the recorded
-`generation_ms` is that ceiling — a censored lower bound, not a measurement. Six
-of the first questions in the 200-CVE broadcast arm hit it exactly. The warning
-this logs is invisible under `run_eval.py`'s `logging.ERROR` level, so the only
-tell is a suspiciously tight cluster at 122 s. Broadcast latency from that arm
-will be reported as a median with the censoring stated, not as a bare mean.
+- **Model rotation.** Each provider rotates across its model catalogue when
+  throttled, so the two arms are not guaranteed to be served by the same model.
+  130 of 405 sharded records ran on a smaller rotated model. Peak-token load is
+  dominated by prompt size and is unaffected; answer-quality deltas between the
+  arms are **not** cleanly attributable to the reading strategy alone.
+- **Censored latency.** 16 broadcast questions hit the 120-second ensemble
+  ceiling. Latency is reported as a median for that reason.
+- **ROUGE is not comparable to the pilot's.** NVD publishes no remediation
+  prose. Where a reference carries NVD's own `Patch` or `Vendor Advisory` tag
+  the corpus builder points the `solution` field at it; the rest get a generic
+  line. Nothing is invented, but `run_eval.py` builds its ROUGE reference as
+  `description + " Remediation: " + solution`, so references here are
+  description-dominated and thinner than the hand-written remediation text in
+  the original 50. **Do not read the two ROUGE columns side by side.**
+- **Questions are template-generated**, not analyst-written, so these metrics
+  measure grounding against a known-correct record rather than expert-judged
+  usefulness.
 
-#### ROUGE is not comparable between the two runs
-
-NVD publishes no remediation prose. Where a reference carries NVD's own `Patch`
-or `Vendor Advisory` tag the corpus builder points the `solution` field at it;
-the rest get a generic line. Nothing is invented, but `run_eval.py` builds its
-ROUGE reference as `description + " Remediation: " + solution`, so references in
-the 200-CVE corpus are description-dominated and thinner than the hand-written
-remediation text in the original 50. **Do not read the two ROUGE columns side by
-side.** Grounding support, CVE fidelity, citation rate and every efficiency
-measure are unaffected, and grounding support is the primary metric regardless.
+A record of every defect found and fixed while producing these numbers, and
+what each one changed, is in [CHANGES.md](CHANGES.md).
 
 ## License
 
