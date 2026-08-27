@@ -50,6 +50,10 @@ def normalize(text: str) -> str:
 #: "CVSS 9.8", "CVSS:3.1 score of 9.8", "CVSS score: 7.5", "base score 7.5".
 #: The number must be adjacent to an explicit CVSS/base-score label, so a
 #: version number or a port in the same sentence is never mistaken for a score.
+#: CVE and CWE identifiers, blanked before score matching so their digits
+#: are never read as a CVSS value.
+_IDENT = re.compile(r"CVE-\d{4}-\d{4,}|CWE-\d+", re.IGNORECASE)
+
 CVSS_PATTERN = re.compile(
     r"(?:CVSS(?:\s*[:v]?\s*\d\.\d)?|base\s+score)"   # label, optional vector version
     r"[^\d\n]{0,30}"                                  # "score of", ":", " / severity:** ", …
@@ -221,8 +225,21 @@ def verify_answer(answer: str, context: str,
             report.unsupported_cwes.append(cwe)
 
     supported_scores = _context_scores(context)
-    for raw in dict.fromkeys(CVSS_PATTERN.findall(answer)):
+    # Blank identifiers before scanning for scores. "the CVSS score for
+    # CVE-2019-0708 is not given" otherwise yields a score of 20 -- the
+    # CVE's year -- and the answer gets a caveat warning the reader about
+    # a fabricated score it never claimed. Every unsupported score both
+    # 200-CVE arms reported was one of these: 20.0 or 60.0.
+    scannable = _IDENT.sub(" ", answer)
+    for raw in dict.fromkeys(CVSS_PATTERN.findall(scannable)):
         score = _normalized_score(raw)
+        # CVSS is defined on 0.0-10.0. A value outside that is not a
+        # score the model asserted, it is a parse artefact.
+        try:
+            if not 0.0 <= float(score) <= 10.0:
+                continue
+        except (TypeError, ValueError):
+            continue
         report.claims_checked += 1
         if score in supported_scores:
             report.claims_supported += 1

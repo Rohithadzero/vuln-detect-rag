@@ -586,6 +586,22 @@ ANSWER FORMAT:
         reduce_prompt = self._reduce_prompt(question, useful, history)
         merged = self._reduce(reduce_prompt, system or self.REDUCE_SYSTEM, **kwargs)
 
+        # The reduce step sometimes echoes the marker back as its whole answer
+        # -- an extract that survived as "NOTHING_RELEVANT plus commentary"
+        # leaves the model nothing else to say. That is a correct refusal
+        # wearing an internal token as its user-facing text, so replace it
+        # with the same sentence the no-evidence path returns.
+        if merged is not None and _is_marker_line(merged.text or ""):
+            logger.info("Reduce returned only the marker; substituting the "
+                        "no-evidence answer")
+            merged = LLMResult(
+                text=NO_EVIDENCE_ANSWER,
+                model=merged.model,
+                provider=merged.provider,
+                prompt_tokens=merged.prompt_tokens,
+                completion_tokens=merged.completion_tokens,
+            )
+
         if merged is None:
             logger.warning("Reduce step failed on every provider")
             return self._fallback(

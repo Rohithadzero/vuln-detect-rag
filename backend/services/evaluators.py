@@ -9,6 +9,9 @@ from models.schemas import EvalResult
 _DASH_FOLD = {ord(c): "-" for c in "‐‑‒–—−"}
 
 
+_IDENT = re.compile(r"CVE-\d{4}-\d{4,}|CWE-\d+", re.IGNORECASE)
+
+
 def _fold(text: str) -> str:
     return (text or "").translate(_DASH_FOLD)
 
@@ -132,36 +135,94 @@ class EvaluatorService:
             },
         )
 
+    #: Ways a model declines. Tolerant of do/does/did and of contain/include/
+    #: mention, because "do not contain" and "does not contain" are the same
+    #: refusal and an exact-phrase list scored one of them as a hallucination.
+    _DECLINE = re.compile(
+        r"(?:do(?:es)?|did)\s+not\s+(?:contain|include|have|mention|cover|list|provide)"
+        r"|no\s+(?:information|entry|entries|matching|relevant|record|data|details)"
+        r"|not\s+(?:available|present|found|in\s+the\s+provided|included)"
+        r"|(?:cannot|can't|unable\s+to)\s+(?:find|locate|answer)"
+        r"|NOTHING_RELEVANT",
+        re.IGNORECASE)
+
+    #: A CVSS score actually stated, as opposed to the phrase "CVSS score"
+    #: appearing inside a refusal ("... or its CVSS score").
+    _SCORE_STATED = re.compile(
+        r"(?:CVSS|base\s+score)[^\d\n]{0,24}(\d{1,2}(?:\.\d)?)", re.IGNORECASE)
+
+    #: The subject being described rather than declined: "CVE-X is a ...",
+    #: "CVE-X affects ...". This is what a parametric-memory answer looks like.
+    _DESCRIBES = re.compile(
+        r"CVE-\d{4}-\d{4,}\s*(?:\([^)]{0,40}\))?\s*"
+        r"(?:is|was|are|were|affects?|allows?|enables?|permits?|exists?)\b",
+        re.IGNORECASE)
+
+    def _states_a_score(self, text: str) -> bool:
+        """Whether the answer actually asserts a CVSS score.
+
+        CVSS is defined on 0.0-10.0, so a captured value outside that
+        range is a parse artefact rather than a claim -- typically a
+        year picked out of an identifier, or a grounding caveat the
+        pipeline appended about one.
+        """
+        for raw in self._SCORE_STATED.findall(text):
+            try:
+                if 0.0 <= float(raw) <= 10.0:
+                    return True
+            except (TypeError, ValueError):
+                continue
+        return False
+
     def evaluate_refusal(self, answers: list[str]) -> EvalResult:
         """Measure correct refusal on questions the corpus cannot answer.
 
         Run against control questions whose subject is deliberately absent from
         the knowledge base. A system that answers these is hallucinating, so a
         high score here is as important as a high score on answerable ones.
+
+        Judged on what the answer supplies, not on whether a phrase appears in
+        it. A substring test fails in both directions and did: it scored three
+        1,000-character answers about BlueKeep, EternalBlue and Heartbleed as
+        correct refusals because each buried a hedge mid-paragraph, and later
+        scored four genuine refusals as hallucinations because they said "do
+        not contain" rather than "does not contain", or replied with the bare
+        marker.
+
+        An answer counts as a refusal when it declines AND does not go on to
+        describe the subject or state a score for it.
         """
         if not answers:
             return EvalResult(metric="Refusal", score=0.0,
                               details={"error": "No answers"})
 
-        refusal_markers = (
-            "does not contain", "no information", "not available",
-            "not in the provided", "no relevant", "cannot find",
-            "does not include", "no entry", "not present", "unable to find",
-            "no matching", "not found in",
-        )
+        refused = 0
+        hedged_but_answered = 0
+        for raw in answers:
+            text = _fold(raw or "").strip()
+            declines = bool(self._DECLINE.search(text))
+            # Blank out identifiers first: "the CVSS score for
+            # CVE-2019-0708 is not given" otherwise matches the CVE's
+            # year as though it were a score of 20.
+            masked = _IDENT.sub(" CVE-ID ", text)
+            asserts = self._states_a_score(masked) or bool(
+                self._DESCRIBES.search(text))
+            if declines and not asserts:
+                refused += 1
+            elif declines and asserts:
+                # Hedged and answered anyway -- the failure mode the old
+                # substring test could not see.
+                hedged_but_answered += 1
 
-        refused = sum(
-            1 for a in answers
-            if any(marker in a.lower() for marker in refusal_markers)
-        )
-
+        total = len(answers)
         return EvalResult(
             metric="Refusal",
-            score=round(refused / len(answers), 4),
+            score=round(refused / total, 4),
             details={
                 "correct_refusals": refused,
-                "hallucinated_answers": len(answers) - refused,
-                "control_questions": len(answers),
+                "hallucinated_answers": total - refused,
+                "hedged_but_answered": hedged_but_answered,
+                "control_questions": total,
             },
         )
 
