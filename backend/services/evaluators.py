@@ -4,6 +4,15 @@ from collections import Counter
 from models.schemas import EvalResult
 
 
+#: Dash variants some providers emit inside identifiers, folded to ASCII
+#: so "CVE‑2021‑38894" matches "CVE-2021-38894".
+_DASH_FOLD = {ord(c): "-" for c in "‐‑‒–—−"}
+
+
+def _fold(text: str) -> str:
+    return (text or "").translate(_DASH_FOLD)
+
+
 class EvaluatorService:
     """Compute evaluation metrics for RAG and scanner outputs."""
 
@@ -87,10 +96,19 @@ class EvaluatorService:
         hallucinated_total = 0
 
         for answer, context_docs in zip(answers, contexts):
-            if re.search(r"\[Doc\s*\d+\]", answer, re.IGNORECASE):
+            # Fold dash variants before matching. Some providers render
+            # identifiers with non-breaking hyphens (CVE‑2021‑38894),
+            # which an ASCII-hyphen pattern silently misses.
+            answer = _fold(answer)
+
+            # Accept full-width brackets as well as ASCII. groq's gpt-oss
+            # models cite as 【Doc 1】, and counting only "[Doc 1]"
+            # undercounts their citations.
+            if re.search(r"[\[【]\s*Doc\s*\d+\s*[\]】]", answer,
+                         re.IGNORECASE):
                 cited += 1
 
-            context_blob = " ".join(context_docs).upper()
+            context_blob = _fold(" ".join(context_docs)).upper()
             answer_cves = set(
                 c.upper() for c in re.findall(r"CVE-\d{4}-\d{4,}", answer, re.IGNORECASE)
             )
