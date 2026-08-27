@@ -74,6 +74,24 @@ NOTHING_RELEVANT = "NOTHING_RELEVANT"
 # the model to answer from the evidence above, so handing it an empty evidence
 # block asserts that evidence exists and invites the model to supply some from
 # memory. Refusing here costs no tokens and cannot hallucinate.
+def _is_marker_line(line: str) -> bool:
+    """Whether a line is the refusal marker rather than evidence.
+
+    Dropping every line that merely CONTAINS the marker loses real findings.
+    A model may quote the instruction back ("Reply NOTHING_RELEVANT if ...")
+    on the same line as its evidence, and on single-line output that would
+    discard everything. So a line counts as a marker only when removing the
+    marker leaves nothing substantive behind; bullets, document references
+    and punctuation are not substance.
+    """
+    upper = line.upper()
+    if NOTHING_RELEVANT not in upper:
+        return False
+    residue = upper.replace(NOTHING_RELEVANT, "")
+    residue = "".join(ch for ch in residue if ch.isalnum())
+    return len(residue) < 12
+
+
 NO_EVIDENCE_ANSWER = (
     "The knowledge base has no matching entry for this question. None of the "
     "retrieved documents bear on it, so there is no grounded answer to give."
@@ -155,7 +173,7 @@ class ShardExtract:
         if not body:
             return ""
         kept = [ln for ln in body.splitlines()
-                if NOTHING_RELEVANT not in ln.upper()]
+                if not _is_marker_line(ln)]
         return "\n".join(kept).strip()
 
     @property

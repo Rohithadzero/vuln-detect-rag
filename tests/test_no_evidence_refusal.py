@@ -179,3 +179,25 @@ def test_clean_read_with_nothing_relevant_still_refuses():
     """The refusal path must survive: no failures, genuinely nothing there."""
     client, outcome = _run(["NOTHING_RELEVANT"])
     assert outcome.result.text == NO_EVIDENCE_ANSWER
+
+
+def test_instruction_quoted_alongside_evidence_is_kept():
+    """A model that echoes the instruction must not lose its evidence.
+
+    openrouter/free returns single-line deliberation that quotes the prompt
+    back -- 'Reply NOTHING_RELEVANT if the ...' -- in the same line as its
+    findings. Line-based stripping on single-line output is all-or-nothing, so
+    the marker has to be judged on what removing it leaves behind.
+    """
+    e = _extract('The docs give CVE-2021-38894 in IBM Security Verify Access '
+                 '10.0.0, CVSS 2.7, CWE-209. The instruction said "Reply '
+                 'NOTHING_RELEVANT if they provide none" but they do provide '
+                 'evidence [Doc 1].')
+    assert e.useful is True
+    assert "CVE-2021-38894" in e.content
+
+
+def test_bare_marker_with_doc_reference_is_still_a_marker():
+    e = _extract("- [Doc 2] NOTHING_RELEVANT")
+    assert e.content == ""
+    assert e.useful is False
