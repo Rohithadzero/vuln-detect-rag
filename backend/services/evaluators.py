@@ -142,6 +142,7 @@ class EvaluatorService:
         r"(?:do(?:es)?|did)\s+not\s+(?:contain|include|have|mention|cover|list|provide)"
         r"|no\s+(?:information|entry|entries|matching|relevant|record|data|details)"
         r"|not\s+(?:available|present|found|in\s+the\s+provided|included)"
+        r"|un(?:available|known)"
         r"|(?:cannot|can't|unable\s+to)\s+(?:find|locate|answer)"
         r"|NOTHING_RELEVANT",
         re.IGNORECASE)
@@ -155,7 +156,8 @@ class EvaluatorService:
     #: "CVE-X affects ...". This is what a parametric-memory answer looks like.
     _DESCRIBES = re.compile(
         r"CVE-\d{4}-\d{4,}\s*(?:\([^)]{0,40}\))?\s*"
-        r"(?:is|was|are|were|affects?|allows?|enables?|permits?|exists?)\b",
+        r"(?:is|was|are|were|affects?|allows?|enables?|permits?|exists?)\b"
+        r"(?!\s+(?:not\b|un(?:available|known)|available|absent|missing))",
         re.IGNORECASE)
 
     def _states_a_score(self, text: str) -> bool:
