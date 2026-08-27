@@ -303,6 +303,12 @@ def run_condition(pipeline: RAGPipeline, questions: list[dict],
                     "shards": reading.get("shards", 0),
                     "shards_with_content": reading.get("shards_with_content", 0),
                     "map_providers": reading.get("map_providers") or [],
+                    # Recorded because its absence hid a real defect: shards
+                    # are dealt one per provider, so a failing provider loses
+                    # whichever shard it held, and without this the loss is
+                    # indistinguishable from the documents being irrelevant.
+                    "shard_failures": reading.get("shard_failures", 0),
+                    "largest_shard_chars": reading.get("largest_shard_chars", 0),
                     "tokens_by_provider": reading.get("tokens_by_provider") or {},
                     "peak_provider_tokens": reading.get("peak_provider_tokens", 0),
                     "fell_back": reading.get("fell_back_to_single_call", False),

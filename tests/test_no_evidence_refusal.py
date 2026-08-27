@@ -125,3 +125,57 @@ def test_errored_extract_is_never_useful():
 
 def test_whitespace_only_extract_is_not_useful():
     assert _extract("   \n  \n").useful is False
+
+
+# ---------------------------------------------------------------------------
+# Refusal must require a COMPLETE read, not merely an empty one
+# ---------------------------------------------------------------------------
+
+class _PartialFailureClient:
+    """One shard errors; the rest legitimately hold nothing relevant.
+
+    This is the shape that produced 134 false refusals (33% of answerable
+    questions): shards are dealt one per provider, so a single failing
+    provider loses whichever shard it was given. When that is the shard
+    holding the answer, the surviving shards correctly report
+    NOTHING_RELEVANT and the query used to refuse a question it could have
+    answered.
+    """
+
+    def __init__(self):
+        self.config = _Cfg()
+        self.calls = 0
+
+    def generate_detailed(self, prompt, **kwargs):
+        if "EVIDENCE EXTRACTED" in prompt:
+            return LLMResult(text="reduced", model="fake-1", provider="fake")
+        self.calls += 1
+        if self.calls == 1:
+            raise RuntimeError("410 Client Error: Gone")
+        return LLMResult(text="NOTHING_RELEVANT", model="fake-1", provider="fake")
+
+
+class _Fallback:
+    config = _Cfg()
+    used = False
+
+    def generate_detailed(self, prompt, **kwargs):
+        _Fallback.used = True
+        return LLMResult(text="answer from the whole context",
+                         model="fake-1", provider="fake")
+
+
+def test_partial_shard_failure_falls_back_instead_of_refusing():
+    _Fallback.used = False
+    fb = _Fallback()
+    reader = ShardedReader([_PartialFailureClient()], fallback=fb)
+    outcome = reader.run("What is CVE-2021-38894?", ["doc a", "doc b", "doc c"])
+    assert outcome.result.text != NO_EVIDENCE_ANSWER, \
+        "a shard that could not be read must not produce a refusal"
+    assert _Fallback.used is True
+
+
+def test_clean_read_with_nothing_relevant_still_refuses():
+    """The refusal path must survive: no failures, genuinely nothing there."""
+    client, outcome = _run(["NOTHING_RELEVANT"])
+    assert outcome.result.text == NO_EVIDENCE_ANSWER

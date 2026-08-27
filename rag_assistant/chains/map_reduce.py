@@ -523,12 +523,19 @@ ANSWER FORMAT:
 
         if not useful:
             failed = [e for e in extracts if e.error]
-            if failed and len(failed) == len(extracts):
-                # Every provider was unreachable. Fall back to a single
-                # ordinary call so the user still gets an answer.
+            if failed:
+                # Any shard we could not read leaves a hole, and absence of
+                # evidence in the shards we DID read says nothing about the
+                # one we did not. Refusing here would be a false refusal
+                # whenever the answer happened to sit in the unread shard --
+                # which is a third of queries when one of the configured
+                # providers is failing, since each shard goes to a different
+                # one. Fall back to a single call over the whole context
+                # instead, and only refuse when every shard was read cleanly.
                 logger.warning(
-                    "All %d map calls failed; falling back to a single call",
-                    len(extracts),
+                    "%d of %d map calls failed and nothing else was relevant; "
+                    "falling back to a single call rather than refusing on an "
+                    "incomplete read", len(failed), len(extracts),
                 )
                 return self._fallback(
                     fallback_prompt or question, system, shards, extracts,
