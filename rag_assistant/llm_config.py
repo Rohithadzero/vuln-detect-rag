@@ -1679,8 +1679,8 @@ class LLMFactory:
             # gemini-2.0-flash is on the free tier and fast enough for chat.
             'gemini': os.getenv('GEMINI_MODEL', 'gemini-flash-latest'),
             # Free tier only; the client refuses any model that costs money.
-            'openrouter': os.getenv('OPENROUTER_MODEL', 'openai/gpt-oss-20b:free'),
-            'nvidia': os.getenv('NVIDIA_MODEL', 'meta/llama-3.3-70b-instruct'),
+            'openrouter': os.getenv('OPENROUTER_MODEL', 'minimax/minimax-m3:free'),
+            'nvidia': os.getenv('NVIDIA_MODEL', 'nvidia/nemotron-3-nano-30b-a3b'),
             'huggingface': os.getenv('HUGGINGFACE_MODEL', 'meta-llama/Llama-3.1-8B-Instruct')
         }
 

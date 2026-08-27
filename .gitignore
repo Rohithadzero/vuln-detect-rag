@@ -75,3 +75,6 @@ research_paper.md
 # few questions while an evaluation is in flight; the finished results file
 # is what carries the measurements.
 backend/data/eval_*_checkpoint.json
+
+# Local .env backups taken before pinning provider models.
+.env.bak.*
