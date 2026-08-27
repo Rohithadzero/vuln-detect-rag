@@ -236,3 +236,17 @@ only one of them scores 5/5 by construction.
   censored at the ensemble ceiling and is not usable as a baseline.
 - **Questions are template-generated**, so these metrics measure grounding
   against a known-correct record rather than expert-judged usefulness.
+- **The three arms disagree on retrieval to the third decimal.** `retrieval`
+  and `full` both scored hit@k 0.9875 / P@1 0.9425 / MRR 0.9631; `sharded`
+  scored 0.9850 / 0.9400 / 0.9606 over the same 400 questions and the same
+  index. Retrieval is meant to be deterministic, so a five-query difference
+  across runs is unexplained. Nothing claimed here turns on it, and the
+  published tables quote the two runs that agree.
+- **`peak_provider_tokens` is 0 on every broadcast record.** The field is
+  written per provider by the sharded path only; the broadcast peak is that
+  single call's `prompt_tokens + completion_tokens`. Recomputing from the raw
+  field yields 0 and reads as a clean sweep for sharding, which it is not.
+- **The `refusal` block in `eval_200_full.json` is stale**, as the stored
+  `unsupported_scores` are. It predates the metric fix and still reads 3/5.
+  Re-scoring the same stored answers with the current evaluator gives 5/5 for
+  both arms.

@@ -8,7 +8,7 @@
 
 A unified vulnerability scanning platform with RAG-powered intelligence across **twelve security tools** — network, web and supply chain — with answers grounded in a live-enriched CVE knowledge base.
 
-The AI layer **splits the retrieved evidence across several free cloud providers** (Groq, Google Gemini, NVIDIA NIM, and OpenRouter where its free tier allows) so each reads only its own share, then merges their extracts into one cited answer — and falls back to a **fully local Ollama** model when every cloud provider is unreachable. Every finished answer is checked back against the retrieved text before it is returned.
+The AI layer **splits the retrieved evidence across three free cloud providers** (Groq, Google Gemini, NVIDIA NIM) so each reads only its own share, then merges their extracts into one cited answer — and falls back to a **fully local Ollama** model when every cloud provider is unreachable. Every finished answer is checked back against the retrieved text before it is returned. A fourth provider, OpenRouter, stays configured but is out of the default rotation: its 429s carry `limit_source: upstream_provider_shared_pool`, so another key would not help.
 
 ## Architecture
 
@@ -765,6 +765,34 @@ scores 5/5 by construction.
 - **Questions are template-generated**, not analyst-written, so these metrics
   measure grounding against a known-correct record rather than expert-judged
   usefulness.
+- **The three arms do not agree on retrieval to the third decimal.** The
+  `retrieval` and `full` runs both scored hit@k 0.9875, P@1 0.9425, MRR
+  0.9631; the `sharded` run scored 0.9850 / 0.9400 / 0.9606 over the same
+  400 questions and the same index — a five-query difference on a step that
+  should be deterministic. The tables above quote the two runs that agree.
+  No claim here turns on it (the description-style P@1 of 0.885 is the
+  headline and is unaffected either way), but a deterministic retriever
+  disagreeing with itself across runs is unexplained and is listed rather
+  than smoothed over.
+
+#### Reading the stored records back
+
+Two traps, for anyone recomputing these numbers from the JSON rather than
+quoting the `metrics` block.
+
+**`peak_provider_tokens` is 0 on every broadcast record.** That field is
+written per provider by the sharded path only. The broadcast arm hands the
+whole context to a single endpoint, so the peak charged to one provider is
+that call's entire `prompt_tokens + completion_tokens` — which is how the
+11,474 above is derived. Summing the raw field gives 0 and looks like a
+clean sweep for sharding; it is an absent field, not a measurement.
+
+**The `refusal` block in `eval_200_full.json` is stale.** It was written
+before the refusal metric was fixed and still reads 3/5 with 2
+hallucinations. Re-scoring the same stored answers with the current
+`EvaluatorService.evaluate_refusal` gives 5/5 with 0 hallucinations for
+both arms, which is what the tables above report. The answers never
+changed; the metric that judged them did.
 
 A record of every defect found and fixed while producing these numbers, and
 what each one changed, is in [CHANGES.md](CHANGES.md).
