@@ -63,8 +63,8 @@ class NucleiScanner(ScannerAdapter):
     def scan(self, target: str) -> list[ScanVulnerability]:
         binary = self._get_binary()
         if not binary:
-            logger.warning("Nuclei not available, using mock data for %s", target)
-            return self._mock_scan(target)
+            logger.warning("Nuclei not available, returning no simulated data for %s", target)
+            return self._no_result(target)
 
         try:
             # Ensure target has a scheme for nuclei
@@ -101,7 +101,7 @@ class NucleiScanner(ScannerAdapter):
                 logger.error(
                     "Nuclei exited with code %d: %s", result.returncode, result.stderr
                 )
-                return self._mock_scan(target)
+                return self._no_result(target)
 
             vulns = self._parse_json_lines(result.stdout, target)
             if not vulns:
@@ -109,10 +109,10 @@ class NucleiScanner(ScannerAdapter):
             return vulns if vulns else []
         except subprocess.TimeoutExpired:
             logger.error("Nuclei scan timed out for %s", target)
-            return self._mock_scan(target)
+            return self._no_result(target)
         except Exception:
             logger.exception("Nuclei scan failed for %s", target)
-            return self._mock_scan(target)
+            return self._no_result(target)
 
     def _parse_json_lines(self, output: str, target: str) -> list[ScanVulnerability]:
         vulns = []
@@ -179,75 +179,3 @@ class NucleiScanner(ScannerAdapter):
         mapping = {"CRITICAL": 9.5, "HIGH": 7.5, "MEDIUM": 5.0, "LOW": 2.5, "INFO": 0.0}
         return mapping.get(severity, 0.0)
 
-    def _mock_scan(self, target: str) -> list[ScanVulnerability]:
-        import hashlib
-
-        target_hash = hashlib.md5((target + "nuclei").encode()).hexdigest()
-        hash_val = int(target_hash[:8], 16)
-
-        vulns = []
-        if hash_val % 2 != 0:
-            vulns.append(
-                ScanVulnerability(
-                    cve_id="CVE-2023-50164",
-                    cvss_score=7.5,
-                    severity="HIGH",
-                    description="Apache Struts Path Traversal leads to RCE",
-                    affected_host=target,
-                    affected_port=80,
-                    affected_service="http",
-                    solution="Upgrade Apache Struts to 6.3.0.2 or later",
-                    references=["https://nvd.nist.gov/vuln/detail/CVE-2023-50164"],
-                    source_scanner=self.name,
-                    raw_output={"type": "mock", "target": target},
-                )
-            )
-        if hash_val % 4 == 0:
-            vulns.append(
-                ScanVulnerability(
-                    cve_id="CVE-2024-23897",
-                    cvss_score=9.8,
-                    severity="CRITICAL",
-                    description="Jenkins Arbitrary File Read Vulnerability",
-                    affected_host=target,
-                    affected_port=8080,
-                    affected_service="http",
-                    solution="Upgrade Jenkins to version 2.442, LTS 2.426.3 or later",
-                    references=["https://nvd.nist.gov/vuln/detail/CVE-2024-23897"],
-                    exploit_available=True,
-                    source_scanner=self.name,
-                    raw_output={"type": "mock", "target": target},
-                )
-            )
-        vulns.append(
-            ScanVulnerability(
-                cve_id=None,
-                cvss_score=5.3,
-                severity="MEDIUM",
-                description="Missing HTTP Security Headers detected",
-                affected_host=target,
-                affected_port=443,
-                affected_service="https",
-                solution="Add X-Frame-Options, X-Content-Type-Options, Strict-Transport-Security headers",
-                source_scanner=self.name,
-                raw_output={"type": "mock", "target": target},
-            )
-        )
-        if hash_val % 6 == 0:
-            vulns.append(
-                ScanVulnerability(
-                    cve_id="CVE-2023-46747",
-                    cvss_score=9.8,
-                    severity="CRITICAL",
-                    description="F5 BIG-IP Configuration Utility Auth Bypass",
-                    affected_host=target,
-                    affected_port=443,
-                    affected_service="https",
-                    solution="Update F5 BIG-IP to fixed versions",
-                    references=["https://nvd.nist.gov/vuln/detail/CVE-2023-46747"],
-                    exploit_available=True,
-                    source_scanner=self.name,
-                    raw_output={"type": "mock", "target": target},
-                )
-            )
-        return vulns

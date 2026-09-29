@@ -221,6 +221,10 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
+from services.tool_paths import ensure_tools_on_path  # noqa: E402
+
+ensure_tools_on_path()
+
 
 def ensure_dirs():
     """Create data directories. Called during app startup."""

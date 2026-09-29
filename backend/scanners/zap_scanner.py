@@ -4,7 +4,6 @@ import json
 import os
 import shutil
 import tempfile
-import hashlib
 import time
 from scanners.base import ScannerAdapter, ScanVulnerability
 from config import settings
@@ -94,8 +93,8 @@ class ZAPScanner(ScannerAdapter):
         """
         binary = self._get_binary()
         if not binary:
-            logger.warning("OWASP ZAP not available, using mock data for %s", target)
-            return self._mock_scan(target)
+            logger.warning("OWASP ZAP not available, returning no simulated data for %s", target)
+            return self._no_result(target)
 
         # Try REST API first (if ZAP is already running)
         try:
@@ -113,9 +112,9 @@ class ZAPScanner(ScannerAdapter):
         except Exception as e:
             logger.debug("ZAP CLI not available: %s", e)
 
-        # Fall back to mock data
-        logger.info("OWASP ZAP scan not possible, using mock data for %s", target)
-        return self._mock_scan(target)
+        # No usable result; report that honestly
+        logger.info("OWASP ZAP scan not possible, returning no simulated data for %s", target)
+        return self._no_result(target)
 
     def _scan_via_api(self, target: str) -> list[ScanVulnerability]:
         """Scan using ZAP REST API."""
@@ -385,107 +384,3 @@ class ZAPScanner(ScannerAdapter):
         }
         return mapping.get(severity, 0.0)
 
-    def _mock_scan(self, target: str) -> list[ScanVulnerability]:
-        """Generate mock vulnerabilities when ZAP is not available."""
-        target_hash = hashlib.md5((target + "zap").encode()).hexdigest()
-        hash_val = int(target_hash[:8], 16)
-
-        vulns = []
-
-        if hash_val % 3 != 0:
-            vulns.append(
-                ScanVulnerability(
-                    cve_id=None,
-                    cvss_score=5.3,
-                    severity="MEDIUM",
-                    description="CWE-79: Cross-Site Scripting (Reflected)",
-                    affected_host=target,
-                    affected_port=443,
-                    affected_service="https",
-                    solution="Validate and sanitize all user input. Implement Content Security Policy.",
-                    source_scanner=self.name,
-                    raw_output={"type": "mock", "target": target},
-                )
-            )
-
-        if hash_val % 2 == 0:
-            vulns.append(
-                ScanVulnerability(
-                    cve_id=None,
-                    cvss_score=7.5,
-                    severity="HIGH",
-                    description="CWE-89: SQL Injection in search parameter",
-                    affected_host=target,
-                    affected_port=443,
-                    affected_service="https",
-                    solution="Use parameterized queries. Never concatenate user input into SQL.",
-                    source_scanner=self.name,
-                    raw_output={"type": "mock", "target": target},
-                )
-            )
-
-        vulns.append(
-            ScanVulnerability(
-                cve_id=None,
-                cvss_score=3.7,
-                severity="LOW",
-                description="CWE-693: Content Security Policy (CSP) header not set",
-                affected_host=target,
-                affected_port=443,
-                affected_service="https",
-                solution="Implement Content-Security-Policy header with strict directives.",
-                source_scanner=self.name,
-                raw_output={"type": "mock", "target": target},
-            )
-        )
-
-        if hash_val % 4 == 0:
-            vulns.append(
-                ScanVulnerability(
-                    cve_id=None,
-                    cvss_score=9.1,
-                    severity="HIGH",
-                    description="CWE-352: Cross-Site Request Forgery (CSRF)",
-                    affected_host=target,
-                    affected_port=443,
-                    affected_service="https",
-                    solution="Implement anti-CSRF tokens and SameSite cookie attribute.",
-                    source_scanner=self.name,
-                    raw_output={"type": "mock", "target": target},
-                )
-            )
-
-        if hash_val % 5 == 0:
-            vulns.append(
-                ScanVulnerability(
-                    cve_id="CVE-2023-44487",
-                    cvss_score=7.5,
-                    severity="HIGH",
-                    description="HTTP/2 Rapid Reset Attack (DDoS vulnerability)",
-                    affected_host=target,
-                    affected_port=443,
-                    affected_service="https",
-                    solution="Update HTTP/2 server implementation and apply rate limiting.",
-                    references=["https://nvd.nist.gov/vuln/detail/CVE-2023-44487"],
-                    source_scanner=self.name,
-                    raw_output={"type": "mock", "target": target},
-                )
-            )
-
-        if hash_val % 6 == 0:
-            vulns.append(
-                ScanVulnerability(
-                    cve_id=None,
-                    cvss_score=6.5,
-                    severity="MEDIUM",
-                    description="CWE-521: Weak password policy detected",
-                    affected_host=target,
-                    affected_port=443,
-                    affected_service="https",
-                    solution="Enforce strong password requirements: min 12 chars, mixed case, numbers, symbols.",
-                    source_scanner=self.name,
-                    raw_output={"type": "mock", "target": target},
-                )
-            )
-
-        return vulns

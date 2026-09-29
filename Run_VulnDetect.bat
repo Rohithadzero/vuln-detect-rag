@@ -141,6 +141,13 @@ if !ERRORLEVEL! neq 0 (
 )
 
 :: ---------------------------------------------------------------
+:: 4b. Scanner tools: install whatever is missing, once, then put them on PATH
+:: ---------------------------------------------------------------
+echo [*] Checking scanner tools ^(installs anything missing, skips what is present^)...
+powershell -NoProfile -ExecutionPolicy RemoteSigned -File "%~dp0scripts\install_tools.ps1"
+set "PATH=%~dp0toolsin;%PATH%"
+
+:: ---------------------------------------------------------------
 :: 5. Seed the knowledge base BEFORE the backend starts
 :: ---------------------------------------------------------------
 :: Ordering matters: the RAG assistant reports an empty corpus if it starts

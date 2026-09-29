@@ -65,6 +65,9 @@ networkx>=3.0,<4.0
 # Async HTTP client used by the Burp and ZAP scanner adapters
 httpx>=0.25.0,<1.0.0
 
+# TLS scanner used by the "tlsscan" adapter
+sslyze>=6.0.0,<7.0.0
+
 # Security: hardens the Nmap XML parser against XXE
 defusedxml>=0.7.0,<1.0.0
 

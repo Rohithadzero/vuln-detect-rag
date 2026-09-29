@@ -73,12 +73,12 @@ class NmapScanner(ScannerAdapter):
     def scan(self, target: str) -> list[ScanVulnerability]:
         binary = self._get_binary()
         if not binary:
-            logger.warning("Nmap not available, using mock data for %s", target)
-            return self._mock_scan(target)
+            logger.warning("Nmap not available, returning no simulated data for %s", target)
+            return self._no_result(target)
 
         if not self._validate_target(target):
             logger.error("Invalid target rejected: %s", target)
-            return self._mock_scan(target)
+            return self._no_result(target)
 
         try:
             cmd = [
@@ -110,19 +110,19 @@ class NmapScanner(ScannerAdapter):
                     vulns = self._parse_xml(result.stdout, target)
                     if vulns:
                         return vulns
-                return self._mock_scan(target)
+                return self._no_result(target)
 
             vulns = self._parse_xml(result.stdout, target)
             if not vulns:
                 logger.info("No CVEs found by nmap for %s, parsing open ports", target)
                 vulns = self._parse_open_ports(result.stdout, target)
-            return vulns if vulns else self._mock_scan(target)
+            return vulns
         except subprocess.TimeoutExpired:
             logger.error("Nmap scan timed out for %s", target)
-            return self._mock_scan(target)
+            return self._no_result(target)
         except Exception:
             logger.exception("Nmap scan failed for %s", target)
-            return self._mock_scan(target)
+            return self._no_result(target)
 
     def _parse_xml(self, xml_output: str, target: str) -> list[ScanVulnerability]:
         vulns = []
@@ -281,77 +281,3 @@ class NmapScanner(ScannerAdapter):
             pass
         return findings
 
-    def _mock_scan(self, target: str) -> list[ScanVulnerability]:
-        import hashlib
-
-        target_hash = hashlib.md5(target.encode()).hexdigest()
-        hash_val = int(target_hash[:8], 16)
-
-        vulns = []
-        if hash_val % 3 == 0:
-            vulns.append(
-                ScanVulnerability(
-                    cve_id="CVE-2021-44228",
-                    cvss_score=10.0,
-                    severity="CRITICAL",
-                    description="Apache Log4j2 Remote Code Execution (Log4Shell)",
-                    affected_host=target,
-                    affected_port=443 if hash_val % 2 == 0 else 8443,
-                    affected_service="https",
-                    solution="Update Log4j to version 2.17.1 or later",
-                    references=["https://nvd.nist.gov/vuln/detail/CVE-2021-44228"],
-                    exploit_available=True,
-                    source_scanner=self.name,
-                    raw_output={"type": "mock", "target": target},
-                )
-            )
-        if hash_val % 2 == 0:
-            vulns.append(
-                ScanVulnerability(
-                    cve_id="CVE-2022-22965",
-                    cvss_score=9.8,
-                    severity="CRITICAL",
-                    description="Spring Framework RCE (Spring4Shell)",
-                    affected_host=target,
-                    affected_port=8080,
-                    affected_service="http-proxy",
-                    solution="Upgrade Spring Framework to 5.3.18+ or 2.6.6+",
-                    references=["https://nvd.nist.gov/vuln/detail/CVE-2022-22965"],
-                    exploit_available=True,
-                    source_scanner=self.name,
-                    raw_output={"type": "mock", "target": target},
-                )
-            )
-        vulns.append(
-            ScanVulnerability(
-                cve_id="CVE-2023-44487",
-                cvss_score=7.5,
-                severity="HIGH",
-                description="HTTP/2 Rapid Reset Attack vulnerable endpoint",
-                affected_host=target,
-                affected_port=443,
-                affected_service="https",
-                solution="Update HTTP/2 server implementation",
-                references=["https://nvd.nist.gov/vuln/detail/CVE-2023-44487"],
-                source_scanner=self.name,
-                raw_output={"type": "mock", "target": target},
-            )
-        )
-        if hash_val % 5 == 0:
-            vulns.append(
-                ScanVulnerability(
-                    cve_id="CVE-2020-1472",
-                    cvss_score=10.0,
-                    severity="CRITICAL",
-                    description="Netlogon Elevation of Privilege (Zerologon)",
-                    affected_host=target,
-                    affected_port=135,
-                    affected_service="msrpc",
-                    solution="Apply Microsoft August 2020 security update",
-                    references=["https://nvd.nist.gov/vuln/detail/CVE-2020-1472"],
-                    exploit_available=True,
-                    source_scanner=self.name,
-                    raw_output={"type": "mock", "target": target},
-                )
-            )
-        return vulns

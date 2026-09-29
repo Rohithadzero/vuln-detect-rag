@@ -1,10 +1,7 @@
 import logging
-import subprocess
-import json
 import os
 import shutil
 import tempfile
-import hashlib
 from scanners.base import ScannerAdapter, ScanVulnerability
 from config import settings
 
@@ -107,8 +104,8 @@ class BurpScanner(ScannerAdapter):
         """
         binary = self._get_binary()
         if not binary:
-            logger.warning("Burp Suite not available, using mock data for %s", target)
-            return self._mock_scan(target)
+            logger.warning("Burp Suite not available, returning no simulated data for %s", target)
+            return self._no_result(target)
 
         # Try REST API first (if Burp is already running)
         try:
@@ -126,11 +123,11 @@ class BurpScanner(ScannerAdapter):
         except Exception as e:
             logger.debug("Burp CLI not available: %s", e)
 
-        # Fall back to mock data
+        # No usable result; report that honestly
         logger.info(
-            "Burp Suite requires manual operation, using mock data for %s", target
+            "Burp Suite requires manual operation, returning no simulated data for %s", target
         )
-        return self._mock_scan(target)
+        return self._no_result(target)
 
     def _scan_via_api(self, target: str) -> list[ScanVulnerability]:
         """Scan using Burp Suite REST API (Professional edition only)."""
@@ -234,93 +231,3 @@ class BurpScanner(ScannerAdapter):
         }
         return mapping.get(severity, 0.0)
 
-    def _mock_scan(self, target: str) -> list[ScanVulnerability]:
-        """Generate mock vulnerabilities when Burp Suite is not available."""
-        target_hash = hashlib.md5((target + "burp").encode()).hexdigest()
-        hash_val = int(target_hash[:8], 16)
-
-        vulns = []
-
-        if hash_val % 3 != 0:
-            vulns.append(
-                ScanVulnerability(
-                    cve_id=None,
-                    cvss_score=6.1,
-                    severity="MEDIUM",
-                    description="Cross-Site Scripting (XSS) Reflected",
-                    affected_host=target,
-                    affected_port=443,
-                    affected_service="https",
-                    solution="Implement output encoding and Content Security Policy (CSP)",
-                    source_scanner=self.name,
-                    raw_output={"type": "mock", "target": target},
-                )
-            )
-
-        if hash_val % 2 == 0:
-            vulns.append(
-                ScanVulnerability(
-                    cve_id="CVE-2023-25690",
-                    cvss_score=7.5,
-                    severity="HIGH",
-                    description="HTTP Request Smuggling vulnerability detected",
-                    affected_host=target,
-                    affected_port=443,
-                    affected_service="https",
-                    solution="Normalize HTTP request parsing and disable HTTP/1.1 connection reuse",
-                    references=["https://nvd.nist.gov/vuln/detail/CVE-2023-25690"],
-                    source_scanner=self.name,
-                    raw_output={"type": "mock", "target": target},
-                )
-            )
-
-        vulns.append(
-            ScanVulnerability(
-                cve_id=None,
-                cvss_score=5.3,
-                severity="MEDIUM",
-                description="Missing security headers: X-Frame-Options, X-Content-Type-Options",
-                affected_host=target,
-                affected_port=443,
-                affected_service="https",
-                solution="Add X-Frame-Options: DENY and X-Content-Type-Options: nosniff headers",
-                source_scanner=self.name,
-                raw_output={"type": "mock", "target": target},
-            )
-        )
-
-        if hash_val % 4 == 0:
-            vulns.append(
-                ScanVulnerability(
-                    cve_id=None,
-                    cvss_score=8.1,
-                    severity="HIGH",
-                    description="SQL Injection in login form parameter",
-                    affected_host=target,
-                    affected_port=443,
-                    affected_service="https",
-                    solution="Use parameterized queries and input validation",
-                    source_scanner=self.name,
-                    raw_output={"type": "mock", "target": target},
-                )
-            )
-
-        if hash_val % 5 == 0:
-            vulns.append(
-                ScanVulnerability(
-                    cve_id="CVE-2021-22986",
-                    cvss_score=9.8,
-                    severity="CRITICAL",
-                    description="F5 BIG-IP iControl REST API Unauthenticated RCE",
-                    affected_host=target,
-                    affected_port=443,
-                    affected_service="https",
-                    solution="Upgrade F5 BIG-IP to patched versions or restrict API access",
-                    references=["https://nvd.nist.gov/vuln/detail/CVE-2021-22986"],
-                    exploit_available=True,
-                    source_scanner=self.name,
-                    raw_output={"type": "mock", "target": target},
-                )
-            )
-
-        return vulns

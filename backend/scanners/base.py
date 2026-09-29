@@ -35,6 +35,27 @@ class ScannerAdapter(ABC):
         """Check if the scanner binary is available on the system."""
         return True
 
+    def _no_result(self, target: str) -> list["ScanVulnerability"]:
+        """An INFO note saying the scan produced nothing. Never invents findings."""
+        installed = self.is_available()
+        kind = "scan_failed" if installed else "not_installed"
+        reason = (
+            "ran but did not complete or produced no readable output"
+            if installed
+            else "is not installed, so it did not run"
+        )
+        return [
+            ScanVulnerability(
+                cve_id=None,
+                cvss_score=0.0,
+                severity="INFO",
+                description=f"{self.name} {reason} for '{target}'. No findings were simulated.",
+                affected_host=target,
+                source_scanner=self.name,
+                raw_output={"type": kind},
+            )
+        ]
+
     @staticmethod
     def parse_severity(score: float) -> str:
         """Convert a CVSS score to severity string."""

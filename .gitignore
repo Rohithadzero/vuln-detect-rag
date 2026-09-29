@@ -83,3 +83,6 @@ backend/data/eval_*_checkpoint.json
 # Scratch checkpoints from evaluation runs.
 backend/data/stage2_backup/
 backend/data/prefix_backup/
+
+# Locally installed scanner binaries (see scripts/install_tools.ps1).
+tools/

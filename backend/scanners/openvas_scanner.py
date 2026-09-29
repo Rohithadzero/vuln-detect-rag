@@ -22,7 +22,6 @@ import os
 import time
 
 from scanners.base import ScannerAdapter, ScanVulnerability
-from config import settings
 
 logger = logging.getLogger("vulndetect")
 
@@ -114,7 +113,7 @@ class OpenVASScanner(ScannerAdapter):
                 "GVM_PASSWORD and install python-gvm). Using sample data for %s",
                 target,
             )
-            return self._mock_scan(target)
+            return self._no_result(target)
 
         target_id = task_id = None
         gmp = None
@@ -137,7 +136,7 @@ class OpenVASScanner(ScannerAdapter):
                 report_id = self._await_completion(gmp, task_id)
                 if not report_id:
                     logger.error("OpenVAS scan did not complete for %s", target)
-                    return self._mock_scan(target)
+                    return self._no_result(target)
 
                 report_xml = gmp.get_report(
                     report_id, details=True, ignore_pagination=True
@@ -146,7 +145,7 @@ class OpenVASScanner(ScannerAdapter):
 
         except Exception:
             logger.exception("OpenVAS scan failed for %s", target)
-            return self._mock_scan(target)
+            return self._no_result(target)
 
         finally:
             # Targets and tasks accumulate in the GVM database otherwise, and a
@@ -344,66 +343,3 @@ class OpenVASScanner(ScannerAdapter):
     # Fallback
     # ------------------------------------------------------------------
 
-    def _mock_scan(self, target: str) -> list[ScanVulnerability]:
-        """Sample data used when no GVM daemon is reachable.
-
-        Every entry is tagged type="mock" so the API, the UI and the RAG
-        assistant can all label it as simulated rather than observed.
-        """
-        return [
-            ScanVulnerability(
-                cve_id="CVE-2023-36884",
-                cvss_score=8.3,
-                severity="HIGH",
-                description="Microsoft Office and Windows HTML RCE Vulnerability",
-                affected_host=target,
-                affected_port=443,
-                affected_service="https",
-                solution="Apply Microsoft July 2023 security updates",
-                references=["https://nvd.nist.gov/vuln/detail/CVE-2023-36884"],
-                source_scanner=self.name,
-                raw_output={"type": "mock"},
-            ),
-            ScanVulnerability(
-                cve_id="CVE-2022-47966",
-                cvss_score=9.8,
-                severity="CRITICAL",
-                description="Zoho ManageEngine RCE via Apache Santuario",
-                affected_host=target,
-                affected_port=8443,
-                affected_service="https",
-                solution="Update ManageEngine products to latest versions",
-                references=["https://nvd.nist.gov/vuln/detail/CVE-2022-47966"],
-                exploit_available=True,
-                source_scanner=self.name,
-                raw_output={"type": "mock"},
-            ),
-            ScanVulnerability(
-                cve_id="CVE-2023-20198",
-                cvss_score=10.0,
-                severity="CRITICAL",
-                description="Cisco IOS XE Web UI Privilege Escalation",
-                affected_host=target,
-                affected_port=443,
-                affected_service="https",
-                solution="Disable HTTP server on Cisco IOS XE, apply patches",
-                references=["https://nvd.nist.gov/vuln/detail/CVE-2023-20198"],
-                exploit_available=True,
-                source_scanner=self.name,
-                raw_output={"type": "mock"},
-            ),
-            ScanVulnerability(
-                cve_id="CVE-2023-22515",
-                cvss_score=10.0,
-                severity="CRITICAL",
-                description="Confluence Data Center and Server Broken Access Control",
-                affected_host=target,
-                affected_port=8090,
-                affected_service="http",
-                solution="Upgrade Confluence to fixed versions",
-                references=["https://nvd.nist.gov/vuln/detail/CVE-2023-22515"],
-                exploit_available=True,
-                source_scanner=self.name,
-                raw_output={"type": "mock"},
-            ),
-        ]
