@@ -58,6 +58,16 @@ class OrchestratorService:
         self._update_scan(scan_id, status="running", progress=0)
 
         try:
+            from services.target_validation import validate_target
+
+            await asyncio.to_thread(validate_target, target)
+        except Exception as e:
+            detail = getattr(e, "detail", str(e))
+            logger.warning("Scan %s rejected at execution time: %s", scan_id, detail)
+            self._update_scan(scan_id, status="failed", progress=100)
+            return
+
+        try:
             all_vulns: list[ScanVulnerability] = []
             total_scanners = len(scanners)
 

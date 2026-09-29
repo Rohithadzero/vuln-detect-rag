@@ -1,4 +1,5 @@
 import json
+import hmac
 import logging
 import os
 import threading
@@ -101,16 +102,35 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
-    allow_credentials=True,
+    allow_credentials="*" not in settings.CORS_ORIGINS,
     allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization", "Accept"],
+    allow_headers=["Content-Type", "Authorization", "Accept", "X-API-Key"],
 )
+
+
+_AUTH_EXEMPT = {"/api/health"}
+
+
+@app.middleware("http")
+async def api_key_middleware(request: Request, call_next):
+    if (
+        settings.API_KEY
+        and request.method != "OPTIONS"
+        and request.url.path.startswith("/api")
+        and request.url.path not in _AUTH_EXEMPT
+    ):
+        supplied = request.headers.get("x-api-key", "")
+        if not hmac.compare_digest(supplied.encode(), settings.API_KEY.encode()):
+            return JSONResponse(status_code=401, content={"detail": "Invalid or missing API key"})
+    return await call_next(request)
 
 
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
     """Simple per-IP rate limiting."""
-    forwarded_for = request.headers.get("x-forwarded-for")
+    forwarded_for = (
+        request.headers.get("x-forwarded-for") if settings.TRUST_PROXY_HEADERS else None
+    )
     if forwarded_for:
         client_ip = forwarded_for.split(",")[0].strip()
     else:

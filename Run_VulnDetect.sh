@@ -38,7 +38,7 @@ need() {
     }
 }
 need python3 "Install Python 3.10+ from https://www.python.org/downloads/"
-need npm     "Install Node.js 18+ from https://nodejs.org/"
+need npm     "Install Node.js 20.19+ from https://nodejs.org/"
 
 echo "[*] Checking optional scanners (missing ones are simply unavailable)..."
 for tool in nmap nuclei nikto whatweb trivy osv-scanner grype sslyze testssl.sh zap.sh; do

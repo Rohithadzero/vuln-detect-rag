@@ -1,8 +1,6 @@
-import re
 import csv
 import json
 import io
-import ipaddress
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends, Query
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import StreamingResponse
@@ -20,44 +18,9 @@ from models.schemas import (
 )
 from services.orchestrator import orchestrator_service
 from services.attack_path import attack_path_service
+from services.target_validation import validate_target
 
 router = APIRouter()
-
-TARGET_PATTERN = re.compile(
-    r"^(?:(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}"
-    r"|(?:\d{1,3}\.){3}\d{1,3}"
-    r"|(?:[a-zA-Z0-9\-]+\.)+[a-zA-Z]{2,})$"
-)
-
-
-def validate_target(target: str) -> str:
-    target = target.strip()
-    if not target:
-        raise HTTPException(status_code=400, detail="Target cannot be empty")
-    if len(target) > 253:
-        raise HTTPException(status_code=400, detail="Target too long")
-    if not TARGET_PATTERN.match(target):
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid target. Must be a valid domain or IP address",
-        )
-        
-    try:
-        ip = ipaddress.ip_address(target)
-        if ip.is_private or ip.is_loopback or ip.is_link_local or str(ip) == "169.254.169.254":
-            raise HTTPException(
-                status_code=400,
-                detail="Scanning internal, private, or localized IP addresses is forbidden",
-            )
-    except ValueError:
-        if target.lower() in ("localhost", "localhost.localdomain"):
-            raise HTTPException(
-                status_code=400,
-                detail="Scanning localhost is forbidden",
-            )
-            
-    return target
-
 
 @router.post("/scans", response_model=ScanResponse)
 async def start_scan(request: ScanRequest, background_tasks: BackgroundTasks):

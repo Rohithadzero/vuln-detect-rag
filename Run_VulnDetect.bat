@@ -39,7 +39,7 @@ if %ERRORLEVEL% neq 0 (
 echo [*] Checking for Node.js (npm)...
 where npm >nul 2>nul
 if %ERRORLEVEL% neq 0 (
-    echo [ERROR] Node.js is not installed or not in PATH. Please install Node.js 18+
+    echo [ERROR] Node.js is not installed or not in PATH. Please install Node.js 20.19+
     echo         Download from: https://nodejs.org/
     pause
     exit /b 1

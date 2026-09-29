@@ -1,11 +1,9 @@
 """RAG chain implementation for vulnerability analysis."""
 
 import os
-import re
 import time
 import logging
 from typing import List, Dict, Any, Optional, Tuple, Iterator
-from dataclasses import dataclass, field
 
 from ..vectorstore.vector_store import get_vector_store, BaseVectorStore, Document, SearchResult
 from ..embeddings.embedding_service import get_embedding_service, EmbeddingService
@@ -16,67 +14,19 @@ from .map_reduce import ShardedReader, map_reduce_enabled, MIN_DOCS_TO_SHARD
 
 logger = logging.getLogger(__name__)
 
-#: Matches a CVE identifier anywhere in free text.
-CVE_PATTERN = re.compile(r"CVE-\d{4}-\d{4,}", re.IGNORECASE)
-
-#: Documents scoring below this cosine similarity are treated as noise rather
-#: than context. Without a floor, an empty-ish store still returns its five
-#: least-bad documents and the model is invited to treat them as evidence.
-DEFAULT_SCORE_THRESHOLD = float(os.getenv('RAG_SCORE_THRESHOLD', '0.25'))
-
-#: How many documents to pull before diversity filtering trims to top_k.
-OVERFETCH_MULTIPLIER = int(os.getenv('RAG_OVERFETCH', '4'))
-
-#: Character budget for retrieved context in the prompt.
-CONTEXT_CHAR_BUDGET = int(os.getenv('RAG_CONTEXT_BUDGET', '6000'))
-
-#: Character budget for conversation history in the prompt.
-HISTORY_CHAR_BUDGET = int(os.getenv('RAG_HISTORY_BUDGET', '2000'))
-
-#: Verify the finished answer's claims against the retrieved text.
-VERIFY_ANSWERS = os.getenv('RAG_VERIFY', '1').lower() not in ('0', 'false', 'no')
-
-#: Spend one extra LLM call rewriting an answer that asserted facts the context
-#: does not contain. Off makes unsupported claims visible but leaves them in
-#: place; on removes them at the cost of one small request.
-REPAIR_ANSWERS = os.getenv('RAG_VERIFY_REPAIR', '1').lower() not in ('0', 'false', 'no')
-
-#: Append MITRE knowledge-graph structure (CWE, CAPEC, ATT&CK) for the CVEs
-#: that retrieval returned. Off falls back to retrieved text alone.
-GRAPH_CONTEXT = os.getenv('RAG_GRAPH_CONTEXT', '1').lower() not in ('0', 'false', 'no')
-
-#: Character budget for the graph block. Kept well under the retrieval budget
-#: on purpose: this is supporting structure, and it must not displace the CVE
-#: text that the answer is meant to be grounded in.
-GRAPH_CHAR_BUDGET = int(os.getenv('RAG_GRAPH_BUDGET', '1500'))
-
-
-@dataclass
-class RAGQuery:
-    """Query for RAG system."""
-    question: str
-    session_id: Optional[str] = None
-    user_id: Optional[str] = None
-    filters: Optional[Dict[str, Any]] = None
-    top_k: int = 5
-    include_sources: bool = True
-    conversation_history: bool = True
-    #: Restrict retrieval to one corpus: "cve_database", "scan_result", or
-    #: None for both.
-    source_type: Optional[str] = None
-    score_threshold: float = DEFAULT_SCORE_THRESHOLD
-
-
-@dataclass
-class RAGResponse:
-    """Response from RAG system."""
-    answer: str
-    sources: List[Dict[str, Any]]
-    session_id: str
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    #: True when retrieval returned usable context. When False the answer is
-    #: an explicit refusal rather than an ungrounded guess.
-    grounded: bool = True
+from .rag_types import (
+    CVE_PATTERN,
+    CONTEXT_CHAR_BUDGET,
+    DEFAULT_SCORE_THRESHOLD,
+    GRAPH_CHAR_BUDGET,
+    GRAPH_CONTEXT,
+    HISTORY_CHAR_BUDGET,
+    OVERFETCH_MULTIPLIER,
+    REPAIR_ANSWERS,
+    VERIFY_ANSWERS,
+    RAGQuery,
+    RAGResponse,
+)
 
 
 class RAGPipeline:
@@ -909,129 +859,9 @@ Tell the user plainly that the knowledge base has no matching entry, and suggest
         return stats
 
 
-class VulnerabilityRAGPipeline(RAGPipeline):
-    """Specialized RAG pipeline for vulnerability analysis."""
-
-    @classmethod
-    def create_remediation_chain(cls) -> 'VulnerabilityRAGPipeline':
-        """Create pipeline optimized for remediation queries."""
-        pipeline = cls()
-        pipeline.SYSTEM_PROMPT = """You are a vulnerability remediation specialist.
-
-GROUNDING RULES (these override everything else):
-1. Base every recommendation on the numbered context documents below, citing them as [Doc N].
-2. Never invent patch versions, configuration keys, or vendor advisories. If the context lacks a fix, say so.
-3. If the context is empty, say the knowledge base has no entry rather than guessing.
-
-Focus on:
-1. Step-by-step remediation guidance
-2. Prioritizing by severity and exploitability
-3. Compensating controls when an immediate fix is not possible
-4. Configuration examples where the context supports them
-5. Dependencies and prerequisites for each fix
-
-For each recommendation: explain the vulnerability and its risk, give specific steps, and note any operational impact or side effects."""
-        return pipeline
-
-    @classmethod
-    def create_exploit_analysis_chain(cls) -> 'VulnerabilityRAGPipeline':
-        """Create pipeline optimized for exploit analysis."""
-        pipeline = cls()
-        pipeline.SYSTEM_PROMPT = """You are an exploit analysis specialist supporting authorized defensive security work.
-
-GROUNDING RULES (these override everything else):
-1. Base your analysis on the numbered context documents below, citing them as [Doc N].
-2. Never invent CVE IDs, affected versions, or exploit availability. If the context lacks it, say so.
-3. If the context is empty, say the knowledge base has no entry rather than guessing.
-
-Focus on:
-1. How the vulnerability works technically
-2. Affected systems and versions
-3. Attack vectors and preconditions
-4. Exploitability and whether public exploit code exists
-5. Detection and mitigation strategies
-
-Explain mechanisms at a conceptual level and prioritize detection signatures and defensive guidance. Do not produce working exploit code."""
-        return pipeline
-
-    @classmethod
-    def create_attack_path_chain(cls) -> 'VulnerabilityRAGPipeline':
-        """Create pipeline optimized for attack path analysis."""
-        pipeline = cls()
-        pipeline.SYSTEM_PROMPT = """You are a network attack path analyst.
-
-GROUNDING RULES (these override everything else):
-1. Base every hop you describe on the numbered context documents below, citing them as [Doc N].
-2. Never invent hosts, services, or vulnerabilities that are not in the context.
-3. If the context is empty, say the knowledge base has no entry rather than guessing.
-
-Focus on:
-1. Modeling plausible attack chains from the observed findings
-2. Identifying pivot points and lateral movement opportunities
-3. Assessing privilege escalation paths
-4. Evaluating network segmentation effectiveness
-5. Recommending controls that break the chain
-
-For each path: map source to target, identify intermediate hops, analyze service relationships, and suggest the single most effective disruption point."""
-        return pipeline
-
-
-#: Pipelines are cached per type. Each construction loads an embedding model and
-#: opens the vector store, so rebuilding one per request was pure overhead.
-_PIPELINE_CACHE: Dict[str, RAGPipeline] = {}
-
-
-def get_rag_pipeline(pipeline_type: str = 'default') -> RAGPipeline:
-    """Get configured RAG pipeline.
-
-    Args:
-        pipeline_type: Type of pipeline (default, remediation, exploit, attack_path)
-
-    Returns:
-        Configured RAG pipeline
-    """
-    pipeline_type = (pipeline_type or 'default').lower()
-
-    if pipeline_type in _PIPELINE_CACHE:
-        return _PIPELINE_CACHE[pipeline_type]
-
-    builders = {
-        'remediation': VulnerabilityRAGPipeline.create_remediation_chain,
-        'exploit': VulnerabilityRAGPipeline.create_exploit_analysis_chain,
-        'attack_path': VulnerabilityRAGPipeline.create_attack_path_chain,
-    }
-
-    if pipeline_type not in builders and pipeline_type != 'default':
-        raise ValueError(
-            f"Unknown pipeline type '{pipeline_type}'. "
-            f"Valid: default, {', '.join(builders)}"
-        )
-
-    pipeline = builders[pipeline_type]() if pipeline_type in builders else RAGPipeline()
-
-    # Specialized pipelines differ only by system prompt, so they can share the
-    # default pipeline's loaded embedding model and vector store handle.
-    if pipeline_type != 'default' and 'default' in _PIPELINE_CACHE:
-        base = _PIPELINE_CACHE['default']
-        pipeline.vector_store = base.vector_store
-        pipeline.embedding_service = base.embedding_service
-        pipeline.conversation_memory = base.conversation_memory
-
-    _PIPELINE_CACHE[pipeline_type] = pipeline
-    return pipeline
-
-
-def reset_pipelines() -> None:
-    """Drop cached pipelines so the next call rebuilds them.
-
-    Needed whenever the LLM topology changes — enabling or disabling a
-    provider, or switching model — because a cached pipeline holds a client
-    built from the previous configuration and would keep using it.
-    """
-    _PIPELINE_CACHE.clear()
-    logger.info("RAG pipeline cache cleared; clients will be rebuilt")
-
-
-def available_pipelines() -> List[str]:
-    """List the selectable pipeline types."""
-    return ['default', 'remediation', 'exploit', 'attack_path']
+from .pipelines import (  # noqa: E402,F401
+    VulnerabilityRAGPipeline,
+    get_rag_pipeline,
+    reset_pipelines,
+    available_pipelines,
+)

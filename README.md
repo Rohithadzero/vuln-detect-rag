@@ -3,12 +3,12 @@
 ![Version](https://img.shields.io/badge/version-v4.5-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)
-![Node](https://img.shields.io/badge/node-18.x-lightgrey.svg)
+![Node](https://img.shields.io/badge/node-20.19%2B-lightgrey.svg)
 ![Platform](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macOS-lightgrey)
 
 A unified vulnerability scanning platform with RAG-powered intelligence across **twelve security tools** — network, web and supply chain — with answers grounded in a live-enriched CVE knowledge base.
 
-The AI layer **splits the retrieved evidence across three free cloud providers** (Groq, Google Gemini, NVIDIA NIM) so each reads only its own share, then merges their extracts into one cited answer — and falls back to a **fully local Ollama** model when every cloud provider is unreachable. Every finished answer is checked back against the retrieved text before it is returned. A fourth provider, OpenRouter, stays configured but is out of the default rotation: its 429s carry `limit_source: upstream_provider_shared_pool`, so another key would not help.
+The AI layer **splits the retrieved evidence across three free cloud providers** (Groq, Google Gemini, NVIDIA NIM) so each reads only its own share, then merges their extracts into one cited answer — and falls back to a **fully local Ollama** model when every cloud provider is unreachable. Every finished answer is checked back against the retrieved text before it is returned. A fourth provider, OpenRouter, stays configured but is out of the default rotation because its free tier is rate-limited upstream.
 
 ## Architecture
 
@@ -371,7 +371,7 @@ measured from the UI.
 Only Python and Node are required. Every scanner and every AI provider is
 optional — the app starts without them and tells you what is missing.
 
-1. **Python 3.10+** and **Node.js 18+**
+1. **Python 3.10+** and **Node.js 20.19+**
 2. **An AI provider** (any one is enough; all have a free tier):
    - [Groq](https://console.groq.com/keys) — fastest
    - [Google Gemini](https://aistudio.google.com/apikey)
@@ -796,6 +796,13 @@ changed; the metric that judged them did.
 
 A record of every defect found and fixed while producing these numbers, and
 what each one changed, is in [CHANGES.md](CHANGES.md).
+
+## Security
+
+- The API binds to `127.0.0.1`. To expose it, set `API_KEY` in `backend/.env`; every `/api` request except `/api/health` must then send it as `X-API-Key`. The frontend reads `VITE_API_KEY` or `localStorage["vulndetect.apiKey"]`.
+- Scan targets must be public. IP literals and every address a hostname resolves to are checked against private, loopback, link-local, multicast, reserved and cloud-metadata ranges, and the check is repeated immediately before the scan starts.
+- `X-Forwarded-For` is ignored for rate limiting unless `TRUST_PROXY_HEADERS=true`.
+- Only scan systems you are authorised to test.
 
 ## License
 

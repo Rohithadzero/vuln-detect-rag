@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, model_validator, ConfigDict
 from typing import Literal, Optional
 
 
@@ -35,8 +35,7 @@ class VulnerabilityResponse(VulnerabilityBase):
     #: only per scanner selection.
     simulated: bool = False
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @model_validator(mode="after")
     def _flag_simulated(self):
@@ -73,8 +72,7 @@ class ScanResponse(BaseModel):
     completed_at: Optional[datetime] = None
     error_message: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ScanResultsResponse(BaseModel):
@@ -97,8 +95,7 @@ class CVEResponse(BaseModel):
     source: str
     indexed_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # --- RAG Schemas ---
@@ -133,8 +130,7 @@ class ChatMessageResponse(BaseModel):
     sources: list[dict] = Field(default_factory=list)
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # --- Attack Path Schemas ---

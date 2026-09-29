@@ -6,11 +6,24 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
+api.interceptors.request.use((config) => {
+  let key = import.meta.env.VITE_API_KEY || ''
+  try {
+    key = window.localStorage.getItem('vulndetect.apiKey') || key
+  } catch {
+    // storage unavailable; fall back to the build-time key
+  }
+  if (key) config.headers['X-API-Key'] = key
+  return config
+})
+
 // Centralized error handling
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 429) {
+    if (error.response?.status === 401) {
+      error.message = 'The API key is missing or wrong. Set VITE_API_KEY or localStorage vulndetect.apiKey.'
+    } else if (error.response?.status === 429) {
       error.message = 'Too many requests. Wait a moment and try again.'
     } else if (error.response?.data?.detail) {
       error.message = error.response.data.detail

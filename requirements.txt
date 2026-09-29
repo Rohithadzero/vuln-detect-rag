@@ -4,7 +4,7 @@
 #
 # System Requirements:
 #   - Python 3.10+
-#   - Node.js 18.x+
+#   - Node.js 20.19+
 #   - Nmap (optional, for live scans)
 #   - Nuclei (optional, for live scans)
 #

@@ -79,3 +79,7 @@ backend/data/eval_*_checkpoint.json
 
 # Local .env backups taken before pinning provider models.
 .env.bak.*
+
+# Scratch checkpoints from evaluation runs.
+backend/data/stage2_backup/
+backend/data/prefix_backup/

@@ -518,14 +518,19 @@ class FAISSVectorStore(BaseVectorStore):
     def _save_index(self) -> bool:
         """Save index to disk."""
         try:
+            import json
             import faiss
-            import pickle
-            
+            from dataclasses import asdict
+
             os.makedirs(self.index_path, exist_ok=True)
             faiss.write_index(self.index, f"{self.index_path}/index.faiss")
-            
-            with open(f"{self.index_path}/documents.pkl", 'wb') as f:
-                pickle.dump((self._documents, self._doc_ids), f)
+
+            payload = {
+                "doc_ids": list(self._doc_ids),
+                "documents": {k: asdict(d) for k, d in self._documents.items()},
+            }
+            with open(f"{self.index_path}/documents.json", 'w', encoding='utf-8') as f:
+                json.dump(payload, f)
             
             return True
         except Exception as e:
@@ -540,19 +545,23 @@ class FAISSVectorStore(BaseVectorStore):
         """
         try:
             index_file = os.path.join(self.index_path, "index.faiss")
-            docs_file = os.path.join(self.index_path, "documents.pkl")
+            docs_file = os.path.join(self.index_path, "documents.json")
             if not os.path.exists(index_file):
                 return False
 
+            import json
             import faiss
-            import pickle
 
             self._index = faiss.read_index(index_file)
             self._dimension = self._index.d
 
             if os.path.exists(docs_file):
-                with open(docs_file, 'rb') as f:
-                    self._documents, self._doc_ids = pickle.load(f)
+                with open(docs_file, 'r', encoding='utf-8') as f:
+                    payload = json.load(f)
+                self._doc_ids = list(payload["doc_ids"])
+                self._documents = {
+                    k: Document(**v) for k, v in payload["documents"].items()
+                }
 
             logger.info("Loaded FAISS index (%d vectors) from %s",
                         len(self._doc_ids), self.index_path)

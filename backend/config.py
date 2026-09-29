@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 # Get absolute paths based on project root
@@ -128,6 +128,13 @@ class Settings(BaseSettings):
     ]
     CORS_ORIGINS_ENV: str = ""  # Set via environment variable
 
+    # When set, every /api request except /api/health must send this value in
+    # the X-API-Key header. Leave empty only while bound to loopback.
+    API_KEY: str = ""
+    # Honour X-Forwarded-For for rate limiting. Enable only behind a trusted
+    # reverse proxy that overwrites the header.
+    TRUST_PROXY_HEADERS: bool = False
+
     # Scanner paths - will be auto-detected if not set
     NMAP_PATH: str = ""
     NUCLEI_PATH: str = ""
@@ -136,21 +143,14 @@ class Settings(BaseSettings):
     BURP_PATH: str = ""  # Burp Suite
     ZAP_PATH: str = ""  # OWASP ZAP
 
-    class Config:
-        # Absolute path, not ".env". A relative path resolves against the
-        # current working directory, so running anything from the repo root
-        # (scripts/run_eval.py, scripts/seed_cve_data.py) silently loaded no
-        # configuration at all and fell back to defaults — which looked like
-        # "no API keys are set" rather than "the file was not found".
-        # Both locations are read, with backend/.env taking precedence.
-        env_file = (
+    model_config = SettingsConfigDict(
+        env_file=(
             str(PROJECT_ROOT / ".env"),
             str(PROJECT_ROOT / "backend" / ".env"),
-        )
-        env_file_encoding = "utf-8"
-        # Ignore unrecognised keys instead of refusing to start. A stray or
-        # newly added variable in .env should never prevent the app booting.
-        extra = "ignore"
+        ),
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

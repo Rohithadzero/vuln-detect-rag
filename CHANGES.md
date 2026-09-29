@@ -1,5 +1,16 @@
 # CHANGES
 
+## Hardening pass
+
+- Scan targets are validated against every resolved address, not only IP literals, and re-validated immediately before the scan runs.
+- Optional `API_KEY` enforced through the `X-API-Key` header; `X-Forwarded-For` is ignored for rate limiting unless `TRUST_PROXY_HEADERS=true`; credentialed CORS is disabled for a wildcard origin.
+- FAISS persistence uses JSON instead of pickle.
+- One dependency manifest (`requirements.txt`); the stale `backend/requirements.txt` and root `.env.example` are removed.
+- Frontend dependencies upgraded (vite 8, react-router 7); `npm audit` reports 0 vulnerabilities. Node 20.19+ is now required.
+- `llm_config.py` and `rag_chain.py` split into `rag_assistant/llm/` and `chains/{rag_types,pipelines}.py`; the old import paths still work.
+- Pydantic v2 `ConfigDict` / `SettingsConfigDict` replace class-based config.
+- Tests for target validation, API auth, rate limiting and FAISS persistence; GitHub Actions CI.
+
 A record of what was measured, what was found to be wrong, and what each fix
 changed. Written because several published numbers in this project turned out
 to be artefacts of defects rather than properties of the system, and the
