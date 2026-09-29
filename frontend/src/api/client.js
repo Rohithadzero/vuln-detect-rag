@@ -11,7 +11,7 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 429) {
-      error.message = 'Too many requests — please slow down and try again.'
+      error.message = 'Too many requests. Wait a moment and try again.'
     } else if (error.response?.data?.detail) {
       error.message = error.response.data.detail
     } else if (!error.response) {

@@ -1,13 +1,22 @@
 import { useState, useRef, useEffect } from 'react'
-import { Send, Bot, User, Loader2, ExternalLink } from 'lucide-react'
+import { ArrowUp, Loader2, MessagesSquare } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { cx } from './ui'
+
+const SUGGESTIONS = [
+  'What is CVE-2021-44228?',
+  'How do I remediate Log4Shell?',
+  'Critical CVEs affecting Exchange',
+  'Attack vectors for Spring4Shell',
+]
 
 export default function ChatPanel({ messages, onSend, loading }) {
   const [input, setInput] = useState('')
-  const messagesEndRef = useRef(null)
+  const endRef = useRef(null)
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+    endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+  }, [messages, loading])
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -17,100 +26,95 @@ export default function ChatPanel({ messages, onSend, loading }) {
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-auto p-4 space-y-4">
-        {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-gray-400">
-            <Bot className="w-12 h-12 mb-3" />
-            <h3 className="text-lg font-black uppercase">Vulnerability Assistant</h3>
-            <p className="text-sm mt-1 font-bold">Ask about CVEs, remediation, or exploits</p>
-            <div className="mt-4 space-y-2 text-sm">
-              <p className="font-bold text-gray-500 uppercase text-[10px]">Try asking:</p>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {[
-                  'What is CVE-2021-44228?',
-                  'How to remediate Log4Shell?',
-                  'List critical CVEs for Exchange',
-                  'Attack vectors for Spring4Shell?',
-                ].map((q) => (
-                  <button
-                    key={q}
-                    onClick={() => onSend(q)}
-                    className="px-3 py-1.5 bg-white border-3 border-black text-xs font-bold shadow-[3px_3px_0px_0px_#000] hover:shadow-[1px_1px_0px_0px_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all"
-                  >
-                    {q}
-                  </button>
-                ))}
-              </div>
+    <>
+      <div className="flex-1 overflow-auto px-4 sm:px-6 py-6" aria-live="polite">
+        {messages.length === 0 && !loading && (
+          <div className="h-full flex flex-col items-center justify-center text-center">
+            <div className="w-10 h-10 rounded-ctl bg-sunken border border-line flex items-center justify-center mb-3">
+              <MessagesSquare className="w-5 h-5 text-ink-subtle" aria-hidden="true" />
+            </div>
+            <p className="text-sm font-medium">Ask about a CVE, a fix, or an exploit</p>
+            <p className="text-[13px] text-ink-muted mt-1">Answers cite the documents they came from.</p>
+            <div className="flex flex-wrap justify-center gap-2 mt-5 max-w-lg">
+              {SUGGESTIONS.map((q) => (
+                <button
+                  key={q}
+                  type="button"
+                  onClick={() => onSend(q)}
+                  className="h-8 px-3 rounded-full border border-line bg-surface text-[13px] text-ink-muted hover:text-ink hover:border-line-strong transition-colors duration-150"
+                >
+                  {q}
+                </button>
+              ))}
             </div>
           </div>
         )}
 
-        {messages.map((msg, i) => (
-          <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
-            {msg.role === 'assistant' && (
-              <div className="w-8 h-8 bg-neo-purple border-2 border-black flex items-center justify-center flex-shrink-0">
-                <Bot className="w-4 h-4" />
-              </div>
-            )}
-            <div className={`max-w-[80%] px-4 py-3 ${msg.role === 'user' ? 'chat-user' : 'chat-assistant'}`}>
-              <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-              {msg.sources?.length > 0 && (
-                <div className="mt-3 pt-3 border-t-2 border-black/20 space-y-1">
-                  <p className="text-[10px] uppercase font-black opacity-60">Sources</p>
-                  {msg.sources.map((s, j) => (
-                    <div key={j} className="flex items-center gap-2 text-xs font-bold">
-                      <ExternalLink className="w-3 h-3" />
-                      <span className="font-mono">{s.cve_id || 'CVE'}</span>
-                      <span className="opacity-50">({(s.score * 100).toFixed(0)}%)</span>
-                    </div>
-                  ))}
+        <div className="space-y-6 max-w-3xl mx-auto">
+          {messages.map((msg, i) =>
+            msg.role === 'user' ? (
+              <div key={i} className="flex justify-end">
+                <div className="max-w-[85%] rounded-card rounded-br-md bg-accent-soft px-4 py-2.5 text-sm whitespace-pre-wrap">
+                  {msg.content}
                 </div>
-              )}
-            </div>
-            {msg.role === 'user' && (
-              <div className="w-8 h-8 bg-neo-cyan border-2 border-black flex items-center justify-center flex-shrink-0">
-                <User className="w-4 h-4" />
               </div>
-            )}
-          </div>
-        ))}
+            ) : (
+              <div key={i} className="text-sm leading-relaxed">
+                <div className={cx('whitespace-pre-wrap max-w-prose', msg.error && 'text-crit')}>{msg.content}</div>
+                {msg.sources?.length > 0 && (
+                  <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                    <span className="text-xs text-ink-subtle mr-1">Sources</span>
+                    {msg.sources.map((s, j) =>
+                      s.cve_id ? (
+                        <Link
+                          key={j}
+                          to={`/cve/${s.cve_id}`}
+                          className="inline-flex items-center gap-1.5 h-6 px-2 rounded-full border border-line bg-sunken text-xs hover:border-line-strong"
+                        >
+                          <span className="font-mono">{s.cve_id}</span>
+                          {typeof s.score === 'number' && <span className="text-ink-subtle tabular">{(s.score * 100).toFixed(0)}%</span>}
+                        </Link>
+                      ) : (
+                        <span key={j} className="inline-flex items-center h-6 px-2 rounded-full border border-line bg-sunken text-xs">Document</span>
+                      )
+                    )}
+                  </div>
+                )}
+              </div>
+            )
+          )}
 
-        {loading && (
-          <div className="flex gap-3">
-            <div className="w-8 h-8 bg-neo-purple border-2 border-black flex items-center justify-center">
-              <Bot className="w-4 h-4" />
+          {loading && (
+            <div className="flex items-center gap-2 text-[13px] text-ink-muted" role="status">
+              <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+              Retrieving and writing an answer. This can take up to a minute.
             </div>
-            <div className="bg-gray-200 border-3 border-black px-4 py-3 flex items-center gap-3">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span className="text-sm font-bold">Generating response... (Local LLMs may take 30-60s)</span>
-            </div>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
+          )}
+          <div ref={endRef} />
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="p-4 border-t-[3px] border-black bg-white">
-        <div className="flex gap-2">
+      <form onSubmit={handleSubmit} className="p-3 border-t border-line">
+        <div className="max-w-3xl mx-auto flex items-center gap-2 rounded-card border border-line bg-surface pl-4 pr-1.5 py-1.5 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/25 transition-colors">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about vulnerabilities, CVEs, remediation..."
-            className="flex-1 bg-white border-3 border-black px-4 py-2.5 text-sm font-mono placeholder-gray-400 nb-input"
+            placeholder="Ask about vulnerabilities, CVEs, remediation…"
+            className="flex-1 min-w-0 bg-transparent text-sm placeholder:text-ink-subtle focus:outline-none focus-visible:outline-none"
             disabled={loading}
-            aria-label="Chat message input"
+            aria-label="Message"
           />
           <button
             type="submit"
             disabled={loading || !input.trim()}
-            className="px-4 py-2.5 bg-neo-cyan border-3 border-black nb-btn disabled:bg-gray-200 disabled:shadow-none"
+            className="w-8 h-8 rounded-ctl bg-accent text-accent-fg flex items-center justify-center hover:bg-accent-hover disabled:opacity-40 transition-colors"
             aria-label="Send message"
           >
-            <Send className="w-4 h-4" aria-hidden="true" />
+            <ArrowUp className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
       </form>
-    </div>
+    </>
   )
 }

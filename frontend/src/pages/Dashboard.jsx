@@ -1,32 +1,35 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend
-} from 'recharts'
-import {
-  Shield, AlertTriangle, TrendingUp, Activity, ChevronRight
-} from 'lucide-react'
+import { AlertTriangle, ChevronRight, Globe, Radar, Server } from 'lucide-react'
 import { getStats, getHealth, startScan } from '../api/client'
+import { normalizeTarget } from '../utils/target'
 import Skeleton, { SkeletonRegion, SkeletonStatCards, SkeletonPanel } from '../components/Skeleton'
+import ScannerStatus from '../components/ScannerStatus'
+import {
+  Button, Card, CardHeader, Input, PageHeader, StatStrip, StatusBadge, EmptyState, Callout, cx,
+} from '../components/ui'
 
-const SEVERITY_COLORS = {
-  CRITICAL: '#ef4444',
-  HIGH: '#ea580c',
-  MEDIUM: '#ca8a04',
-  LOW: '#2563eb',
-}
+const SEVERITIES = [
+  { key: 'critical_vulns', label: 'Critical', bar: 'bg-crit-solid', text: 'text-crit' },
+  { key: 'high_vulns', label: 'High', bar: 'bg-high-solid', text: 'text-high' },
+  { key: 'medium_vulns', label: 'Medium', bar: 'bg-med-solid', text: 'text-med' },
+  { key: 'low_vulns', label: 'Low', bar: 'bg-low-solid', text: 'text-low' },
+]
 
-const statusColors = {
-  completed: 'bg-neo-green text-black',
-  running: 'bg-neo-cyan text-black',
-  pending: 'bg-neo-yellow text-black',
-  failed: 'bg-neo-red text-white',
+function timeAgo(iso) {
+  if (!iso) return ''
+  const s = Math.round((Date.now() - new Date(iso + (iso.endsWith('Z') ? '' : 'Z')).getTime()) / 1000)
+  if (s < 60) return 'just now'
+  const m = Math.round(s / 60)
+  if (m < 60) return `${m} min ago`
+  const h = Math.round(m / 60)
+  if (h < 24) return `${h} h ago`
+  return new Date(iso).toLocaleDateString()
 }
 
 export default function Dashboard() {
   const [stats, setStats] = useState(null)
-  const [health, setHealth] = useState(null)
+  const [health, setHealth] = useState(undefined)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [targetUrl, setTargetUrl] = useState('')
@@ -45,8 +48,8 @@ export default function Dashboard() {
     try {
       const { data } = await getHealth()
       setHealth(data)
-    } catch (err) {
-      console.error('Failed to load health:', err)
+    } catch {
+      setHealth(null)
     }
   }
 
@@ -68,7 +71,7 @@ export default function Dashboard() {
     setIsScanning(true)
     setScanError('')
     try {
-      const { data } = await startScan(targetUrl, ['nmap', 'nuclei'])
+      const { data } = await startScan(normalizeTarget(targetUrl), ['nmap', 'nuclei'])
       setTargetUrl('')
       navigate(`/scans?scan=${data.id}`)
     } catch (err) {
@@ -78,38 +81,27 @@ export default function Dashboard() {
     }
   }
 
-  // Must stay above the early returns below. Hooks have to run in the same
-  // order on every render, and the loading/error branches return before this
-  // point on the first pass -- calling useMemo after them changes the hook
-  // count as soon as stats arrive, and React aborts the render with
-  // "rendered more hooks than during the previous render". That crash is why
-  // the dashboard went blank the moment its data loaded.
-  const severityData = useMemo(() => [
-    { name: 'Critical', value: stats?.critical_vulns || 0, color: SEVERITY_COLORS.CRITICAL },
-    { name: 'High', value: stats?.high_vulns || 0, color: SEVERITY_COLORS.HIGH },
-    { name: 'Medium', value: stats?.medium_vulns || 0, color: SEVERITY_COLORS.MEDIUM },
-    { name: 'Low', value: stats?.low_vulns || 0, color: SEVERITY_COLORS.LOW },
-  ].filter(d => d.value > 0), [stats?.critical_vulns, stats?.high_vulns, stats?.medium_vulns, stats?.low_vulns])
+  // Hooks stay above the early returns: calling useMemo after them changed the
+  // hook count once stats arrived and blanked the dashboard (v4.5 fix).
+  const breakdown = useMemo(() => {
+    const total = SEVERITIES.reduce((sum, s) => sum + (stats?.[s.key] || 0), 0)
+    return {
+      total,
+      rows: SEVERITIES.map((s) => ({ ...s, value: stats?.[s.key] || 0, pct: total ? ((stats?.[s.key] || 0) / total) * 100 : 0 })),
+    }
+  }, [stats])
 
   if (loading) {
-    // Mirrors the real layout below -- header, scan form, four stat tiles,
-    // three panels -- so nothing shifts position when the data lands.
     return (
-      <SkeletonRegion label="Loading dashboard" className="space-y-6 min-w-0">
-        <div className="flex flex-col gap-4">
-          <div className="space-y-2">
-            <Skeleton className="h-8 w-56" />
-            <Skeleton className="h-3 w-72" />
-          </div>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-            <Skeleton bordered className="h-[50px] flex-1 min-w-0" />
-            <Skeleton bordered className="h-[50px] w-full sm:w-32 flex-shrink-0" />
-          </div>
+      <SkeletonRegion label="Loading dashboard" className="space-y-6">
+        <div className="space-y-2">
+          <Skeleton className="h-7 w-48" />
+          <Skeleton className="h-3 w-72" />
         </div>
+        <Skeleton className="h-[72px] w-full rounded-card" />
         <SkeletonStatCards count={4} />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <SkeletonPanel />
-          <SkeletonPanel />
+          <SkeletonPanel className="lg:col-span-2" />
           <SkeletonPanel />
         </div>
       </SkeletonRegion>
@@ -118,170 +110,132 @@ export default function Dashboard() {
 
   if (error && !stats) {
     return (
-      <div className="flex flex-col items-center justify-center h-full">
-        <AlertTriangle className="w-12 h-12 text-neo-red mb-3" />
-        <p className="text-xl font-black mb-1 uppercase">Failed to load</p>
-        <p className="text-sm mb-4 font-bold text-gray-600">{error}</p>
-        <button onClick={loadStats} className="px-6 py-3 bg-neo-yellow nb-btn text-sm">Retry</button>
-      </div>
+      <EmptyState
+        icon={AlertTriangle}
+        title="Could not load the dashboard"
+        className="flex-1"
+        action={<Button variant="primary" onClick={loadStats}>Retry</Button>}
+      >
+        {error}
+      </EmptyState>
     )
   }
 
   return (
-    <div className="space-y-6 min-w-0">
-      <div className="flex flex-col gap-4">
-        <div>
-          <h1 className="text-3xl font-black uppercase tracking-tight">Dashboard</h1>
-          <p className="text-sm font-bold text-gray-600 mt-1 uppercase tracking-wider">Vulnerability scanning overview</p>
-        </div>
+    <div className="space-y-6">
+      <PageHeader title="Dashboard" description="Findings across every scan run on this machine." />
 
-        <form onSubmit={handleStartScan} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-          <div className="flex items-center gap-2 flex-1 min-w-0 bg-white border-3 border-black px-4 py-3 nb-input">
-            <Shield className="w-5 h-5 text-gray-400 flex-shrink-0" />
-            <input
-              type="text"
-              value={targetUrl}
-              onChange={(e) => setTargetUrl(e.target.value)}
-              placeholder="Enter target (e.g., example.com)"
-              className="bg-transparent border-none outline-none text-black text-sm w-full placeholder-gray-400 font-mono"
-              disabled={isScanning}
-              required
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={isScanning || !targetUrl.trim()}
-            className="px-6 py-3 bg-neo-red text-white nb-btn disabled:bg-gray-300 disabled:text-gray-500 disabled:shadow-none flex items-center justify-center gap-2 flex-shrink-0 text-sm"
-          >
-            {isScanning ? (
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white animate-spin" />
-            ) : 'Start Scan'}
-          </button>
+      <Card>
+        <form onSubmit={handleStartScan} className="p-4 flex flex-col sm:flex-row gap-3 sm:items-center">
+          <label htmlFor="quick-target" className="text-[13px] font-medium sm:w-28 flex-shrink-0">
+            Quick scan
+            <span className="block text-xs font-normal text-ink-subtle">Nmap + Nuclei</span>
+          </label>
+          <Input
+            id="quick-target"
+            icon={Globe}
+            className="flex-1"
+            inputClassName="font-mono"
+            value={targetUrl}
+            onChange={(e) => setTargetUrl(e.target.value)}
+            placeholder="scanme.nmap.org"
+            disabled={isScanning}
+            autoComplete="off"
+            spellCheck={false}
+          />
+          <Button type="submit" variant="primary" icon={Radar} loading={isScanning} disabled={!targetUrl.trim()}>
+            Start scan
+          </Button>
         </form>
-        {scanError && <div className="text-neo-red text-xs font-bold">{scanError}</div>}
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { label: 'Total Scans', value: stats?.total_scans || 0, icon: Activity, color: 'bg-neo-cyan' },
-          { label: 'Vulnerabilities', value: stats?.total_vulnerabilities || 0, icon: AlertTriangle, color: 'bg-neo-orange' },
-          { label: 'Critical Vulns', value: stats?.critical_vulns || 0, icon: Shield, color: 'bg-neo-red' },
-          { label: 'Avg CVSS', value: stats?.avg_cvss || 0, icon: TrendingUp, color: 'bg-neo-green' },
-        ].map((card, i) => (
-          <div key={i} className={`${card.color} border-3 border-black p-5 shadow-neb-sm hover:shadow-neb-hover hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all`}>
-            <div className="flex items-center gap-3">
-              <card.icon className="w-6 h-6" />
-              <div>
-                <div className="text-2xl font-black">{card.value}</div>
-                <div className="text-[10px] font-bold uppercase tracking-wider opacity-70">{card.label}</div>
-              </div>
-            </div>
+        {scanError && (
+          <div className="px-4 pb-4">
+            <Callout tone="crit" icon={AlertTriangle} role="alert">{scanError}</Callout>
           </div>
-        ))}
-      </div>
+        )}
+      </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Severity Distribution */}
-        <div className="bg-white border-3 border-black p-5 shadow-neb">
-          <h3 className="text-sm font-black uppercase tracking-wider mb-4">Severity Distribution</h3>
-          {severityData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie data={severityData} cx="50%" cy="50%" innerRadius={55} outerRadius={80} dataKey="value" stroke="#000" strokeWidth={2}>
-                  {severityData.map((entry, index) => (
-                    <Cell key={index} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={{ backgroundColor: '#fff', border: '3px solid #000', borderRadius: 0, color: '#000', fontWeight: 700 }} />
-                <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontWeight: 700, fontSize: '12px' }} />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="flex items-center justify-center h-[200px] text-gray-400 text-sm font-bold">No data yet</div>
-          )}
-        </div>
+      <StatStrip
+        items={[
+          { label: 'Scans', value: stats?.total_scans ?? 0 },
+          { label: 'Findings', value: stats?.total_vulnerabilities ?? 0 },
+          { label: 'Critical', value: stats?.critical_vulns ?? 0, tone: stats?.critical_vulns ? 'crit' : undefined },
+          { label: 'Mean CVSS', value: (stats?.avg_cvss ?? 0).toFixed(1) },
+        ]}
+      />
 
-        {/* Severity Bar Chart */}
-        <div className="bg-white border-3 border-black p-5 shadow-neb">
-          <h3 className="text-sm font-black uppercase tracking-wider mb-4">Vulnerability Count</h3>
-          {severityData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={severityData}>
-                <XAxis dataKey="name" tick={{ fill: '#000', fontSize: 11, fontWeight: 700 }} axisLine={{ stroke: '#000', strokeWidth: 2 }} tickLine={false} />
-                <YAxis tick={{ fill: '#000', fontSize: 11, fontWeight: 700 }} axisLine={{ stroke: '#000', strokeWidth: 2 }} tickLine={false} />
-                <Tooltip contentStyle={{ backgroundColor: '#fff', border: '3px solid #000', borderRadius: 0, color: '#000', fontWeight: 700 }} />
-                <Bar dataKey="value" radius={0} stroke="#000" strokeWidth={2}>
-                  {severityData.map((entry, index) => (
-                    <Cell key={index} fill={entry.color} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="flex items-center justify-center h-[200px] text-gray-400 text-sm font-bold">No data yet</div>
-          )}
-        </div>
-
-        {/* System Health */}
-        <div className="bg-white border-3 border-black p-5 shadow-neb">
-          <h3 className="text-sm font-black uppercase tracking-wider mb-4">System Health</h3>
-          <div className="space-y-3">
-            {[
-              { label: 'Backend API', status: health ? 'Online' : 'Offline', ok: !!health },
-              { label: 'Nmap', status: health?.scanners?.nmap ? 'Ready' : 'Mock Mode', ok: health?.scanners?.nmap },
-              { label: 'Nuclei', status: health?.scanners?.nuclei ? 'Ready' : 'Mock Mode', ok: health?.scanners?.nuclei },
-              { label: 'OpenVAS', status: health?.scanners?.openvas ? 'Ready' : 'Mock Mode', ok: health?.scanners?.openvas },
-              { label: 'Nessus', status: health?.scanners?.nessus ? 'Ready' : 'Mock Mode', ok: health?.scanners?.nessus },
-              { label: 'Burp Suite', status: health?.scanners?.burp ? 'Ready' : 'Mock Mode', ok: health?.scanners?.burp },
-              { label: 'OWASP ZAP', status: health?.scanners?.zap ? 'Ready' : 'Mock Mode', ok: health?.scanners?.zap },
-            ].map((item, i) => (
-              <div key={i} className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase">{item.label}</span>
-                <span className={`px-2 py-0.5 text-[10px] font-black uppercase border-2 border-black ${item.ok ? 'bg-neo-green' : 'bg-gray-200'}`}>
-                  {item.status}
-                </span>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <div className="lg:col-span-2 space-y-6 min-w-0">
+        <Card>
+          <CardHeader title="Severity breakdown" description={breakdown.total ? `${breakdown.total} findings with a severity rating` : undefined} />
+          {breakdown.total > 0 ? (
+            <div className="px-5 pb-5 space-y-5">
+              <div className="flex h-2.5 rounded-full overflow-hidden bg-hover" aria-hidden="true">
+                {breakdown.rows.map((r) => r.value > 0 && (
+                  <div key={r.key} className={r.bar} style={{ width: `${r.pct}%` }} />
+                ))}
               </div>
+              <ul className="space-y-3">
+                {breakdown.rows.map((r) => (
+                  <li key={r.key} className="grid grid-cols-[80px_1fr_auto] items-center gap-3 text-[13px]">
+                    <span className="flex items-center gap-2">
+                      <span className={cx('w-2 h-2 rounded-full', r.bar)} aria-hidden="true" />
+                      {r.label}
+                    </span>
+                    <div className="h-1.5 rounded-full bg-hover overflow-hidden" aria-hidden="true">
+                      <div className={cx('h-full rounded-full', r.bar)} style={{ width: `${r.pct}%` }} />
+                    </div>
+                    <span className="tabular text-right w-24">
+                      <span className="font-medium">{r.value}</span>
+                      <span className="text-ink-subtle"> · {r.pct.toFixed(0)}%</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <EmptyState title="No findings yet">Run a scan to see how its findings break down by severity.</EmptyState>
+          )}
+        </Card>
+
+
+      <Card>
+        <CardHeader
+          title="Recent scans"
+          actions={<Button size="sm" variant="ghost" onClick={() => navigate('/scans')}>View all</Button>}
+        />
+        {stats?.recent_scans?.length > 0 ? (
+          <ul className="border-t border-line divide-y divide-line">
+            {stats.recent_scans.map((scan) => (
+              <li key={scan.id}>
+                <button
+                  className="w-full px-5 py-3 flex items-center gap-4 text-left hover:bg-hover transition-colors duration-150"
+                  onClick={() => navigate(`/scans?scan=${scan.id}`)}
+                >
+                  <span className="font-mono text-[13px] truncate flex-1 min-w-0">{scan.target}</span>
+                  <StatusBadge status={scan.status} />
+                  <span className="text-[13px] text-ink-muted tabular w-24 text-right hidden sm:block">
+                    {scan.total_vulnerabilities} findings
+                  </span>
+                  <span className="text-xs text-ink-subtle w-20 text-right hidden md:block">{timeAgo(scan.started_at)}</span>
+                  <ChevronRight className="w-4 h-4 text-ink-subtle flex-shrink-0" aria-hidden="true" />
+                </button>
+              </li>
             ))}
-          </div>
+          </ul>
+        ) : (
+          <EmptyState icon={Radar} title="No scans yet">Enter a target above to run your first scan.</EmptyState>
+        )}
+      </Card>
         </div>
-      </div>
 
-      {/* Recent Scans */}
-      <div className="bg-white border-3 border-black shadow-neb overflow-hidden">
-        <div className="p-4 border-b-[3px] border-black bg-neo-yellow">
-          <h3 className="text-sm font-black uppercase tracking-wider">Recent Scans</h3>
-        </div>
-        <div className="divide-y-[3px] divide-black">
-          {stats?.recent_scans?.length > 0 ? (
-            stats.recent_scans.map((scan) => (
-              <button
-                key={scan.id}
-                className="px-5 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-gray-50 cursor-pointer transition-colors w-full text-left"
-                onClick={() => navigate(`/scans?scan=${scan.id}`)}
-                aria-label={`View scan for ${scan.target}`}
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className="text-sm font-bold truncate font-mono">{scan.target}</span>
-                  <span className={`px-2 py-0.5 text-[10px] font-black uppercase border-2 border-black flex-shrink-0 ${statusColors[scan.status]}`}>
-                    {scan.status}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 text-xs flex-shrink-0">
-                  <span className="font-bold">{scan.total_vulnerabilities} vulns</span>
-                  <span className="text-gray-500 hidden sm:inline font-mono text-[10px]">
-                    {new Date(scan.started_at).toLocaleString()}
-                  </span>
-                  <ChevronRight className="w-4 h-4" />
-                </div>
-              </button>
-            ))
+        <Card>
+          <CardHeader title="Scanners" icon={Server} />
+          {health === undefined ? (
+            <div className="px-5 pb-5 space-y-3"><Skeleton className="h-3 w-full" /><Skeleton className="h-3 w-4/5" /></div>
           ) : (
-            <div className="p-8 text-center text-gray-400 text-sm font-bold uppercase">
-              No scans yet. Start a scan from the dashboard.
-            </div>
+            <ScannerStatus health={health} />
           )}
-        </div>
+        </Card>
       </div>
     </div>
   )

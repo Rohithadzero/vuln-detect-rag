@@ -1,7 +1,9 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
+import { Compass } from 'lucide-react'
 import Layout from './components/Layout'
 import Skeleton, { SkeletonRegion, SkeletonStatCards, SkeletonPanel } from './components/Skeleton'
+import { EmptyState } from './components/ui'
 
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 const ScanConsole = lazy(() => import('./pages/ScanConsole'))
@@ -11,15 +13,13 @@ const CVEBrowse = lazy(() => import('./pages/CVEBrowse'))
 const KnowledgeGraph = lazy(() => import('./pages/KnowledgeGraph'))
 const Settings = lazy(() => import('./pages/Settings'))
 
-// Route-level fallback while a lazily imported page chunk downloads. Generic
-// on purpose: at this point the router knows which route is coming but the
-// module defining its layout has not arrived, so a page header and a couple of
-// blocks is the most honest outline available.
+// Route-level fallback while a page chunk downloads: a header and two blocks
+// is the most honest outline available before the page module arrives.
 function Loading() {
   return (
     <SkeletonRegion label="Loading page" className="space-y-6">
       <div className="space-y-2">
-        <Skeleton className="h-8 w-56" />
+        <Skeleton className="h-7 w-56" />
         <Skeleton className="h-3 w-72" />
       </div>
       <SkeletonStatCards count={4} />
@@ -33,33 +33,39 @@ function Loading() {
 
 function NotFound() {
   return (
-    <div className="flex flex-col items-center justify-center h-full">
-      <h1 className="text-8xl font-black mb-4">404</h1>
-      <p className="text-lg font-bold uppercase tracking-wider">Page not found</p>
-      <a href="/" className="mt-6 px-6 py-3 bg-neo-yellow nb-btn text-sm">
-        Go to Dashboard
-      </a>
-    </div>
+    <EmptyState
+      icon={Compass}
+      title="Page not found"
+      className="flex-1"
+      action={
+        <Link
+          to="/"
+          className="inline-flex items-center h-9 px-3.5 rounded-ctl bg-accent text-accent-fg text-sm font-medium hover:bg-accent-hover"
+        >
+          Go to dashboard
+        </Link>
+      }
+    >
+      That address does not match any page.
+    </EmptyState>
   )
 }
 
 export default function App() {
   return (
     <BrowserRouter>
-      <Suspense fallback={<Loading />}>
-        <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Dashboard />} />
-            <Route path="scans" element={<ScanConsole />} />
-            <Route path="rag" element={<RAGAssistant />} />
-            <Route path="cve" element={<CVEBrowse />} />
-            <Route path="cve/:cveId" element={<CVEDetail />} />
-            <Route path="graph" element={<KnowledgeGraph />} />
-            <Route path="settings" element={<Settings />} />
-            <Route path="*" element={<NotFound />} />
-          </Route>
-        </Routes>
-      </Suspense>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Suspense fallback={<Loading />}><Dashboard /></Suspense>} />
+          <Route path="scans" element={<Suspense fallback={<Loading />}><ScanConsole /></Suspense>} />
+          <Route path="rag" element={<Suspense fallback={<Loading />}><RAGAssistant /></Suspense>} />
+          <Route path="cve" element={<Suspense fallback={<Loading />}><CVEBrowse /></Suspense>} />
+          <Route path="cve/:cveId" element={<Suspense fallback={<Loading />}><CVEDetail /></Suspense>} />
+          <Route path="graph" element={<Suspense fallback={<Loading />}><KnowledgeGraph /></Suspense>} />
+          <Route path="settings" element={<Suspense fallback={<Loading />}><Settings /></Suspense>} />
+          <Route path="*" element={<NotFound />} />
+        </Route>
+      </Routes>
     </BrowserRouter>
   )
 }

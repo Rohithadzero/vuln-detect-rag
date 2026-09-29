@@ -1,174 +1,164 @@
 import { useState } from 'react'
-import { Play, Loader2, Star } from 'lucide-react'
+import { Play, Star, AlertTriangle, Check } from 'lucide-react'
+import { normalizeTarget } from '../utils/target'
+import { Badge, Button, Callout, IconButton, Input, Label, cx } from './ui'
 
-// `status` is shown next to each checkbox so the user knows, before starting a
-// scan, whether a tool can actually run. Presenting a simulated scanner as if
-// it were live is the single most misleading thing this UI could do.
+// `status` tells the user, before starting a scan, whether a tool can run for
+// real. Presenting a simulated scanner as live is the single most misleading
+// thing this UI could do.
 const scanners = [
-  // Network and web scanning
-  { id: 'nmap', label: 'Nmap', desc: 'Port scanning & service detection', status: 'live', free: true, group: 'Network' },
-  { id: 'nuclei', label: 'Nuclei', desc: 'Template-based vulnerability scanning', status: 'live', free: true, group: 'Network' },
-  { id: 'zap', label: 'OWASP ZAP', desc: 'Dynamic application security testing', status: 'live', free: true, group: 'Web' },
-  { id: 'nikto', label: 'Nikto', desc: 'Web server misconfiguration & outdated software', status: 'live', free: true, group: 'Web' },
-  { id: 'tlsscan', label: 'testssl / sslyze', desc: 'TLS protocols, ciphers & certificate health', status: 'live', free: true, group: 'Web' },
-  { id: 'whatweb', label: 'WhatWeb', desc: 'Technology & version fingerprinting', status: 'live', free: true, group: 'Web' },
-  { id: 'openvas', label: 'OpenVAS', desc: 'Comprehensive vulnerability assessment', status: 'live', free: true, group: 'Network', note: 'Needs a running GVM stack' },
-  // Supply chain
-  { id: 'trivy', label: 'Trivy', desc: 'Containers, dependencies, IaC & secrets', status: 'live', free: true, group: 'Supply chain', note: 'Scans a path or image, not a hostname' },
-  { id: 'osv', label: 'OSV-Scanner', desc: 'Dependency manifests against the OSV database', status: 'live', free: true, group: 'Supply chain', note: 'Scans a project directory' },
-  { id: 'grype', label: 'Grype', desc: 'Container image & filesystem CVE matching', status: 'live', free: true, group: 'Supply chain', note: 'Scans a path or image' },
-  // Commercial
-  { id: 'burp', label: 'Burp Suite', desc: 'Web application security testing', status: 'licence', free: false, group: 'Commercial', note: 'Requires a Burp Pro licence; Community has no automation API' },
-  { id: 'nessus', label: 'Nessus', desc: 'Enterprise vulnerability scanner', status: 'simulated', free: false, group: 'Commercial', note: 'Simulated - free tier is capped at 16 IPs behind registration' },
+  { id: 'nmap', label: 'Nmap', desc: 'Ports and service detection', status: 'live', group: 'Network' },
+  { id: 'nuclei', label: 'Nuclei', desc: 'Template-based vulnerability checks', status: 'live', group: 'Network' },
+  { id: 'openvas', label: 'OpenVAS', desc: 'Full vulnerability assessment', status: 'live', group: 'Network', note: 'Needs a running GVM stack' },
+  { id: 'zap', label: 'OWASP ZAP', desc: 'Dynamic application testing', status: 'live', group: 'Web' },
+  { id: 'nikto', label: 'Nikto', desc: 'Server misconfiguration, outdated software', status: 'live', group: 'Web' },
+  { id: 'tlsscan', label: 'testssl / sslyze', desc: 'TLS protocols, ciphers, certificates', status: 'live', group: 'Web' },
+  { id: 'whatweb', label: 'WhatWeb', desc: 'Technology fingerprinting', status: 'live', group: 'Web' },
+  { id: 'trivy', label: 'Trivy', desc: 'Containers, dependencies, IaC, secrets', status: 'live', group: 'Supply chain', note: 'Scans a path or image, not a hostname' },
+  { id: 'osv', label: 'OSV-Scanner', desc: 'Dependency manifests against OSV', status: 'live', group: 'Supply chain', note: 'Scans a project directory' },
+  { id: 'grype', label: 'Grype', desc: 'Image and filesystem CVE matching', status: 'live', group: 'Supply chain', note: 'Scans a path or image' },
+  { id: 'burp', label: 'Burp Suite', desc: 'Web application testing', status: 'licence', group: 'Commercial', note: 'Needs a Burp Pro licence' },
+  { id: 'nessus', label: 'Nessus', desc: 'Enterprise vulnerability scanner', status: 'simulated', group: 'Commercial', note: 'Returns simulated sample data' },
 ]
 
-const STATUS_STYLES = {
-  live: 'bg-neo-green',
-  licence: 'bg-neo-yellow',
-  simulated: 'bg-neo-orange',
-}
-
-const STATUS_LABELS = {
-  live: 'Live',
-  licence: 'Paid licence',
-  simulated: 'Simulated',
-}
-
+const GROUPS = ['Network', 'Web', 'Supply chain', 'Commercial']
 const defaultScanners = ['nmap', 'nuclei']
 
-export default function ScanForm({ onStartScan, loading, onAddFavorite }) {
+export default function ScanForm({ onStartScan, loading, onAddFavorite, error, availability }) {
   const [target, setTarget] = useState('')
   const [selected, setSelected] = useState(defaultScanners)
+  const [showAll, setShowAll] = useState(false)
 
   const toggleScanner = (id) => {
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
-    )
+    setSelected((prev) => (prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]))
   }
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (!target.trim() || selected.length === 0) return
-    onStartScan(target.trim(), selected)
+    const clean = normalizeTarget(target)
+    if (!clean || selected.length === 0) return
+    onStartScan(clean, selected)
   }
 
+  const needsWarning = selected.some((id) => scanners.find((s) => s.id === id)?.status !== 'live')
+
+  // Tools the backend reports as missing are tucked away so the ones that can
+  // run, and the Start button, stay in view. Selected tools always show.
+  const isVisible = (s) => showAll || !availability || availability[s.id] || selected.includes(s.id)
+  const hiddenCount = scanners.filter((s) => !isVisible(s)).length
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5">
       <div>
-        <label className="block text-sm font-bold text-black mb-2 uppercase tracking-wide">
-          Target Domain or IP
-        </label>
+        <Label htmlFor="scan-target" hint="domain or public IP">Target</Label>
         <div className="flex gap-2">
-          <input
-            type="text"
+          <Input
+            id="scan-target"
+            className="flex-1 min-w-0"
+            inputClassName="font-mono"
             value={target}
             onChange={(e) => setTarget(e.target.value)}
-            placeholder="e.g., example.com or 192.168.1.1"
-            className="flex-1 min-w-0 bg-white border-3 border-black rounded-none px-4 py-3 text-black placeholder-gray-500 focus:outline-none font-mono shadow-[4px_4px_0px_0px_#000] focus:shadow-[2px_2px_0px_0px_#000] transition-shadow"
+            placeholder="scanme.nmap.org"
             disabled={loading}
+            autoComplete="off"
+            spellCheck={false}
           />
           {target.trim() && onAddFavorite && (
-            <button
-              type="button"
-              onClick={() => onAddFavorite(target.trim())}
-              className="px-3 bg-yellow-300 border-3 border-black text-black hover:bg-yellow-400 transition-colors flex-shrink-0 shadow-[4px_4px_0px_0px_#000] active:shadow-[2px_2px_0px_0px_#000]"
-              title="Save to favorites"
-            >
-              <Star className="w-4 h-4" />
-            </button>
+            <IconButton
+              icon={Star}
+              label="Save target"
+              className="border border-line"
+              onClick={() => onAddFavorite(normalizeTarget(target))}
+            />
           )}
         </div>
       </div>
 
-      <div>
-        <label className="block text-sm font-bold text-black mb-2 uppercase tracking-wide">
-          Select Scanners
-        </label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {scanners.map((s) => (
-            <label
-              key={s.id}
-              className={`flex items-center gap-3 p-3 border-3 border-black cursor-pointer transition-all ${
-                selected.includes(s.id)
-                  ? 'bg-cyan-300 shadow-[2px_2px_0px_0px_#000] translate-x-[-2px] translate-y-[-2px]'
-                  : 'bg-white hover:bg-gray-100 shadow-[4px_4px_0px_0px_#000]'
-              }`}
-            >
-              <input
-                type="checkbox"
-                checked={selected.includes(s.id)}
-                onChange={() => toggleScanner(s.id)}
-                className="sr-only"
-              />
-              <div
-                className={`w-5 h-5 border-3 border-black flex items-center justify-center flex-shrink-0 ${
-                  selected.includes(s.id) ? 'bg-black' : 'bg-white'
-                }`}
-              >
-                {selected.includes(s.id) && (
-                  <svg className="w-3 h-3 text-cyan-300" viewBox="0 0 12 12">
-                    <path
-                      d="M10 3L4.5 8.5 2 6"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      fill="none"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                )}
+      <fieldset>
+        <legend className="text-[13px] font-medium mb-2">
+          Scanners <span className="font-normal text-ink-subtle tabular">{selected.length} selected</span>
+        </legend>
+        <div className="space-y-4">
+          {GROUPS.filter((group) => scanners.some((s) => s.group === group && isVisible(s))).map((group) => (
+            <div key={group}>
+              <p className="text-xs text-ink-subtle mb-1">{group}</p>
+              <div className="rounded-ctl border border-line divide-y divide-line overflow-hidden">
+                {scanners.filter((s) => s.group === group && isVisible(s)).map((s) => {
+                  const on = selected.includes(s.id)
+                  const installed = availability ? availability[s.id] : undefined
+                  return (
+                    <label
+                      key={s.id}
+                      className={cx(
+                        'flex items-start gap-3 px-3 py-2.5 cursor-pointer transition-colors duration-150',
+                        on ? 'bg-accent-soft/40' : 'hover:bg-hover'
+                      )}
+                    >
+                      <input type="checkbox" checked={on} onChange={() => toggleScanner(s.id)} className="peer sr-only" />
+                      <span
+                        className={cx(
+                          'mt-0.5 w-4 h-4 rounded-[5px] border flex items-center justify-center flex-shrink-0 transition-colors',
+                          'peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-accent peer-focus-visible:outline-offset-2',
+                          on ? 'bg-accent border-accent text-accent-fg' : 'border-line-strong bg-surface'
+                        )}
+                        aria-hidden="true"
+                      >
+                        {on && <Check className="w-3 h-3" strokeWidth={3} />}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[13px] font-medium">{s.label}</span>
+                          {s.status === 'licence' && <Badge tone="med">Paid licence</Badge>}
+                          {s.status === 'simulated' && <Badge tone="high">Simulated</Badge>}
+                          {s.status === 'live' && installed === false && <Badge>Not installed</Badge>}
+                        </span>
+                        <span className="block text-xs text-ink-muted">{s.desc}</span>
+                        {s.note && <span className="block text-xs text-ink-subtle">{s.note}</span>}
+                      </span>
+                    </label>
+                  )
+                })}
               </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-bold text-black">{s.label}</span>
-                  <span
-                    className={`text-[9px] font-black uppercase px-1.5 py-0.5 border-2 border-black ${STATUS_STYLES[s.status]}`}
-                  >
-                    {STATUS_LABELS[s.status]}
-                  </span>
-                  {s.free && (
-                    <span className="text-[9px] font-black uppercase text-green-700">
-                      Free
-                    </span>
-                  )}
-                </div>
-                <div className="text-[11px] text-gray-600 truncate">{s.desc}</div>
-                {s.note && (
-                  <div className="text-[10px] font-bold text-gray-500 mt-0.5">
-                    {s.note}
-                  </div>
-                )}
-              </div>
-            </label>
+            </div>
           ))}
         </div>
 
-        {selected.some((id) => scanners.find((s) => s.id === id)?.status !== 'live') && (
-          <p className="mt-3 text-[11px] font-bold bg-neo-orange border-3 border-black p-2">
-            One or more selected tools cannot run live here and will return
-            simulated sample data. Those findings are labelled &quot;Simulated&quot;
-            in the results and do not describe the real target.
-          </p>
+        {(hiddenCount > 0 || showAll) && availability && (
+          <button
+            type="button"
+            onClick={() => setShowAll(!showAll)}
+            aria-expanded={showAll}
+            className="mt-2 text-[13px] text-accent-text hover:underline"
+          >
+            {showAll ? 'Hide unavailable scanners' : `Show ${hiddenCount} unavailable scanners`}
+          </button>
         )}
-      </div>
 
-      <button
-        type="submit"
-        disabled={loading || !target.trim() || selected.length === 0}
-        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-500 hover:bg-red-400 disabled:bg-gray-300 disabled:text-gray-500 text-white font-black uppercase tracking-wider border-3 border-black shadow-[6px_6px_0px_0px_#000] hover:shadow-[3px_3px_0px_0px_#000] active:shadow-[1px_1px_0px_0px_#000] hover:translate-x-[-3px] hover:translate-y-[-3px] active:translate-x-[0px] active:translate-y-[0px] transition-all"
-      >
-        {loading ? (
-          <>
-            <Loader2 className="w-5 h-5 animate-spin" />
-            Scanning...
-          </>
-        ) : (
-          <>
-            <Play className="w-5 h-5" />
-            Start Scan
-          </>
+        {needsWarning && (
+          <Callout tone="warn" icon={AlertTriangle} className="mt-3">
+            Some selected tools cannot run live here and return simulated sample data. Those findings are
+            labelled Simulated and do not describe the real target.
+          </Callout>
         )}
-      </button>
+      </fieldset>
+
+      {error && (
+        <Callout tone="crit" icon={AlertTriangle} role="alert" title="Scan not started">
+          {error}
+        </Callout>
+      )}
+
+      <Button
+        type="submit"
+        variant="primary"
+        size="lg"
+        icon={Play}
+        loading={loading}
+        disabled={!target.trim() || selected.length === 0}
+        className="w-full"
+      >
+        {loading ? 'Scanning…' : 'Start scan'}
+      </Button>
     </form>
   )
 }

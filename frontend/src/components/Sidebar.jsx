@@ -1,82 +1,114 @@
+import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
-import { Shield, LayoutDashboard, Scan, MessageSquare, Activity, Database, Network, Settings } from 'lucide-react'
+import {
+  ShieldCheck, LayoutDashboard, Radar, MessagesSquare, Database, Network, Settings,
+  Sun, Moon, Monitor,
+} from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
+import { getHealth } from '../api/client'
+import { cx } from './ui'
 
 const navItems = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard', color: 'bg-neo-yellow' },
-  { to: '/scans', icon: Scan, label: 'Scan Console', color: 'bg-neo-cyan' },
-  { to: '/rag', icon: MessageSquare, label: 'RAG Assistant', color: 'bg-neo-purple' },
-  { to: '/cve', icon: Database, label: 'CVE Database', color: 'bg-neo-green' },
-  { to: '/graph', icon: Network, label: 'Knowledge Graph', color: 'bg-neo-orange' },
-  { to: '/settings', icon: Settings, label: 'Settings', color: 'bg-neo-pink' },
+  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/scans', icon: Radar, label: 'Scan console' },
+  { to: '/rag', icon: MessagesSquare, label: 'Assistant' },
+  { to: '/cve', icon: Database, label: 'CVE database' },
+  { to: '/graph', icon: Network, label: 'Knowledge graph' },
+  { to: '/settings', icon: Settings, label: 'Settings' },
 ]
 
-export default function Sidebar() {
+const THEME_ICONS = { light: Sun, dark: Moon, system: Monitor }
+
+export default function Sidebar({ onNavigate }) {
   const { theme, setTheme, themes } = useTheme()
+  const [health, setHealth] = useState(undefined)
+
+  useEffect(() => {
+    let alive = true
+    const load = () =>
+      getHealth()
+        .then(({ data }) => alive && setHealth(data))
+        .catch(() => alive && setHealth(null))
+    load()
+    const id = setInterval(load, 30000)
+    return () => { alive = false; clearInterval(id) }
+  }, [])
 
   return (
-    <aside className="w-64 app-sidebar border-r-[3px] border-black flex flex-col z-10">
-      <div className="p-5 border-b-[3px] border-black app-sidebar-accent">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-black flex items-center justify-center">
-            <Shield className="w-6 h-6 text-neo-yellow" />
-          </div>
-          <div>
-            <h1 className="text-lg font-black uppercase tracking-tight text-black">VulnDetect</h1>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-black/60">RAG Platform</p>
-          </div>
+    <aside className="w-60 h-full bg-sunken border-r border-line flex flex-col">
+      <div className="h-14 lg:h-16 px-4 flex items-center gap-2.5">
+        <div className="w-8 h-8 rounded-ctl bg-accent text-accent-fg flex items-center justify-center">
+          <ShieldCheck className="w-[18px] h-[18px]" aria-hidden="true" />
+        </div>
+        <div className="leading-tight">
+          <div className="text-sm font-semibold text-ink">VulnDetect</div>
+          <div className="text-2xs text-ink-subtle">Vulnerability intelligence</div>
         </div>
       </div>
 
-      {/* Two hardcoded buttons could not represent six themes, and a row of six
-          would crowd the sidebar. A select stays one line however many themes
-          exist, and the full picker with descriptions lives in Settings. */}
-      <div className="p-4 border-b-[3px] border-black">
-        <label
-          htmlFor="theme-select"
-          className="block text-[10px] font-black uppercase tracking-widest mb-2 text-gray-500"
-        >
-          Theme
-        </label>
-        <select
-          id="theme-select"
-          value={theme}
-          onChange={(e) => setTheme(e.target.value)}
-          className="w-full px-3 py-2 text-[11px] font-black uppercase bg-white border-3 border-black nb-input cursor-pointer"
-        >
-          {themes.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <nav className="flex-1 p-4 space-y-2">
-        {navItems.map(({ to, icon: Icon, label, color }) => (
+      <nav aria-label="Main" className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
+        {navItems.map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}
             to={to}
             end={to === '/'}
-            aria-label={label}
+            onClick={onNavigate}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-3 text-sm font-bold uppercase tracking-wide transition-all border-3 border-black app-nav-link ${
+              cx(
+                'flex items-center gap-2.5 h-9 px-3 rounded-ctl text-sm transition-colors duration-150',
                 isActive
-                  ? `${color} shadow-[3px_3px_0px_0px_#000] translate-x-[-2px] translate-y-[-1px]`
-                  : 'bg-white hover:bg-gray-100 shadow-[4px_4px_0px_0px_#000] hover:shadow-[2px_2px_0px_0px_#000] hover:translate-x-[-2px] hover:translate-y-[-2px]'
-              }`
+                  ? 'bg-surface text-ink font-medium shadow-card border border-line'
+                  : 'text-ink-muted hover:text-ink hover:bg-hover border border-transparent'
+              )
             }
           >
-            <Icon className="w-5 h-5" aria-hidden="true" />
-            {label}
+            {({ isActive }) => (
+              <>
+                <Icon className={cx('w-4 h-4', isActive ? 'text-accent' : 'text-ink-subtle')} aria-hidden="true" />
+                {label}
+              </>
+            )}
           </NavLink>
         ))}
       </nav>
 
-      <div className="p-4 border-t-[3px] border-black">
-        <div className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase">
-          <Activity className="w-3 h-3" />
-          <span>v3.5.0</span>
+      <div className="p-3 space-y-3 border-t border-line">
+        <div role="radiogroup" aria-label="Color theme" className="grid grid-cols-3 gap-0.5 p-0.5 rounded-ctl bg-hover">
+          {themes.map((t) => {
+            const Icon = THEME_ICONS[t.id]
+            const active = theme === t.id
+            return (
+              <button
+                key={t.id}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                title={t.label}
+                onClick={() => setTheme(t.id)}
+                className={cx(
+                  'h-7 rounded-[8px] flex items-center justify-center gap-1 text-2xs transition-colors duration-150',
+                  active ? 'bg-surface text-ink shadow-card' : 'text-ink-subtle hover:text-ink'
+                )}
+              >
+                <Icon className="w-3.5 h-3.5" aria-hidden="true" />
+                <span className="sr-only sm:not-sr-only">{t.label}</span>
+              </button>
+            )
+          })}
+        </div>
+
+        <div className="flex items-center justify-between px-1 text-xs text-ink-subtle">
+          <span className="flex items-center gap-1.5" role="status">
+            <span
+              className={cx(
+                'w-1.5 h-1.5 rounded-full',
+                health === undefined ? 'bg-line-strong' : health ? 'bg-ok-solid' : 'bg-crit-solid'
+              )}
+              aria-hidden="true"
+            />
+            {health === undefined ? 'Connecting' : health ? 'Backend online' : 'Backend offline'}
+          </span>
+          {health?.version && <span className="font-mono">v{health.version}</span>}
         </div>
       </div>
     </aside>

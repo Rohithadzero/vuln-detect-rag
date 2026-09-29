@@ -1,20 +1,19 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Search, Bug, ExternalLink } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Search, Bug, SearchX, ChevronRight } from 'lucide-react'
 import { searchCVEs } from '../api/client'
 import { SkeletonRegion, SkeletonRows } from '../components/Skeleton'
+import { Badge, Button, Card, EmptyState, Input, PageHeader, Segmented, SeverityBadge, cx } from '../components/ui'
 
-const severityColors = {
-  CRITICAL: 'text-severity-critical',
-  HIGH: 'text-severity-high',
-  MEDIUM: 'text-severity-medium',
-  LOW: 'text-severity-low',
-}
-
-const SEVERITIES = ['', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
+const SEVERITIES = [
+  { value: '', label: 'All' },
+  { value: 'CRITICAL', label: 'Critical' },
+  { value: 'HIGH', label: 'High' },
+  { value: 'MEDIUM', label: 'Medium' },
+  { value: 'LOW', label: 'Low' },
+]
 
 export default function CVEBrowse() {
-  const navigate = useNavigate()
   const [cves, setCves] = useState([])
   const [loading, setLoading] = useState(false)
   const [query, setQuery] = useState('')
@@ -34,90 +33,76 @@ export default function CVEBrowse() {
   const handleSearch = (e) => { e.preventDefault(); searchCVE() }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-black uppercase tracking-tight">CVE Database</h1>
-        <p className="text-sm font-bold text-gray-600 mt-1 uppercase tracking-wider">Browse and search known vulnerabilities</p>
-      </div>
+    <div>
+      <PageHeader title="CVE database" description="The vulnerabilities the assistant retrieves from, enriched with KEV and EPSS." />
 
-      <div className="flex flex-col gap-3">
-        <form onSubmit={handleSearch} className="flex gap-2">
-          <input
-            type="text"
+      <div className="flex flex-col lg:flex-row gap-3 mb-4">
+        <form onSubmit={handleSearch} role="search" className="flex gap-2 flex-1">
+          <Input
+            icon={Search}
+            aria-label="Search CVE descriptions"
+            className="flex-1 min-w-0"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search CVE descriptions..."
-            className="flex-1 min-w-0 bg-white border-3 border-black px-4 py-2.5 text-sm font-mono nb-input"
+            placeholder="Search descriptions, e.g. deserialization"
           />
-          <button type="submit" className="px-4 py-2.5 bg-neo-yellow border-3 border-black nb-btn">
-            <Search className="w-4 h-4" />
-          </button>
+          <Button type="submit">Search</Button>
         </form>
-
-        <div className="flex flex-wrap gap-2">
-          {SEVERITIES.map((s) => (
-            <button
-              key={s || 'all'}
-              onClick={() => setSeverity(s)}
-              className={`px-3 py-2 text-[10px] font-black uppercase border-3 border-black transition-all ${
-                severity === s ? 'bg-neo-cyan shadow-neb-xs' : 'bg-white shadow-neb-sm hover:shadow-neb-xs'
-              }`}
-            >
-              {s || 'ALL'}
-            </button>
-          ))}
+        <div className="flex items-center gap-2 flex-wrap">
+          <Segmented label="Severity" role="radiogroup" value={severity} onChange={setSeverity} options={SEVERITIES} />
           <button
+            type="button"
+            aria-pressed={exploitOnly}
             onClick={() => setExploitOnly(!exploitOnly)}
-            className={`px-3 py-2 text-[10px] font-black uppercase border-3 border-black flex items-center gap-1.5 transition-all ${
-              exploitOnly ? 'bg-neo-red text-white shadow-neb-xs' : 'bg-white shadow-neb-sm'
-            }`}
+            className={cx(
+              'inline-flex items-center gap-1.5 h-9 px-3 rounded-ctl border text-[13px] font-medium transition-colors duration-150',
+              exploitOnly ? 'bg-crit-soft border-crit/30 text-crit' : 'bg-surface border-line text-ink-muted hover:text-ink hover:border-line-strong'
+            )}
           >
-            <Bug className="w-3 h-3" /> Exploits
+            <Bug className="w-3.5 h-3.5" aria-hidden="true" /> Known exploit
           </button>
         </div>
       </div>
 
-      <div className="bg-white border-3 border-black shadow-neb divide-y-[3px] divide-black overflow-hidden">
+      <Card className="overflow-hidden">
+        <div className="hidden md:grid grid-cols-[88px_150px_1fr_56px_16px] gap-4 px-5 py-2.5 border-b border-line bg-sunken text-xs text-ink-subtle">
+          <span>Severity</span><span>ID</span><span>Description</span><span className="text-right">CVSS</span><span />
+        </div>
         {loading ? (
-          <SkeletonRegion label="Loading CVEs">
-            <SkeletonRows rows={8} />
-          </SkeletonRegion>
+          <SkeletonRegion label="Loading CVEs"><SkeletonRows rows={8} /></SkeletonRegion>
         ) : cves.length > 0 ? (
-          cves.map((cve) => (
-            <a
-              key={cve.id}
-              href={`/cve/${cve.cve_id}`}
-              onClick={(e) => { e.preventDefault(); navigate(`/cve/${cve.cve_id}`) }}
-              className="px-5 py-4 flex items-center justify-between hover:bg-gray-50 cursor-pointer transition-colors block"
-              role="button"
-              aria-label={`View details for ${cve.cve_id}`}
-            >
-              <div className="flex items-center gap-4 flex-1 min-w-0">
-                <span className={`text-sm font-black font-mono ${severityColors[cve.severity] || 'text-gray-500'}`}>
-                  {cve.cve_id}
-                </span>
-                <span className="text-sm truncate">{cve.description}</span>
-                {cve.exploit_available && (
-                  <span className="px-1.5 py-0.5 text-[10px] bg-neo-red text-white border-2 border-black font-black uppercase flex-shrink-0">EXPLOIT</span>
-                )}
-              </div>
-              <div className="flex items-center gap-4 ml-4">
-                <span className="text-lg font-black">{cve.cvss_score}</span>
-                <ExternalLink className="w-4 h-4 text-gray-400" />
-              </div>
-            </a>
-          ))
+          <ul className="divide-y divide-line">
+            {cves.map((cve) => (
+              <li key={cve.id}>
+                <Link
+                  to={`/cve/${cve.cve_id}`}
+                  className="grid grid-cols-[1fr_auto] md:grid-cols-[88px_150px_1fr_56px_16px] items-center gap-x-4 gap-y-1 px-5 py-3 hover:bg-hover transition-colors duration-150"
+                >
+                  <span className="hidden md:block"><SeverityBadge severity={cve.severity} /></span>
+                  <span className="font-mono text-[13px] font-medium flex items-center gap-2">
+                    <span className="md:hidden"><SeverityBadge severity={cve.severity} /></span>
+                    {cve.cve_id}
+                  </span>
+                  <span className="col-span-2 md:col-span-1 row-start-2 md:row-start-auto text-[13px] text-ink-muted truncate flex items-center gap-2 min-w-0">
+                    {cve.exploit_available && <Badge tone="crit" icon={Bug}>Exploit</Badge>}
+                    <span className="truncate">{cve.description}</span>
+                  </span>
+                  <span className="text-sm font-semibold tabular text-right row-start-1 col-start-2 md:row-start-auto md:col-start-auto">{cve.cvss_score}</span>
+                  <ChevronRight className="hidden md:block w-4 h-4 text-ink-subtle" aria-hidden="true" />
+                </Link>
+              </li>
+            ))}
+          </ul>
         ) : (
-          <div className="p-8 text-center text-gray-400 text-sm font-bold uppercase">No CVEs found</div>
+          <EmptyState icon={SearchX} title="No CVEs match">Try a broader search or clear the filters.</EmptyState>
         )}
-      </div>
+      </Card>
 
-      {/* Suppressed while loading: `cves` is still the empty initial state, so
-          this rendered "0 results" underneath a list that was in fact loading
-          -- a claim about the data that was not yet true. */}
-      <div className="text-[10px] font-bold text-gray-400 text-center uppercase">
+      {/* Hidden while loading: "0 results" under a list that is still
+          loading is a claim about the data that is not yet true. */}
+      <p className="text-xs text-ink-subtle mt-3 tabular" aria-live="polite">
         {loading ? 'Searching…' : `${cves.length} results`}
-      </div>
+      </p>
     </div>
   )
 }

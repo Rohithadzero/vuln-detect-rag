@@ -1,14 +1,19 @@
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { History, RefreshCw, Star, StarOff } from 'lucide-react'
-import { startScan, getScanResults, getAttackPaths, listScans, getFavorites, addFavorite, deleteFavorite } from '../api/client'
+import { History, RefreshCw, Star, X, Radar, AlertTriangle } from 'lucide-react'
+import {
+  startScan, getScanResults, getAttackPaths, listScans, getFavorites, addFavorite, deleteFavorite, getHealth,
+} from '../api/client'
 import ScanForm from '../components/ScanForm'
 import ScanResults from '../components/ScanResults'
 import AttackPathGraph from '../components/AttackPathGraph'
 import ScanExplanation from '../components/ScanExplanation'
+import {
+  Button, Callout, Card, CardHeader, IconButton, PageHeader, Segmented, StatusBadge, EmptyState, cx,
+} from '../components/ui'
 
 export default function ScanConsole() {
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [scanning, setScanning] = useState(false)
   const [currentScan, setCurrentScan] = useState(null)
   const [vulnerabilities, setVulnerabilities] = useState([])
@@ -16,18 +21,29 @@ export default function ScanConsole() {
   const [scanHistory, setScanHistory] = useState([])
   const [favorites, setFavorites] = useState([])
   const [activeTab, setActiveTab] = useState('results')
+  const [scanError, setScanError] = useState('')
+  const [health, setHealth] = useState(null)
+  const [loadError, setLoadError] = useState(null)
+  const [historyError, setHistoryError] = useState('')
   const pollRef = useRef(null)
 
   useEffect(() => {
     loadHistory()
     loadFavorites()
+    getHealth().then(({ data }) => setHealth(data)).catch(() => setHealth(null))
     const scanId = searchParams.get('scan')
     if (scanId) loadScan(parseInt(scanId))
     return () => { if (pollRef.current) clearInterval(pollRef.current) }
   }, [])
 
   const loadHistory = async () => {
-    try { const { data } = await listScans(); setScanHistory(data) } catch (err) { console.error(err) }
+    try {
+      const { data } = await listScans()
+      setScanHistory(data)
+      setHistoryError('')
+    } catch (err) {
+      setHistoryError(err.message || 'Could not load history')
+    }
   }
 
   const loadFavorites = async () => {
@@ -40,19 +56,27 @@ export default function ScanConsole() {
         clearInterval(pollRef.current)
         pollRef.current = null
       }
+      setLoadError(null)
       const { data } = await getScanResults(scanId)
       setCurrentScan(data.scan)
       setVulnerabilities(data.vulnerabilities)
+      setAttackPaths([])
       if (data.scan.status === 'pending' || data.scan.status === 'running') {
         setScanning(true)
         pollScan(scanId)
       } else {
         setScanning(false)
-        if (data.scan.status === 'completed') {
-          loadAttackPaths(scanId)
-        }
+        if (data.scan.status === 'completed') loadAttackPaths(scanId)
       }
-    } catch (err) { console.error(err) }
+    } catch (err) {
+      setLoadError({ id: scanId, message: err.message || 'Could not load this scan' })
+    }
+  }
+
+  const selectScan = (scanId) => {
+    setActiveTab('results')
+    setSearchParams({ scan: String(scanId) }, { replace: true })
+    loadScan(scanId)
   }
 
   const loadAttackPaths = async (scanId) => {
@@ -61,13 +85,22 @@ export default function ScanConsole() {
 
   const handleStartScan = async (target, scanners) => {
     setScanning(true)
+    setScanError('')
     setVulnerabilities([])
     setAttackPaths([])
     try {
       const { data } = await startScan(target, scanners)
       setCurrentScan(data)
+      setActiveTab('results')
+      setSearchParams({ scan: String(data.id) }, { replace: true })
+      loadHistory()
       pollScan(data.id)
-    } catch (err) { console.error(err); setScanning(false) }
+    } catch (err) {
+      // Rejections (invalid or private target) used to be swallowed here,
+      // which made the Start scan button look dead. See issues.md ISSUE-001.
+      setScanError(err.message || 'Failed to start scan')
+      setScanning(false)
+    }
   }
 
   const handleAddFavorite = async (target) => {
@@ -92,7 +125,7 @@ export default function ScanConsole() {
           setScanning(false)
           if (data.scan.status === 'completed') loadAttackPaths(scanId)
         }
-      } catch (err) {
+      } catch {
         clearInterval(pollRef.current)
         pollRef.current = null
         setScanning(false)
@@ -101,108 +134,123 @@ export default function ScanConsole() {
   }
 
   return (
-    <div className="space-y-6 min-w-0">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="text-3xl font-black uppercase tracking-tight">Scan Console</h1>
-          <p className="text-sm font-bold text-gray-600 mt-1 uppercase tracking-wider">Launch and monitor vulnerability scans</p>
-        </div>
-        <button onClick={loadHistory} className="px-4 py-2 bg-white border-3 border-black text-sm font-bold nb-btn shadow-neb flex items-center gap-2 flex-shrink-0">
-          <RefreshCw className="w-4 h-4" /> Refresh
-        </button>
-      </div>
+    <div>
+      <PageHeader
+        title="Scan console"
+        description="Launch scans and review what each one found."
+        actions={<Button size="sm" icon={RefreshCw} onClick={loadHistory}>Refresh</Button>}
+      />
 
-      <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6">
-        {/* Left column */}
-        <div className="lg:col-span-1 space-y-4">
-          <div className="bg-white border-3 border-black p-5 shadow-neb">
-            <h3 className="text-sm font-black uppercase tracking-wider mb-4">New Scan</h3>
-            <ScanForm onStartScan={handleStartScan} loading={scanning} onAddFavorite={handleAddFavorite} />
-          </div>
-
-          {/* Favorites */}
-          {favorites.length > 0 && (
-            <div className="bg-white border-3 border-black shadow-neb overflow-hidden">
-              <div className="p-3 border-b-[3px] border-black bg-neo-yellow flex items-center gap-2">
-                <Star className="w-4 h-4" />
-                <h3 className="text-xs font-black uppercase">Favorites</h3>
-              </div>
-              <div className="divide-y-[2px] divide-black">
-                {favorites.map((fav) => (
-                  <div key={fav.id} className="px-4 py-3 flex items-center justify-between hover:bg-gray-50 min-h-[44px]">
-                    <span className="text-sm font-bold font-mono">{fav.target}</span>
-                    <button onClick={() => handleDeleteFavorite(fav.id)} className="hover:text-neo-red p-2" aria-label={`Remove ${fav.target} from favorites`}>
-                      <StarOff className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(320px,380px)_1fr] gap-6 items-start">
+        <div className="space-y-6 min-w-0">
+          <Card>
+            <CardHeader title="New scan" />
+            <div className="px-5 pb-5">
+              <ScanForm
+                onStartScan={handleStartScan}
+                loading={scanning}
+                onAddFavorite={handleAddFavorite}
+                error={scanError}
+                availability={health?.scanners}
+              />
             </div>
+          </Card>
+
+          {favorites.length > 0 && (
+            <Card>
+              <CardHeader title="Saved targets" icon={Star} />
+              <ul className="border-t border-line divide-y divide-line">
+                {favorites.map((fav) => (
+                  <li key={fav.id} className="flex items-center justify-between pl-5 pr-2 py-1.5">
+                    <span className="font-mono text-[13px] truncate">{fav.target}</span>
+                    <IconButton size="sm" icon={X} label={`Remove ${fav.target} from saved targets`} onClick={() => handleDeleteFavorite(fav.id)} />
+                  </li>
+                ))}
+              </ul>
+            </Card>
           )}
 
-          {/* Scan History */}
-          <div className="bg-white border-3 border-black shadow-neb overflow-hidden">
-            <div className="p-3 border-b-[3px] border-black bg-neo-purple flex items-center gap-2">
-              <History className="w-4 h-4" />
-              <h3 className="text-xs font-black uppercase">Scan History</h3>
-            </div>
-            <div className="divide-y-[2px] divide-black max-h-[400px] overflow-auto">
-              {scanHistory.map((scan) => (
-                <button
-                  key={scan.id}
-                  onClick={() => { loadScan(scan.id); setActiveTab('results') }}
-                  className={`w-full px-4 py-4 cursor-pointer hover:bg-gray-50 transition-colors text-left ${
-                    currentScan?.id === scan.id ? 'bg-neo-cyan/30 border-l-[4px] border-black' : ''
-                  }`}
-                  aria-label={`Load scan for ${scan.target}`}
-                >
-                  <div className="text-sm font-bold font-mono">{scan.target}</div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className={`text-[10px] px-1.5 py-0.5 border-2 border-black font-black uppercase ${
-                      scan.status === 'completed' ? 'bg-neo-green' : scan.status === 'failed' ? 'bg-neo-red text-white' : 'bg-neo-yellow'
-                    }`}>
-                      {scan.status}
-                    </span>
-                    <span className="text-[10px] font-bold">{scan.total_vulnerabilities} vulns</span>
-                    {scan.progress > 0 && scan.progress < 100 && (
-                      <span className="text-[10px] font-bold text-blue-600">{scan.progress}%</span>
-                    )}
-                  </div>
-                </button>
-              ))}
-              {scanHistory.length === 0 && (
-                <div className="p-4 text-center text-gray-400 text-sm font-bold uppercase">No scans yet</div>
-              )}
-            </div>
-          </div>
+          <Card>
+            <CardHeader title="History" icon={History} description={historyError ? undefined : `${scanHistory.length} scans`} />
+            {historyError && scanHistory.length === 0 ? (
+              <p className="px-5 pb-5 text-[13px] text-crit">
+                {historyError}{' '}
+                <button type="button" className="underline text-ink" onClick={loadHistory}>Try again</button>
+              </p>
+            ) : scanHistory.length > 0 ? (
+              <ul className="border-t border-line divide-y divide-line max-h-[420px] overflow-auto">
+                {scanHistory.map((scan) => {
+                  const active = currentScan?.id === scan.id
+                  return (
+                    <li key={scan.id}>
+                      <button
+                        onClick={() => selectScan(scan.id)}
+                        aria-current={active ? 'true' : undefined}
+                        className={cx(
+                          'w-full px-5 py-3 text-left transition-colors duration-150',
+                          active ? 'bg-accent-soft/60' : 'hover:bg-hover'
+                        )}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="font-mono text-[13px] truncate">{scan.target}</span>
+                          <StatusBadge status={scan.status} />
+                        </div>
+                        <div className="text-xs text-ink-subtle mt-1 tabular">
+                          {scan.total_vulnerabilities} findings
+                          {scan.progress > 0 && scan.progress < 100 && ` · ${scan.progress}%`}
+                          {' · '}#{scan.id}
+                        </div>
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            ) : (
+              <p className="px-5 pb-5 text-[13px] text-ink-muted">No scans yet.</p>
+            )}
+          </Card>
         </div>
 
-        {/* Right column */}
-        <div className="lg:col-span-2">
+        <div className="min-w-0 space-y-5">
+          {loadError && (
+            <Callout tone="crit" icon={AlertTriangle} title={`Scan #${loadError.id} did not load`} role="alert">
+              {loadError.message}{' '}
+              <button type="button" className="underline text-ink" onClick={() => loadScan(loadError.id)}>Try again</button>
+            </Callout>
+          )}
           {currentScan ? (
-            <div className="space-y-4">
-              <div className="flex gap-1 bg-white border-3 border-black p-1 shadow-neb-sm">
-                {['results', 'explain', 'attack-paths'].map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={`flex-1 px-4 py-2 text-sm font-black uppercase tracking-wide transition-colors border-2 border-transparent ${
-                      activeTab === tab ? 'bg-neo-cyan border-black' : 'hover:bg-gray-100'
-                    }`}
-                  >
-                    {tab === 'results' ? 'Vulnerabilities' : tab === 'explain' ? 'AI Briefing' : 'Attack Paths'}
-                  </button>
-                ))}
+            <div className="space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-mono text-base font-medium truncate">{currentScan.target}</h2>
+                    <StatusBadge status={currentScan.status} />
+                  </div>
+                  <p className="text-xs text-ink-subtle mt-0.5">
+                    Scan #{currentScan.id} · {(currentScan.scanners_used || []).join(', ')}
+                  </p>
+                </div>
+                <Segmented
+                  label="Scan views"
+                  value={activeTab}
+                  onChange={setActiveTab}
+                  options={[
+                    { value: 'results', label: 'Findings', count: vulnerabilities.length },
+                    { value: 'explain', label: 'Briefing' },
+                    { value: 'attack-paths', label: 'Attack paths', count: attackPaths.length || undefined },
+                  ]}
+                />
               </div>
               {activeTab === 'results' && <ScanResults scan={currentScan} vulnerabilities={vulnerabilities} />}
               {activeTab === 'explain' && <ScanExplanation scan={currentScan} />}
               {activeTab === 'attack-paths' && <AttackPathGraph paths={attackPaths} />}
             </div>
           ) : (
-            <div className="bg-white border-3 border-black p-12 text-center shadow-neb">
-              <p className="text-xl font-black uppercase">No scan selected</p>
-              <p className="text-sm font-bold text-gray-500 mt-2 uppercase">Start a new scan or select one from history</p>
-            </div>
+            <Card>
+              <EmptyState icon={Radar} title="No scan selected" className="py-20">
+                Start a new scan, or pick one from history to review its findings.
+              </EmptyState>
+            </Card>
           )}
         </div>
       </div>

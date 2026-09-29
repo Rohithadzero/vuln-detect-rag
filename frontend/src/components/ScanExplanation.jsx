@@ -1,13 +1,12 @@
 import { useState } from 'react'
-import { Sparkles, Loader2, AlertTriangle, RefreshCw, Cpu } from 'lucide-react'
+import { FileText, AlertTriangle, RefreshCw, Cpu, Clock } from 'lucide-react'
 import { explainScan } from '../api/client'
+import { Button, Callout, Card, CardHeader, EmptyState, Input } from './ui'
+import { SkeletonText } from './Skeleton'
 
 /**
- * Final step of the scan flow: the AI explains what the findings mean.
- *
- * Raw CVE tables are exactly the expertise barrier this project exists to
- * remove, so the briefing is written for a competent engineer who is not a
- * security specialist.
+ * Final step of the scan flow: a plain-language briefing on what the findings
+ * mean, for a competent engineer who is not a security specialist.
  */
 export default function ScanExplanation({ scan }) {
   const [explanation, setExplanation] = useState(null)
@@ -15,15 +14,16 @@ export default function ScanExplanation({ scan }) {
   const [error, setError] = useState('')
   const [question, setQuestion] = useState('')
 
-  const generate = async (customQuestion) => {
+  const generate = async (e) => {
+    e?.preventDefault()
     setLoading(true)
     setError('')
     try {
-      const { data } = await explainScan(scan.id, customQuestion)
+      const { data } = await explainScan(scan.id, question.trim() || undefined)
       setExplanation(data)
       if (data.error) setError(data.error)
     } catch (err) {
-      setError(err.message || 'Failed to generate an explanation.')
+      setError(err.message || 'Failed to generate a briefing.')
     } finally {
       setLoading(false)
     }
@@ -31,97 +31,66 @@ export default function ScanExplanation({ scan }) {
 
   if (scan.status !== 'completed') {
     return (
-      <div className="bg-white border-3 border-black p-8 text-center shadow-neb">
-        <Sparkles className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-        <p className="font-black uppercase text-gray-500">
-          Available once the scan completes
-        </p>
-      </div>
+      <Card>
+        <EmptyState icon={FileText} title="Available once the scan completes" />
+      </Card>
     )
   }
 
   return (
     <div className="space-y-4">
-      <div className="bg-white border-3 border-black p-5 shadow-neb">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="min-w-0">
-            <h3 className="text-lg font-black uppercase flex items-center gap-2">
-              <Sparkles className="w-5 h-5" />
-              AI Briefing
-            </h3>
-            <p className="text-xs font-bold text-gray-600 uppercase tracking-wider mt-1">
-              Plain-language explanation of {scan.total_vulnerabilities} findings on {scan.target}
-            </p>
-          </div>
-          <button
-            onClick={() => generate(question)}
-            disabled={loading}
-            className="px-4 py-2 bg-neo-purple border-3 border-black text-sm font-black uppercase nb-btn flex items-center gap-2 flex-shrink-0 disabled:opacity-50"
-          >
-            {loading ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /> Analyzing</>
-            ) : explanation ? (
-              <><RefreshCw className="w-4 h-4" /> Regenerate</>
-            ) : (
-              <><Sparkles className="w-4 h-4" /> Explain results</>
-            )}
-          </button>
-        </div>
-
-        <div className="mt-4 flex gap-2">
-          <input
-            type="text"
+      <Card>
+        <CardHeader
+          title="Briefing"
+          description={`What the ${scan.total_vulnerabilities} findings on ${scan.target} mean, and what to fix first.`}
+        />
+        <form onSubmit={generate} className="px-5 pb-5 flex flex-col sm:flex-row gap-2">
+          <Input
+            aria-label="Optional question about this scan"
+            className="flex-1 min-w-0"
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && !loading) generate(question) }}
             placeholder="Optional: ask something specific about this scan"
-            className="flex-1 min-w-0 bg-white border-3 border-black px-3 py-2 text-sm font-mono nb-input"
             disabled={loading}
           />
-        </div>
-      </div>
+          <Button type="submit" variant="primary" loading={loading} icon={explanation ? RefreshCw : FileText}>
+            {loading ? 'Writing…' : explanation ? 'Regenerate' : 'Write briefing'}
+          </Button>
+        </form>
+      </Card>
 
       {error && (
-        <div className="bg-neo-red text-white border-3 border-black p-4 shadow-neb flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-          <div className="min-w-0">
-            <p className="font-black uppercase text-sm">Could not generate a briefing</p>
-            <p className="text-xs font-bold mt-1 break-words">{error}</p>
-          </div>
-        </div>
+        <Callout tone="crit" icon={AlertTriangle} title="Could not write a briefing" role="alert">{error}</Callout>
+      )}
+
+      {loading && !explanation && (
+        <Card className="p-6" aria-busy="true">
+          <SkeletonText lines={6} />
+        </Card>
       )}
 
       {explanation && !error && (
-        <div className="bg-white border-3 border-black p-5 shadow-neb space-y-4">
-          <div className="prose-sm max-w-none whitespace-pre-wrap text-sm leading-relaxed">
+        <Card>
+          <div className="px-6 py-5 text-sm leading-relaxed whitespace-pre-wrap max-w-prose">
             {explanation.explanation}
           </div>
-
-          <div className="pt-3 border-t-2 border-black/20 flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] font-bold uppercase text-gray-500">
+          <div className="px-6 py-3 border-t border-line flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-subtle">
             {explanation.llm_model && (
-              <span className="flex items-center gap-1">
-                <Cpu className="w-3 h-3" />
-                {explanation.llm_provider} / {explanation.llm_model}
+              <span className="flex items-center gap-1.5">
+                <Cpu className="w-3.5 h-3.5" aria-hidden="true" />
+                <span className="font-mono">{explanation.llm_provider} / {explanation.llm_model}</span>
               </span>
             )}
             {explanation.generation_ms > 0 && (
-              <span>{(explanation.generation_ms / 1000).toFixed(1)}s</span>
+              <span className="flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5" aria-hidden="true" />
+                {(explanation.generation_ms / 1000).toFixed(1)}s
+              </span>
             )}
-            <span>{explanation.finding_count} findings analyzed</span>
-            {explanation.sources?.length > 0 && (
-              <span>{explanation.sources.length} sources retrieved</span>
-            )}
+            <span>{explanation.finding_count} findings analysed</span>
+            {explanation.sources?.length > 0 && <span>{explanation.sources.length} sources retrieved</span>}
           </div>
-        </div>
-      )}
-
-      {!explanation && !loading && !error && (
-        <div className="bg-white border-3 border-black p-8 text-center shadow-neb">
-          <Sparkles className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-          <p className="font-black uppercase text-gray-500">
-            Generate a briefing to see what these findings mean
-          </p>
-        </div>
+        </Card>
       )}
     </div>
   )

@@ -1,5 +1,6 @@
 import React from 'react'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
+import { Button, Card } from './ui'
 
 export default class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -18,23 +19,24 @@ export default class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex flex-col items-center justify-center h-full bg-stone-100 p-8">
-          <div className="bg-white border-3 border-black p-8 max-w-md text-center shadow-[8px_8px_0px_0px_#000]">
-            <AlertTriangle className="w-12 h-12 text-neo-red mx-auto mb-4" />
-            <h2 className="text-xl font-black mb-2 uppercase">Something went wrong</h2>
-            <p className="text-sm font-bold text-gray-500 mb-4">
+        <div className="min-h-screen flex items-center justify-center bg-canvas p-6">
+          <Card className="p-8 max-w-md w-full text-center">
+            <AlertTriangle className="w-8 h-8 text-crit mx-auto mb-3" aria-hidden="true" />
+            <h1 className="text-lg font-semibold mb-1">Something went wrong</h1>
+            <p className="text-[13px] text-ink-muted mb-5 break-words">
               {this.state.error?.message || 'An unexpected error occurred.'}
             </p>
-            <button
+            <Button
+              variant="primary"
+              icon={RefreshCw}
               onClick={() => {
                 this.setState({ hasError: false, error: null })
                 window.location.href = '/'
               }}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-neo-yellow border-3 border-black nb-btn text-sm"
             >
-              <RefreshCw className="w-4 h-4" /> Reload App
-            </button>
-          </div>
+              Reload app
+            </Button>
+          </Card>
         </div>
       )
     }

@@ -1,83 +1,61 @@
-import { Check, Palette } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
+import { cx } from './ui'
 
-/**
- * The theme picker shown on the Settings page.
- *
- * Each option is a real button carrying its own palette swatch, so the choice
- * is made by looking rather than by reading a name. The swatch is three flat
- * colours taken from the theme definition, not a miniature render of the UI:
- * a mock preview would have to be maintained by hand alongside the stylesheet
- * and would eventually describe a theme that no longer looks like that.
- *
- * Selection applies immediately. There is no save button because the whole
- * page repaints in the chosen theme the moment it is clicked, which is a more
- * convincing preview than any thumbnail, and the choice is persisted to
- * localStorage by the provider.
- */
+// A miniature of each mode drawn with fixed colours, since the live tokens
+// only ever describe the active theme.
+const PREVIEW = {
+  light: { bg: '#f6f7f9', panel: '#ffffff', line: '#e2e4ea', ink: '#2b2f3a' },
+  dark: { bg: '#1b1d23', panel: '#23262e', line: '#343844', ink: '#e9eaee' },
+}
+
+function Mini({ mode }) {
+  const p = PREVIEW[mode]
+  return (
+    <div className="h-16 rounded-md overflow-hidden border border-line flex" style={{ background: p.bg }} aria-hidden="true">
+      <div className="w-1/4 h-full" style={{ borderRight: `1px solid ${p.line}` }} />
+      <div className="flex-1 p-2 space-y-1.5">
+        <div className="h-1.5 w-1/2 rounded-full" style={{ background: p.ink, opacity: 0.8 }} />
+        <div className="h-6 rounded" style={{ background: p.panel, border: `1px solid ${p.line}` }} />
+      </div>
+    </div>
+  )
+}
+
 export default function ThemePicker() {
   const { theme, setTheme, themes } = useTheme()
 
   return (
-    <div className="bg-white border-3 border-black p-5 shadow-neb">
-      <div className="flex items-center gap-2 mb-1">
-        <Palette className="w-5 h-5 flex-shrink-0" />
-        <h2 className="text-sm font-black uppercase tracking-wider">Theme</h2>
-      </div>
-      <p className="text-xs font-bold text-gray-600 mb-4">
-        Applies immediately and is remembered on this device.
-      </p>
-
-      <div
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
-        role="radiogroup"
-        aria-label="Interface theme"
-      >
-        {themes.map((t) => {
-          const active = t.id === theme
-          return (
-            <button
-              key={t.id}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              onClick={() => setTheme(t.id)}
-              className={`text-left p-3 border-3 border-black transition-all ${
-                active
-                  ? 'bg-neo-yellow shadow-neb-xs'
-                  : 'bg-white shadow-neb-sm hover:shadow-neb-hover'
-              }`}
-            >
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <span className="text-xs font-black uppercase tracking-wider">
-                  {t.label}
-                </span>
-                {active && <Check className="w-4 h-4 flex-shrink-0" />}
+    <div role="radiogroup" aria-label="Color theme" className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      {themes.map((t) => {
+        const active = t.id === theme
+        return (
+          <button
+            key={t.id}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            onClick={() => setTheme(t.id)}
+            className={cx(
+              'text-left p-2.5 rounded-card border transition-colors duration-150',
+              active ? 'border-accent bg-accent-soft/50' : 'border-line hover:border-line-strong bg-surface'
+            )}
+          >
+            {t.id === 'system' ? (
+              <div className="h-16 rounded-md overflow-hidden border border-line grid grid-cols-2" aria-hidden="true">
+                <div style={{ background: PREVIEW.light.bg }} />
+                <div style={{ background: PREVIEW.dark.bg }} />
               </div>
-
-              {/* The swatch is decorative -- the label already names the theme,
-                  so announcing three colour chips adds noise for a screen
-                  reader and nothing else. */}
-              <div className="flex gap-1 mb-2" aria-hidden="true">
-                {t.swatch.map((c) => (
-                  <span
-                    key={c}
-                    className="w-7 h-7 border-2 border-black flex-shrink-0"
-                    style={{ backgroundColor: c }}
-                  />
-                ))}
-              </div>
-
-              <div className="text-[10px] font-black uppercase tracking-wider text-gray-500">
-                {t.tagline}
-              </div>
-              <p className="text-[11px] font-bold text-gray-600 mt-1 leading-snug">
-                {t.description}
-              </p>
-            </button>
-          )
-        })}
-      </div>
+            ) : (
+              <Mini mode={t.id} />
+            )}
+            <div className="flex items-center justify-between mt-2 px-0.5">
+              <span className="text-[13px] font-medium">{t.label}</span>
+              {active && <Check className="w-4 h-4 text-accent" aria-hidden="true" />}
+            </div>
+          </button>
+        )
+      })}
     </div>
   )
 }
