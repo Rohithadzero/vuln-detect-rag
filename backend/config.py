@@ -135,6 +135,10 @@ class Settings(BaseSettings):
     # reverse proxy that overwrites the header.
     TRUST_PROXY_HEADERS: bool = False
 
+    # VirusTotal reputation lookup for the file/link sanitizer. Optional: when
+    # empty, sanitizing falls back to local heuristics only. https://virustotal.com
+    VT_API_KEY: str = ""
+
     # Scanner paths - will be auto-detected if not set
     NMAP_PATH: str = ""
     NUCLEI_PATH: str = ""
@@ -212,6 +216,7 @@ class Settings(BaseSettings):
             "RAG_MAP_TIMEOUT": str(self.RAG_MAP_TIMEOUT),
             "RAG_VERIFY": "1" if self.RAG_VERIFY else "0",
             "RAG_VERIFY_REPAIR": "1" if self.RAG_VERIFY_REPAIR else "0",
+            "VT_API_KEY": self.VT_API_KEY,
         }
         for key, value in exported.items():
             # A real environment variable always wins over the .env file.

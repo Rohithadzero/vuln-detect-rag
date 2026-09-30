@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Search, AlertTriangle, ExternalLink, Info, Crosshair } from 'lucide-react'
+import { Search, AlertTriangle, ExternalLink, Info, Crosshair, RefreshCw } from 'lucide-react'
 import { getGraphStats, getGraphChain, searchGraph } from '../api/client'
 import { Badge, Button, Callout, Card, CardHeader, Input, PageHeader } from '../components/ui'
 import { SkeletonRegion, SkeletonCard } from '../components/Skeleton'
@@ -24,11 +24,18 @@ export default function KnowledgeGraph() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    getGraphStats()
-      .then(({ data }) => setStats(data))
-      .catch((err) => setError(err.message || 'Failed to read graph status'))
-  }, [])
+  const refreshStats = useCallback(
+    () =>
+      getGraphStats()
+        .then(({ data }) => {
+          setStats(data)
+          return data
+        })
+        .catch((err) => setError(err.message || 'Failed to read graph status')),
+    [],
+  )
+
+  useEffect(() => { refreshStats() }, [refreshStats])
 
   const runLookup = useCallback(async (term) => {
     const value = (term || '').trim()
@@ -71,6 +78,20 @@ export default function KnowledgeGraph() {
           <pre className="text-xs bg-surface border border-line rounded-ctl p-2.5 overflow-x-auto">
 python scripts/fetch_datasets.py{'\n'}python scripts/build_knowledge_graph.py
           </pre>
+          <p className="text-xs mt-2 mb-2 text-ink-muted">
+            Already ran these? Recheck — no backend restart needed.
+          </p>
+          <Button
+            size="sm"
+            icon={RefreshCw}
+            onClick={() =>
+              refreshStats().then((data) => {
+                if (data?.loaded) runLookup(query)
+              })
+            }
+          >
+            Recheck
+          </Button>
         </Callout>
       )}
 

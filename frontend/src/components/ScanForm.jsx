@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Play, Star, AlertTriangle, Check } from 'lucide-react'
+import { Play, Star, AlertTriangle, Check, Square } from 'lucide-react'
 import { normalizeTarget } from '../utils/target'
 import { Badge, Button, Callout, IconButton, Input, Label, cx } from './ui'
 
@@ -14,6 +14,7 @@ const scanners = [
   { id: 'nikto', label: 'Nikto', desc: 'Server misconfiguration, outdated software', status: 'live', group: 'Web' },
   { id: 'tlsscan', label: 'testssl / sslyze', desc: 'TLS protocols, ciphers, certificates', status: 'live', group: 'Web' },
   { id: 'whatweb', label: 'WhatWeb', desc: 'Technology fingerprinting', status: 'live', group: 'Web' },
+  { id: 'webprobe', label: 'Web probes', desc: 'OS command injection, session hijacking, file inclusion, open redirect', status: 'live', group: 'Web' },
   { id: 'trivy', label: 'Trivy', desc: 'Containers, dependencies, IaC, secrets', status: 'live', group: 'Supply chain', note: 'Scans a path or image, not a hostname' },
   { id: 'osv', label: 'OSV-Scanner', desc: 'Dependency manifests against OSV', status: 'live', group: 'Supply chain', note: 'Scans a project directory' },
   { id: 'grype', label: 'Grype', desc: 'Image and filesystem CVE matching', status: 'live', group: 'Supply chain', note: 'Scans a path or image' },
@@ -24,7 +25,7 @@ const scanners = [
 const GROUPS = ['Network', 'Web', 'Supply chain', 'Commercial']
 const defaultScanners = ['nmap', 'nuclei']
 
-export default function ScanForm({ onStartScan, loading, onAddFavorite, error, availability }) {
+export default function ScanForm({ onStartScan, onStopScan, loading, onAddFavorite, error, availability }) {
   const [target, setTarget] = useState('')
   const [selected, setSelected] = useState(defaultScanners)
   const [showAll, setShowAll] = useState(false)
@@ -148,17 +149,42 @@ export default function ScanForm({ onStartScan, loading, onAddFavorite, error, a
         </Callout>
       )}
 
-      <Button
-        type="submit"
-        variant="primary"
-        size="lg"
-        icon={Play}
-        loading={loading}
-        disabled={!target.trim() || selected.length === 0}
-        className="w-full"
-      >
-        {loading ? 'Scanning…' : 'Start scan'}
-      </Button>
+      {loading && onStopScan ? (
+        <div className="flex gap-2">
+          <Button
+            type="submit"
+            variant="primary"
+            size="lg"
+            icon={Play}
+            loading
+            disabled
+            className="flex-1"
+          >
+            Scanning…
+          </Button>
+          <Button
+            type="button"
+            variant="danger"
+            size="lg"
+            icon={Square}
+            onClick={onStopScan}
+          >
+            Stop
+          </Button>
+        </div>
+      ) : (
+        <Button
+          type="submit"
+          variant="primary"
+          size="lg"
+          icon={Play}
+          loading={loading}
+          disabled={!target.trim() || selected.length === 0}
+          className="w-full"
+        >
+          {loading ? 'Scanning…' : 'Start scan'}
+        </Button>
+      )}
     </form>
   )
 }

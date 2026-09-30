@@ -39,6 +39,7 @@ export const getHealth = () => api.get('/health')
 
 // Scans
 export const startScan = (target, scanners) => api.post('/scans', { target, scanners })
+export const stopScan = (id) => api.post(`/scans/${id}/cancel`)
 export const getScan = (id) => api.get(`/scans/${id}`)
 export const getScanResults = (id) => api.get(`/scans/${id}/results`)
 export const getAttackPaths = (id) => api.get(`/scans/${id}/attack-paths`)
@@ -68,6 +69,14 @@ export const deleteFavorite = (id) => api.delete(`/favorites/${id}`)
 
 // LLM Status
 export const getLLMStatus = () => api.get('/llm-status')
+
+// Sanitize (threat screening for files and links)
+export const sanitizeFiles = (files) => {
+  const form = new FormData()
+  for (const file of files) form.append('files', file)
+  return api.post('/sanitize/files', form, { headers: { 'Content-Type': 'multipart/form-data' } })
+}
+export const sanitizeLinks = (urls) => api.post('/sanitize/links', { urls })
 
 // Provider + RAG controls (used for research: isolate a backend, or turn
 // retrieval off entirely to measure the no-RAG baseline)

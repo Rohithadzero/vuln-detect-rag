@@ -13,6 +13,15 @@ export default function ScanResults({ scan, vulnerabilities }) {
   if (!scan) return null
 
   if (scan.status === 'pending' || scan.status === 'running') {
+    // The backend only bumps `progress` at scanner boundaries, so a single
+    // long-running scanner leaves it at 0 for minutes. Fill the gap from the
+    // ETA (recomputed server-side on every poll) so the bar always moves:
+    // time-driven up to 80%, then the real backend progress for the
+    // aggregate/index phases. Never let it slip below what the backend reports.
+    const total = scan.eta_seconds || 0
+    const remaining = scan.eta_remaining_seconds ?? total
+    const timeProgress = total > 0 ? Math.min(80, Math.round(((total - remaining) / total) * 80)) : 0
+    const shown = Math.max(scan.progress || 0, timeProgress)
     return (
       <Card className="p-6">
         <div className="flex items-baseline justify-between gap-4 mb-3">
@@ -24,11 +33,17 @@ export default function ScanResults({ scan, vulnerabilities }) {
               {scan.current_scanner ? `Running ${scan.current_scanner}` : 'This can take a few minutes.'}
             </p>
           </div>
-          <span className="text-sm tabular text-ink-muted">{scan.progress || 0}%</span>
+          <span className="text-sm tabular text-ink-muted">{shown}%</span>
         </div>
-        <ProgressBar value={scan.progress || 0} label={`Scan progress for ${scan.target}`} />
+        <ProgressBar value={shown} label={`Scan progress for ${scan.target}`} />
+        {scan.eta_message && (
+          <p className={`text-xs mt-3 ${scan.overrun ? 'text-med' : 'text-ink-subtle'}`}>
+            {scan.overrun && <AlertTriangle className="inline w-3.5 h-3.5 mr-1 -mt-0.5" />}
+            {scan.eta_message}
+          </p>
+        )}
         {vulnerabilities?.length > 0 && (
-          <p className="text-xs text-ink-subtle mt-3 tabular">{vulnerabilities.length} findings so far</p>
+          <p className="text-xs text-ink-subtle mt-2 tabular">{vulnerabilities.length} findings so far</p>
         )}
       </Card>
     )
@@ -38,6 +53,14 @@ export default function ScanResults({ scan, vulnerabilities }) {
     return (
       <Callout tone="crit" icon={AlertTriangle} title="Scan failed">
         {scan.error_message || 'The backend did not report a reason.'}
+      </Callout>
+    )
+  }
+
+  if (scan.status === 'cancelled') {
+    return (
+      <Callout tone="warn" icon={AlertTriangle} title="Scan stopped">
+        You stopped this scan before it finished. Any findings collected before the stop are not saved.
       </Callout>
     )
   }

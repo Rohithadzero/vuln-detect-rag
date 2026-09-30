@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import {
   ShieldCheck, LayoutDashboard, Radar, MessagesSquare, Database, Network, Settings,
-  Sun, Moon, Monitor,
+  FileSearch, Sun, Moon, Monitor,
 } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
 import { getHealth } from '../api/client'
@@ -14,6 +14,7 @@ const navItems = [
   { to: '/rag', icon: MessagesSquare, label: 'Assistant' },
   { to: '/cve', icon: Database, label: 'CVE database' },
   { to: '/graph', icon: Network, label: 'Knowledge graph' },
+  { to: '/sanitize', icon: FileSearch, label: 'Sanitize' },
   { to: '/settings', icon: Settings, label: 'Settings' },
 ]
 

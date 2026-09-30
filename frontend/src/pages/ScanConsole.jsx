@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { History, RefreshCw, Star, X, Radar, AlertTriangle } from 'lucide-react'
 import {
-  startScan, getScanResults, getAttackPaths, listScans, getFavorites, addFavorite, deleteFavorite, getHealth,
+  startScan, stopScan, getScanResults, getAttackPaths, listScans, getFavorites, addFavorite, deleteFavorite, getHealth,
 } from '../api/client'
 import ScanForm from '../components/ScanForm'
 import ScanResults from '../components/ScanResults'
@@ -103,6 +103,17 @@ export default function ScanConsole() {
     }
   }
 
+  const handleStopScan = async () => {
+    if (!currentScan) return
+    try {
+      // Cooperative stop: the backend flips the status to `cancelled` at the
+      // next scanner boundary, which the active poll then picks up.
+      await stopScan(currentScan.id)
+    } catch (err) {
+      setScanError(err.message || 'Failed to stop scan')
+    }
+  }
+
   const handleAddFavorite = async (target) => {
     try { await addFavorite(target, ''); loadFavorites() } catch (err) { console.error(err) }
   }
@@ -119,7 +130,7 @@ export default function ScanConsole() {
         setCurrentScan(data.scan)
         setVulnerabilities(data.vulnerabilities)
         loadHistory()
-        if (data.scan.status === 'completed' || data.scan.status === 'failed') {
+        if (['completed', 'failed', 'cancelled'].includes(data.scan.status)) {
           clearInterval(pollRef.current)
           pollRef.current = null
           setScanning(false)
@@ -148,6 +159,7 @@ export default function ScanConsole() {
             <div className="px-5 pb-5">
               <ScanForm
                 onStartScan={handleStartScan}
+                onStopScan={handleStopScan}
                 loading={scanning}
                 onAddFavorite={handleAddFavorite}
                 error={scanError}

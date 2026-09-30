@@ -41,6 +41,23 @@ async def get_scan(scan_id: int):
     return ScanResponse.model_validate(scan)
 
 
+@router.post("/scans/{scan_id}/cancel", response_model=ScanResponse)
+async def cancel_scan(scan_id: int):
+    """Request a running scan to stop.
+
+    Cancellation is cooperative: the orchestrator checks the flag at scanner
+    boundaries, so the status flips to ``cancelled`` on a following poll rather
+    than instantly. A scan that already finished cannot be stopped.
+    """
+    scan = orchestrator_service.get_scan(scan_id)
+    if not scan:
+        raise HTTPException(status_code=404, detail="Scan not found")
+    if scan.status not in ("pending", "running"):
+        raise HTTPException(status_code=409, detail="Scan is not running")
+    orchestrator_service.request_cancel(scan_id)
+    return ScanResponse.model_validate(scan)
+
+
 @router.get("/scans/{scan_id}/results", response_model=ScanResultsResponse)
 async def get_scan_results(scan_id: int, db: Session = Depends(get_db)):
     """Get full scan results with all vulnerabilities."""

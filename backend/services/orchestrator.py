@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import threading
 import traceback
 from datetime import datetime, timezone
 from concurrent.futures import ThreadPoolExecutor
@@ -15,6 +16,7 @@ from scanners.nessus_scanner import NessusScanner
 from scanners.burp_scanner import BurpScanner
 from scanners.zap_scanner import ZAPScanner
 from scanners.web_tools import NiktoScanner, TLSScanner, WhatWebScanner
+from scanners.web_probe import WebProbeScanner
 from scanners.supply_chain_tools import TrivyScanner, OSVScanner, GrypeScanner
 from services.aggregator import aggregator_service
 
@@ -28,6 +30,9 @@ SCANNER_MAP = {
     "nikto": NiktoScanner,
     "tlsscan": TLSScanner,
     "whatweb": WhatWebScanner,
+    # Native active web probes: OS command injection, session hijacking, file
+    # inclusion and open redirect. No external binary required.
+    "webprobe": WebProbeScanner,
     # Supply chain: code, dependencies and container images
     "trivy": TrivyScanner,
     "osv": OSVScanner,
@@ -52,9 +57,29 @@ class OrchestratorService:
 
     def __init__(self):
         self.executor = ThreadPoolExecutor(max_workers=4)
+        # Scan ids the user asked to stop. Cancellation is cooperative: the run
+        # loop checks this between scanners, so a stop takes effect at the next
+        # scanner boundary, not mid-scanner (a running binary cannot be killed
+        # from here). Guarded because the flag is set from a request thread and
+        # read from the scan's worker thread.
+        self._cancelled: set[int] = set()
+        self._cancel_lock = threading.Lock()
+
+    def request_cancel(self, scan_id: int) -> None:
+        with self._cancel_lock:
+            self._cancelled.add(scan_id)
+
+    def _is_cancelled(self, scan_id: int) -> bool:
+        with self._cancel_lock:
+            return scan_id in self._cancelled
+
+    def _clear_cancel(self, scan_id: int) -> None:
+        with self._cancel_lock:
+            self._cancelled.discard(scan_id)
 
     async def run_scan(self, scan_id: int, target: str, scanners: list[str]):
         """Execute a scan across selected scanners."""
+        self._clear_cancel(scan_id)
         self._update_scan(scan_id, status="running", progress=0)
 
         try:
@@ -72,6 +97,14 @@ class OrchestratorService:
             total_scanners = len(scanners)
 
             for idx, scanner_name in enumerate(scanners):
+                if self._is_cancelled(scan_id):
+                    logger.info("Scan %s stopped by user", scan_id)
+                    self._update_scan(
+                        scan_id, status="cancelled", current_scanner="",
+                    )
+                    self._clear_cancel(scan_id)
+                    return
+
                 scanner_cls = SCANNER_MAP.get(scanner_name)
                 if not scanner_cls:
                     logger.warning("Unknown scanner: %s, skipping", scanner_name)
@@ -95,6 +128,18 @@ class OrchestratorService:
                         all_vulns.extend(results)
                 except Exception as e:
                     logger.warning(f"Scanner {scanner_name} failed: {e}")
+
+                # Advance the bar as each scanner finishes, so progress reflects
+                # completed work rather than only jumping at the next scanner.
+                self._update_scan(
+                    scan_id, progress=int(((idx + 1) / total_scanners) * 80)
+                )
+
+            if self._is_cancelled(scan_id):
+                logger.info("Scan %s stopped by user", scan_id)
+                self._update_scan(scan_id, status="cancelled", current_scanner="")
+                self._clear_cancel(scan_id)
+                return
 
             self._update_scan(scan_id, progress=80, current_scanner="aggregating")
 

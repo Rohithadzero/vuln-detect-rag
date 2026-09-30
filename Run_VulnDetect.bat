@@ -132,8 +132,15 @@ if not defined VENV_OK (
 )
 
 echo [*] Installing Python dependencies...
+echo     This can take several minutes on the first run (large packages such as
+echo     torch, chromadb and faiss are downloaded and built). Progress is shown
+echo     below - the terminal is not frozen.
 :: requirements.txt lives at the repository root, not in backend\.
-"%VENV_PY%" -m pip install -r requirements.txt -q
+:: Upgrade pip/setuptools/wheel first so wheels resolve fast and do not fall
+:: back to slow source builds. --no-input stops pip blocking on a prompt, and
+:: dropping -q keeps the progress bar visible so the run never looks stuck.
+"%VENV_PY%" -m pip install --upgrade --no-input --disable-pip-version-check pip setuptools wheel
+"%VENV_PY%" -m pip install -r requirements.txt --no-input --disable-pip-version-check --progress-bar on
 if !ERRORLEVEL! neq 0 (
     echo [ERROR] Dependency installation failed. See the messages above.
     pause

@@ -18,6 +18,7 @@ from api.routes_scan import router as scan_router
 from api.routes_rag import router as rag_router
 from api.routes_cve import router as cve_router
 from api.routes_graph import router as graph_router
+from api.routes_sanitize import router as sanitize_router
 
 # Use absolute path for log file in data directory
 LOG_DIR = Path(__file__).parent / "data"
@@ -37,6 +38,7 @@ _rate_store: dict[str, list[float]] = defaultdict(list)
 RATE_LIMITS = {
     "/api/scans": (30, 60),  # 30 scan requests per 60 seconds
     "/api/rag/chat": (60, 60),  # 60 RAG chats per 60 seconds
+    "/api/sanitize": (30, 60),  # 30 sanitize requests per 60 seconds
 }
 DEFAULT_RATE_LIMIT = (200, 60)  # 200 requests per 60 seconds for everything else
 
@@ -206,6 +208,7 @@ app.include_router(scan_router, prefix="/api")
 app.include_router(rag_router, prefix="/api")
 app.include_router(cve_router, prefix="/api")
 app.include_router(graph_router, prefix="/api")
+app.include_router(sanitize_router, prefix="/api")
 
 
 @app.get("/")

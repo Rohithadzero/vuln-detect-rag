@@ -132,6 +132,7 @@ const STATUS = {
   running: { tone: 'accent', label: 'Running' },
   pending: { tone: 'neutral', label: 'Queued' },
   failed: { tone: 'crit', label: 'Failed' },
+  cancelled: { tone: 'neutral', label: 'Stopped' },
 }
 
 export function StatusBadge({ status }) {

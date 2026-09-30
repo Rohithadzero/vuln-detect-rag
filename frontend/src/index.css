@@ -90,11 +90,22 @@
     -webkit-text-size-adjust: 100%;
   }
 
+  /* The app shell owns its own scroll regions (see Layout: a fixed-height
+   * flex frame with an internal <main class="overflow-auto">). Pin the
+   * document to the viewport so the window itself never scrolls and drags
+   * the sidebar with it. */
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
   body {
     @apply bg-canvas text-ink font-sans antialiased;
     font-size: 14px;
     line-height: 1.5;
     font-feature-settings: 'cv11', 'ss01';
+    overflow: hidden;
   }
 
   /* One focus treatment for the whole app. Components never remove it. */

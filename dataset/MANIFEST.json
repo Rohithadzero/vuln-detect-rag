@@ -26,6 +26,6 @@
       "source": "https://raw.githubusercontent.com/mitre/cti/master/enterprise-attack/enterprise-attack.json"
     }
   },
-  "generated": "2026-08-19T05:45:20Z",
+  "generated": "2026-09-30T04:44:24Z",
   "note": "Inputs to scripts/build_knowledge_graph.py. Re-fetch with scripts/fetch_datasets.py --force."
 }

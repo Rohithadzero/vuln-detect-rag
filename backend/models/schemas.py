@@ -71,8 +71,27 @@ class ScanResponse(BaseModel):
     started_at: datetime
     completed_at: Optional[datetime] = None
     error_message: Optional[str] = None
+    #: Estimated running time for the scan's background work. Derived from the
+    #: selected scanners and elapsed time so the client can show a wait, and an
+    #: honest "more time needed" once the scan runs past its estimate.
+    eta_seconds: int = 0
+    eta_remaining_seconds: int = 0
+    overrun: bool = False
+    eta_message: str = ""
 
     model_config = ConfigDict(from_attributes=True)
+
+    @model_validator(mode="after")
+    def _fill_eta(self):
+        """Compute the ETA fields from the scan's status and timing."""
+        from services.eta import compute_eta
+
+        eta = compute_eta(
+            self.status, self.scanners_used, self.started_at, self.completed_at
+        )
+        for key, value in eta.items():
+            object.__setattr__(self, key, value)
+        return self
 
 
 class ScanResultsResponse(BaseModel):
@@ -176,6 +195,37 @@ class DashboardStats(BaseModel):
     low_vulns: int
     avg_cvss: float
     recent_scans: list[ScanResponse]
+
+
+# --- Sanitizer Schemas ---
+
+
+class SanitizeIndicator(BaseModel):
+    severity: Literal["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"]
+    title: str
+    detail: str = ""
+
+
+class SanitizeItemResult(BaseModel):
+    kind: Literal["file", "link"]
+    name: str
+    verdict: Literal["clean", "low", "suspicious", "malicious", "error"]
+    score: int = 0
+    sha256: Optional[str] = None
+    size: Optional[int] = None
+    detected_type: Optional[str] = None
+    sanitized: Optional[str] = None
+    note: str = ""
+    indicators: list[SanitizeIndicator] = Field(default_factory=list)
+    engines: dict = Field(default_factory=dict)
+
+
+class SanitizeResponse(BaseModel):
+    results: list[SanitizeItemResult]
+
+
+class LinkSanitizeRequest(BaseModel):
+    urls: list[str] = Field(..., max_length=50, description="URLs to screen")
 
 
 # --- Evaluation Schemas ---

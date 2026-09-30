@@ -51,34 +51,48 @@ class KnowledgeGraph:
         self.meta: Dict[str, Any] = {}
         self.loaded = False
         self.error: Optional[str] = None
+        self._load_lock = threading.Lock()
 
     def load(self) -> bool:
-        if self.loaded or self.error:
-            return self.loaded
-        if not os.path.exists(self.path):
-            self.error = (
-                "knowledge graph not built. Run: python "
-                "scripts/fetch_datasets.py && python scripts/build_knowledge_graph.py"
-            )
-            logger.warning(self.error)
-            return False
-        try:
-            with io.open(self.path, encoding="utf-8") as fh:
-                data = json.load(fh)
-            for node in data.get("nodes", []):
-                self.nodes[node["id"]] = node
-            for link in data.get("links", []):
-                src, dst = link["source"], link["target"]
-                rel = link.get("relation", "RELATED")
-                self.out.setdefault(src, []).append((dst, rel))
-                self.inc.setdefault(dst, []).append((src, rel))
-            self.meta = data.get("meta", {})
-            self.loaded = True
-            logger.info("knowledge graph loaded: %d nodes, %d edges",
-                        len(self.nodes), sum(len(v) for v in self.out.values()))
-        except (ValueError, KeyError, OSError) as exc:
-            self.error = "failed to load knowledge graph: %s" % exc
-            logger.error(self.error)
+        # Never cache a "not built" error permanently. The graph is built by an
+        # out-of-band script the user may run *after* the server started, so a
+        # missing file must be re-checked on every call -- otherwise the error
+        # box stays up and traces keep failing until a restart, even though the
+        # file now exists.
+        if self.loaded:
+            return True
+        with self._load_lock:
+            if self.loaded:
+                return True
+            if not os.path.exists(self.path):
+                self.error = (
+                    "knowledge graph not built. Run: python "
+                    "scripts/fetch_datasets.py && python scripts/build_knowledge_graph.py"
+                )
+                logger.warning(self.error)
+                return False
+            try:
+                with io.open(self.path, encoding="utf-8") as fh:
+                    data = json.load(fh)
+                nodes: Dict[str, Dict[str, Any]] = {}
+                out: Dict[str, List[tuple]] = {}
+                inc: Dict[str, List[tuple]] = {}
+                for node in data.get("nodes", []):
+                    nodes[node["id"]] = node
+                for link in data.get("links", []):
+                    src, dst = link["source"], link["target"]
+                    rel = link.get("relation", "RELATED")
+                    out.setdefault(src, []).append((dst, rel))
+                    inc.setdefault(dst, []).append((src, rel))
+                self.nodes, self.out, self.inc = nodes, out, inc
+                self.meta = data.get("meta", {})
+                self.error = None
+                self.loaded = True
+                logger.info("knowledge graph loaded: %d nodes, %d edges",
+                            len(self.nodes), sum(len(v) for v in self.out.values()))
+            except (ValueError, KeyError, OSError) as exc:
+                self.error = "failed to load knowledge graph: %s" % exc
+                logger.error(self.error)
         return self.loaded
 
     # -- helpers ---------------------------------------------------------

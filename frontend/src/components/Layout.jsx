@@ -19,8 +19,9 @@ export default function Layout() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-canvas">
-      {/* Desktop: permanent rail. */}
-      <div className="hidden lg:flex">
+      {/* Desktop: permanent rail. Pinned full-height so page scroll never
+       * moves it. */}
+      <div className="hidden lg:flex shrink-0 h-screen sticky top-0">
         <Sidebar />
       </div>
 

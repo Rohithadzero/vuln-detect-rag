@@ -19,6 +19,7 @@ class LLMFactory:
     #: well, best first. Used when auto-selecting a model.
     PREFERRED_OLLAMA_MODELS = (
         'qwen3-coder',
+        'qwen3.5:9b',
         'qwen2.5-coder',
         'qwen3',
         'qwen2.5',
@@ -120,7 +121,7 @@ class LLMFactory:
             if not result["models"]:
                 result["error"] = (
                     "Ollama is running but has no models installed. "
-                    "Run: ollama pull qwen2.5-coder:7b"
+                    "Run: ollama pull qwen3.5:9b"
                 )
                 return _cache_ollama_status(result)
 
@@ -313,7 +314,7 @@ class LLMFactory:
 
         logger.warning(
             "No LLM provider is configured. Set GROQ_API_KEY or GEMINI_API_KEY, "
-            "or install a local model with 'ollama pull qwen2.5-coder:7b'."
+            "or install a local model with 'ollama pull qwen3.5:9b'."
         )
         return cls.provider_order()[0] if cls.provider_order() else 'ollama'
 
@@ -333,10 +334,10 @@ class LLMFactory:
             ollama_status = cls.check_ollama_available()
             default_ollama_model = (
                 ollama_status["model"] if ollama_status["available"]
-                else 'qwen2.5-coder:7b'
+                else 'qwen3.5:9b'
             )
         else:
-            default_ollama_model = 'qwen2.5-coder:7b'
+            default_ollama_model = 'qwen3.5:9b'
 
         model_map = {
             'openai': os.getenv('OPENAI_MODEL', 'gpt-4o'),
